@@ -22,7 +22,7 @@ Hedef ödüller: Local Impact, Best Use of Science, Most Inspirational, Art & Te
 - NASA SVS düz 2:1 harita görselleri/videoları piksel analiziyle değere, değer sese çevrilir.
 - **Radar kullanıcının seçtiği herhangi bir yerde döner. Hiçbir şehir sabit kodlanmaz** (kod, varsayılan, örnek veri dahil). Açılışta varsayılan konum YOK; kullanıcıdan yer seçmesi istenir, seçmezse "Konumumu kullan" önerilir.
 - Konum seçimi üç yol: şehir arama (public/data/cities.json, ekran okuyucuyla erişilebilir ARIA combobox), haritaya dokunma, "Konumumu kullan" (geolocation).
-- Eşleme (Caldwell 73 / SVS 13786 yöntemi Dünya'ya uyarlandı): yön → stereo konum, uzaklık → perde, tür/katman → enstrüman, değer → ses şiddeti. Menzil 500 / 2000 / 5000 km. Katmanlar tek tek açılıp kapanır: yüzey sıcaklığı (5147), 4 aerosol türü (5669), yıldırım (5011). Başta 15 sn sesli lejant.
+- Eşleme (Caldwell 73 / SVS 13786 yöntemi Dünya'ya uyarlandı; orkestra): yön → stereo konum, tür/katman → enstrüman, değer → nota (yüksek değer ince nota, Do majör pentatonik), ←/→ ile elle çevirince yakın-orta-uzak üç nota. Enstrümanlar: CO₂ keman, yüzey sıcaklığı gitar, okyanus arp + dalga sesi, kara karbon çello, toz çelesta, deniz tuzu flüt, sülfat marimba. Radar 32 adımlı sıralayıcı gibi çalar; yer değişince durmaz (I/K/J/M ile gezilir, zaman korunur). Menzil 500 / 2000 / 5000 km. Sesli lejant (L) ve özet (S) tekrar basınca durur. Sesli rehber (G): düğme adlarını ve duyuruları konuşur; kapalıyken duyurular aria-live ile ekran okuyucuya gider. Kod: src/audio/engine.ts, radarPlayer.ts, speech.ts, src/lib/radar.ts (PARTS).
 - **Radarın ilk ve ana katmanı: CO₂** (OCO-2 GEOS L3 günlük, 2021; ekip paketi `referans/jukebox_1yillik_tam_paket.json` → `node scripts/co2.mjs` → public/data/co2_2021_grid.json + co2_2021_stations.json). Yalnız ppm tutulur; ses eşlemesini motor yapar. Aylık katmanlar ayın 1. GÜNÜNÜN anlık değeri (aylık ortalama değil). Kredi: "Veri: NASA OCO-2 GEOS Level 3 Daily CO2 (OCO2_GEOS_L3CO2_DAY), GES DISC" (kaynak bağlantısı sonra eklenecek). referans/'taki diğer iki JSON alt küme, kullanılmaz.
 - 10 CO₂ istasyonu = Dünya turunda "öne çıkan duraklar"; ana deneyim ızgarayla her yerde çalışır. Enlem halkaları Dünya turu için. "Gezegenin nefesi" sahnesi: seçilen yerin 12 aylık (istasyon yakınsa 365 günlük) CO₂ döngüsü.
 - Görüntü sonifikasyonu (yüzey sıcaklığı, aerosoller, yıldırım) ana özellik olarak kalır; ek katmanlar.
@@ -46,7 +46,7 @@ Hedef ödüller: Local Impact, Best Use of Science, Most Inspirational, Art & Te
 ## Erişilebilirlik kuralları (zorunlu)
 - Özel jest sistemi icat etme; VoiceOver/TalkBack ile kusursuz çalış.
 - Zaman/konum seçiciler gerçek `<input type="range">`; her değişimde ses + aria-live okuma.
-- Her kontrol açıklayıcı etiketli; tam klavye desteği (←/→ ışın yönü, Boşluk çal/durdur, S özet).
+- Her kontrol açıklayıcı etiketli; tam klavye desteği (Boşluk çal/durdur, ←/→ ışın yönü, I/K/J/M gez, 1–4 katman, S özet, L lejant, C yer seç, H yardım, G sesli rehber, Esc sustur).
 - Ses yalnızca kullanıcı dokunuşuyla başlar; iOS için sessiz <audio> kilit açma + navigator.audioSession.type='playback'.
 
 ## Teknik

@@ -1,4 +1,4 @@
-// Arayüz metinleri (TR/EN). Veri özetleri ve sesli anlatım şimdilik Türkçe.
+// Arayüz metinleri (TR/EN). Veri özetleri ve sesli anlatım da seçilen dilde (lib/radar.ts, lib/layers.ts).
 export type Lang = 'tr' | 'en';
 
 const T = {
@@ -16,7 +16,10 @@ const T = {
   range: { tr: 'Menzil', en: 'Range' },
   layers: { tr: 'Katmanlar', en: 'Layers' },
   speed: { tr: 'Hız', en: 'Speed' },
-  story: { tr: 'Hikâye modu (müzikal)', en: 'Story mode (musical)' },
+  story: { tr: 'Müzikal mod', en: 'Musical mode' },
+  guide: { tr: 'Sesli rehber', en: 'Voice guide' },
+  stopLegend: { tr: 'Lejantı durdur', en: 'Stop legend' },
+  stopSummary: { tr: 'Özeti durdur', en: 'Stop summary' },
   nowPlaying: { tr: 'Şu an', en: 'Now' },
   center: { tr: 'merkezde', en: 'at center' },
   highest: { tr: 'en yüksek yön', en: 'highest toward' },
@@ -27,7 +30,7 @@ const T = {
   highContrast: { tr: 'Yüksek kontrast', en: 'High contrast' },
   view3d: { tr: '3D Dünya', en: '3D globe' },
   view2d: { tr: '2D görünüm', en: '2D view' },
-  keys: { tr: 'Boşluk: çal/durdur · ←/→: ışını çevir · S: sesli özet', en: 'Space: play/stop · ←/→: turn beam · S: spoken summary' },
+  keys: { tr: 'Boşluk: çal/durdur · I/K/J/M: Dünya üzerinde gez · ←/→: ışını çevir · 1–4: katmanlar · S: özet · L: lejant · C: yer seç · H: yardım · Esc: sustur', en: 'Space: play/stop · I/K/J/M: travel the globe · ←/→: turn beam · 1–4: layers · S: summary · L: legend · C: choose place · H: help · Esc: silence' },
   disclaimer: { tr: 'NASA verisi kullanılarak NASA Space Apps Challenge 2026 için hazırlanmıştır; NASA tarafından onaylanmamıştır.', en: 'Built with NASA data for the NASA Space Apps Challenge 2026; not endorsed by NASA.' },
   noLayer: { tr: 'Hiç katman açık değil.', en: 'No layer is on.' },
   fallback: { tr: '2D görünüm: bu cihazda 3D kapalı', en: '2D view: 3D is off on this device' },

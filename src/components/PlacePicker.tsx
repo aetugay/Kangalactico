@@ -35,7 +35,7 @@ export function PlacePicker({ cities, place, onPick, announce, autoFocus }: Prop
     setHits(h);
     setActive(h.length ? 0 : -1);
     setOpen(q.trim().length >= 2);
-    if (q.trim().length >= 2) announce(h.length ? `${h.length} sonuç. Aşağı okla gez, Enter ile seç.` : 'Sonuç yok.');
+    if (q.trim().length >= 2) announce(h.length ? `${h.length} sonuç. İlki: ${h[0][0]}, ${countryName(h[0][1])}. Enter ile seç ya da aşağı okla gez.` : 'Sonuç yok.');
   }, [q, cities, announce]);
 
   const choose = (row: CityRow) => {
@@ -44,8 +44,9 @@ export function PlacePicker({ cities, place, onPick, announce, autoFocus }: Prop
   };
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setActive((a) => Math.min(hits.length - 1, a + 1)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(0, a - 1)); }
+    const say = (i: number) => { const c = hits[i]; if (c) announce(`${c[0]}, ${countryName(c[1])}`); };
+    if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); const i = Math.min(hits.length - 1, active + 1); setActive(i); say(i); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); const i = Math.max(0, active - 1); setActive(i); say(i); }
     else if (e.key === 'Enter') { if (open && hits[active]) { e.preventDefault(); choose(hits[active]); } }
     else if (e.key === 'Escape') { setOpen(false); }
   };

@@ -32,8 +32,9 @@ for (const q of process.argv.slice(2)) {
     const vals = sampleLayer(L, P);
     console.log(`  [CO₂ ${co2.monthLabel(m)}, 2000 km] ${summarize(L, vals, P, place.name)}`);
     check(localRange(vals).coverage === 1, 'CO₂ kapsama %100');
+    const E = DEFAULTS.beams / 4; // 90° doğu ışını
     const km = 4.5 / 8 * 2000, direct = co2.grid.bilinear(destination(place, 90, km), m), nn = co2.grid.nearest(destination(place, 90, km), m);
-    check(Math.abs(direct - vals[9 * 8 + 4]) < 0.5, `CO₂ doğu ışını ${Math.round(km)} km: radar ${vals[9 * 8 + 4].toFixed(2)} ≈ bilinear ${direct.toFixed(2)} (en yakın düğüm ${nn.ppm.toFixed(2)} ppm, ${Math.round(nn.km)} km)`);
+    check(Math.abs(direct - vals[E * 8 + 4]) < 0.5, `CO₂ doğu ışını ${Math.round(km)} km: radar ${vals[E * 8 + 4].toFixed(2)} ≈ bilinear ${direct.toFixed(2)} (en yakın düğüm ${nn.ppm.toFixed(2)} ppm, ${Math.round(nn.km)} km)`);
   }
   const st = co2.stations.near(place, 3000);
   console.log(`  en yakın CO₂ istasyonu: ${st ? st.s.id + ' (' + Math.round(st.km) + ' km)' : 'yok (3000 km içinde)'}`);
@@ -44,14 +45,14 @@ for (const q of process.argv.slice(2)) {
     const loc = localRange(vals);
     console.log(`  [${rangeKm} km] ${summarize(L, vals, P, place.name)}`);
     check(loc.coverage > 0.9, `kapsama %${Math.round(loc.coverage * 100)}`);
-    // bağımsız kontrol: 9. ışın (90° doğu), 4. halka değerini doğrudan ızgaradan hesapla
-    const b = 9, k = 4, km = ((k + 0.5) / P.rings) * rangeKm;
+    // bağımsız kontrol: doğu ışını (90°), 4. halka değerini doğrudan ızgaradan hesapla
+    const b = DEFAULTS.beams / 4, k = 4, km = ((k + 0.5) / P.rings) * rangeKm;
     const direct = temp.layer.sample(frame, destination(place, 90, km));
     check(Math.abs(direct - vals[b * P.rings + k]) < 3, `doğu ışını ${Math.round(km)} km: radar ${vals[b * P.rings + k].toFixed(1)} °C ≈ doğrudan ${direct.toFixed(1)} °C`);
     if (rangeKm === 2000) {
       console.log('    ' + describeBeam(L, vals, P, 0));
-      console.log('    ' + describeBeam(L, vals, P, 9));
-      const g = Array.from({ length: P.rings }, (_, kk) => gainFor(vals[9 * P.rings + kk], L, 'bilim').toFixed(2));
+      console.log('    ' + describeBeam(L, vals, P, DEFAULTS.beams / 4));
+      const g = Array.from({ length: P.rings }, (_, kk) => gainFor(vals[(DEFAULTS.beams / 4) * P.rings + kk], L, 'bilim').toFixed(2));
       console.log(`    doğu ışını şiddetleri (bilim): ${g.join(' ')}`);
     }
   }

@@ -74,5 +74,6 @@ export class Co2Stations {
 }
 
 const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-export const monthName = (m: number) => MONTHS_TR[m];
+const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+export const monthName = (m: number, lang: 'tr' | 'en' = 'tr') => (lang === 'en' ? MONTHS_EN : MONTHS_TR)[m];
 export const stationLabel = (id: string) => id.replace(/_/g, ' ');

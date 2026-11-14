@@ -17,9 +17,12 @@ interface Opts {
   /** Öncelikli duyuru (sesli rehber açıksa konuşur, kapalıysa ekran okuyucuya gider). */
   announce: (t: string) => void;
   onRevolution?: () => void;
+  /** Işını elle çevirirken o yöndeki yerlerin adları (ör. "Bu yönde: Erzurum 380 km"). */
+  beamPlaces?: (bearingDeg: number) => string;
 }
 
-export function useRadar({ placeName, center, layers, rangeKm, mode, lang, announce, onRevolution }: Opts) {
+export function useRadar({ placeName, center, layers, rangeKm, mode, lang, announce, onRevolution, beamPlaces }: Opts) {
+  const placesRef = useRef(beamPlaces); placesRef.current = beamPlaces;
   const en = lang === 'en';
   const [playing, setPlaying] = useState(false);
   const [revSec, setRevSec] = useState(8);
@@ -82,7 +85,8 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, lang, annou
     manualBeam.current = b;
     manualAngle.current = (b * 360) / P.beams;
     player.playManual(frameRef.current, b, engine.now + 0.02);
-    if (computed.length) announce(computed.map(({ layer, vals }) => `${layer.label}: ${describeBeam(layer, vals, P, b, lang)}`).join(' '));
+    const names = placesRef.current?.((b * 360) / P.beams) ?? '';
+    announce([names, ...computed.map(({ layer, vals }) => `${layer.label}: ${describeBeam(layer, vals, P, b, lang)}`)].filter(Boolean).join(' '));
   }, [P, player, stop, computed, announce, lang]);
 
   // Sesli lejant: ses kurallarını ve açık katmanların enstrümanlarını tanıtır. Tekrar basılırsa durur.

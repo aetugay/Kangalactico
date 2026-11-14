@@ -3,7 +3,7 @@ import { useEffect, useId, useRef } from 'react';
 import { tr, type Lang } from '../i18n.ts';
 import { formatKm } from '../lib/geo.ts';
 import type { Mode } from '../lib/radar.ts';
-import { IconContrast, IconGlobe, IconHeadphones, IconInfo, IconPause, IconPin, IconPlay, IconSpeak } from './icons.tsx';
+import { IconContrast, IconGlobe, IconHeadphones, IconInfo, IconMic, IconPause, IconPin, IconPlay, IconSpeak } from './icons.tsx';
 
 // ---------------- Diyalog (modal): Esc kapatır, odak içeride döner, kapanınca açana döner
 export function Dialog({ open, onClose, title, children, className = '', lang }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode; className?: string; lang: Lang }) {
@@ -40,13 +40,14 @@ export function Dialog({ open, onClose, title, children, className = '', lang }:
 }
 
 // ---------------- Üst çubuk
-export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean; setHc: (v: boolean) => void; view3d: boolean; can3d: boolean; setView3d: (v: boolean) => void; onPick: () => void; onAbout: () => void; hasPlace: boolean; guide: boolean; setGuide: (v: boolean) => void }) {
+export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean; setHc: (v: boolean) => void; view3d: boolean; can3d: boolean; setView3d: (v: boolean) => void; onPick: () => void; onAbout: () => void; hasPlace: boolean; guide: boolean; setGuide: (v: boolean) => void; listening: boolean; onTalk: () => void }) {
   const { lang } = p;
   return (
     <header className="topbar">
       <div className="brand" aria-label="EarthEar">Earth<span>Ear</span></div>
       <nav className="top-actions" aria-label={lang === 'tr' ? 'Genel ayarlar' : 'General settings'}>
         {p.hasPlace && <button type="button" className="chip" onClick={p.onPick}><IconPin /> {tr(lang, 'change')}</button>}
+        <button type="button" className={`chip mic${p.listening ? ' live' : ''}`} aria-pressed={p.listening} aria-keyshortcuts="T" onClick={p.onTalk}><IconMic /> {p.listening ? tr(lang, 'listening') : tr(lang, 'talk')}</button>
         <button type="button" className="chip" aria-pressed={p.guide} aria-keyshortcuts="G" onClick={() => p.setGuide(!p.guide)}><IconSpeak /> {tr(lang, 'guide')}</button>
         <button type="button" className="chip" aria-pressed={p.hc} onClick={() => p.setHc(!p.hc)}><IconContrast /> {tr(lang, 'highContrast')}</button>
         {p.can3d && <button type="button" className="chip" aria-pressed={p.view3d} onClick={() => p.setView3d(!p.view3d)}><IconGlobe /> {p.view3d ? tr(lang, 'view3d') : tr(lang, 'view2d')}</button>}
@@ -58,13 +59,14 @@ export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean;
 }
 
 // ---------------- Açılış
-export function Intro({ lang, onPick }: { lang: Lang; onPick: () => void }) {
+export function Intro({ lang, onPick, onTalk }: { lang: Lang; onPick: () => void; onTalk?: () => void }) {
   return (
     <section className="intro" aria-labelledby="intro-h">
       <h1 id="intro-h">EarthEar</h1>
       <p className="tagline">{tr(lang, 'tagline')}</p>
       <p className="intro-sub">{tr(lang, 'intro')}</p>
       <button type="button" className="cta" onClick={onPick} autoFocus aria-keyshortcuts="C"><IconPin /> {tr(lang, 'pick')}</button>
+      {onTalk && <button type="button" className="btn talk-cta" onClick={onTalk} aria-keyshortcuts="T"><IconMic /> {tr(lang, 'talkLong')}</button>}
       <p className="intro-hint">{tr(lang, 'orTap')}</p>
     </section>
   );

@@ -119,7 +119,9 @@ export default function App() {
     announce(en ? `${name}: ${names}.${removed.length ? ` Not included because it did not pass our data audit: ${removed.join(', ')}.` : ''}` : `${name}: ${names}.${removed.length ? ` Veri denetimimizden geçmediği için eklenmedi: ${removed.join(', ')}.` : ''}`);
   };
   const m24Started = useRef(false);
-  const openM24 = () => { if (m24 || m24Loading || m24Started.current) return; m24Started.current = true; setM24Loading(true); M24.load(import.meta.env.BASE_URL).then(setM24).catch((e) => setErr(String(e))).finally(() => setM24Loading(false)); };
+  const [m24Rev, setM24Rev] = useState(0); // API yedeğinde hücreler geldikçe radar yeniden örneklesin
+  useEffect(() => { if (m24) m24.onUpdate = () => setM24Rev((r) => r + 1); }, [m24]);
+  const openM24 = () => { if (m24 || m24Loading || m24Started.current) return; m24Started.current = true; setM24Loading(true); M24.load(import.meta.env.BASE_URL).then((m) => { setM24(m); if (m.source === 'api') announce(langRef.current === 'en' ? 'Monthly layer file could not be loaded; using the team API as backup. Layers will sound after a short loading pause.' : 'Aylık katman dosyası yüklenemedi; ekip API\'si yedek olarak kullanılıyor. Katmanlar kısa bir yüklemeden sonra çalar.'); }).catch((e) => setErr(String(e))).finally(() => setM24Loading(false)); };
   const [pickOpen, setPickOpen] = useState(false);
   // iki yeri karşılaştırma: B yeri, sırayla dinleme ve tur sayacı
   const [pickFor, setPickFor] = useState<'A' | 'B'>('A');
@@ -202,7 +204,7 @@ export default function App() {
     if (on.aerosol && aer) L.push(...aer.radarLayers(lang));
     if (m24) m24.meta.layers.forEach((l, i) => { if (m24On[l.id]) L.push(m24.radarLayer(i, month, lang)); });
     return L;
-  }, [on, co2, temp, sst, aer, month, tFrame, sstFrame, lang, mix.inst, m24, m24On]);
+  }, [m24Rev, on, co2, temp, sst, aer, month, tFrame, sstFrame, lang, mix.inst, m24, m24On]);
 
   const advanceRef = useRef(advance); advanceRef.current = advance;
   const anyM24RefOn = useRef(false); anyM24RefOn.current = anyM24On;
@@ -798,7 +800,7 @@ export default function App() {
     }
     return null;
   }, [visual, co2, temp, sst, aer, month, tFrame, sstFrame, m24, m24Idx]);
-  const paintKey = `${m24Idx >= 0 ? 'm24' + m24Idx + '-' + month + '-' : ''}${visual}-${visual === 'co2' ? month : visual === 'temp' ? tFrame : visual === 'sst' ? sstFrame : 0}-${!!co2}-${!!temp}-${!!sst}-${!!aer}`;
+  const paintKey = `${m24Idx >= 0 ? 'm24' + m24Idx + '-' + month + '-' + m24Rev + '-' : ''}${visual}-${visual === 'co2' ? month : visual === 'temp' ? tFrame : visual === 'sst' ? sstFrame : 0}-${!!co2}-${!!temp}-${!!sst}-${!!aer}`;
   // boyanmış dokular saklanır: aynı ay/kare ikinci kez istenince yeniden hesaplanmaz (akıcı geçiş)
   const texCache = useRef(new Map<string, HTMLCanvasElement>());
   const cachedTex = (key: string) => {

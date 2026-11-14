@@ -1,0 +1,576 @@
+{
+ "tarih": "2026-11-14T20:56:50.302Z",
+ "api": "https://jukebox-api-h5ve.onrender.com",
+ "meta": {
+  "surum": 3,
+  "katmanSayisi": 15,
+  "farklar": []
+ },
+ "noktalar": [
+  {
+   "yer": "Sivas",
+   "nokta_id": 9302,
+   "apiLat": 39,
+   "apiLon": 36.25,
+   "katmanlar": {
+    "CO2": {
+     "n": 365,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "co2_daily.bin"
+    },
+    "TEMP": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "LST": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "O3": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "AOD": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SO2": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "FIRE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "referans/v3 (uygulamada kapalı)"
+    },
+    "CO": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "referans/v3 (uygulamada kapalı)"
+    },
+    "ALBEDO": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SST": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SEAICE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 12,
+     "kaynak": "monthly.bin"
+    },
+    "SMAP": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "IMERG": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "GRACE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "NDVI": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    }
+   }
+  },
+  {
+   "yer": "Tokyo",
+   "nokta_id": 9055,
+   "apiLat": 35,
+   "apiLon": 138.75,
+   "katmanlar": {
+    "CO2": {
+     "n": 365,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "co2_daily.bin"
+    },
+    "TEMP": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "LST": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "O3": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "AOD": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SO2": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "FIRE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "referans/v3 (uygulamada kapalı)"
+    },
+    "CO": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "referans/v3 (uygulamada kapalı)"
+    },
+    "ALBEDO": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SST": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SEAICE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 12,
+     "kaynak": "monthly.bin"
+    },
+    "SMAP": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "IMERG": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "GRACE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "NDVI": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    }
+   }
+  },
+  {
+   "yer": "Lagos",
+   "nokta_id": 6985,
+   "apiLat": 7,
+   "apiLon": 3.75,
+   "katmanlar": {
+    "CO2": {
+     "n": 365,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "co2_daily.bin"
+    },
+    "TEMP": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "LST": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "O3": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "AOD": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SO2": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "FIRE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "referans/v3 (uygulamada kapalı)"
+    },
+    "CO": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "referans/v3 (uygulamada kapalı)"
+    },
+    "ALBEDO": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SST": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SEAICE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 12,
+     "kaynak": "monthly.bin"
+    },
+    "SMAP": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "IMERG": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "GRACE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "NDVI": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    }
+   }
+  },
+  {
+   "yer": "Amazon (Manaus)",
+   "nokta_id": 6239,
+   "apiLat": -3,
+   "apiLon": -61.25,
+   "katmanlar": {
+    "CO2": {
+     "n": 365,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "co2_daily.bin"
+    },
+    "TEMP": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "LST": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "O3": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "AOD": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SO2": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "FIRE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "referans/v3 (uygulamada kapalı)"
+    },
+    "CO": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "referans/v3 (uygulamada kapalı)"
+    },
+    "ALBEDO": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SST": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SEAICE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 12,
+     "kaynak": "monthly.bin"
+    },
+    "SMAP": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "IMERG": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "GRACE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "NDVI": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    }
+   }
+  },
+  {
+   "yer": "Svalbard (Longyearbyen)",
+   "nokta_id": 12174,
+   "apiLat": 79,
+   "apiLon": 16.25,
+   "katmanlar": {
+    "CO2": {
+     "n": 365,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "co2_daily.bin"
+    },
+    "TEMP": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "LST": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "O3": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "AOD": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SO2": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "FIRE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "referans/v3 (uygulamada kapalı)"
+    },
+    "CO": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "referans/v3 (uygulamada kapalı)"
+    },
+    "ALBEDO": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SST": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "SEAICE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 5,
+     "kaynak": "monthly.bin"
+    },
+    "SMAP": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "IMERG": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "GRACE": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    },
+    "NDVI": {
+     "n": 12,
+     "farkli": 0,
+     "enBuyukFarkQ": 0,
+     "bilincliMaskeFarki": 0,
+     "kaynak": "monthly.bin"
+    }
+   }
+  }
+ ]
+}

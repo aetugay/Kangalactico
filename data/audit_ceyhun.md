@@ -188,3 +188,41 @@ Kullanıcının adımları (şifre sohbete yazılmaz):
 4. Bana "netrc hazır" de. Ben `node scripts/verify-granule.mjs` çalıştırıp sonucu `data/verify_granule.json`'a yazarım.
    - Oran ≈ 1 ise beklentimiz yanlıştır ve katman açılır.
    - Oran ≈ 3 (FIRE) ya da ≈ 2–3 (CO) ise paket hatalıdır; Ceyhun düzeltene kadar kapalı kalır.
+
+
+---
+
+# API v3'e geçti — statik dosyalarla tutarlılık (15 Kasım 2026)
+
+`jukebox-api-h5ve.onrender.com`: `/health` → 15 katman; `/api/meta` → sürüm 3, kırpma yok, kanıt dolu, daily_FIRE yok. Uç noktalar: `/health`, `/api/meta`, `/api/point-sonify?id|lat|lon`. API yalnız nokta veriyor; ızgara uç noktası yok.
+
+**Sınama:** `node scripts/compare-api.mjs` → `data/api_v3_tutarlilik.json`
+- **API meta ↔ referans/v3/meta.json:** 15 katmanın vmin, vmax, transform, cube_offset_index ve kanıt alanları **aynı**.
+- **5 nokta, `/api/point-sonify` ↔ public/data/m24** (aynı nokta_id, 0..1000 nicem değerleri):
+
+| Yer | nokta_id (API hücre merkezi) | Sonuç |
+|---|---|---|
+| Sivas | 9302 (39°, 36,25°) | 15 seri birebir aynı |
+| Tokyo | 9055 (35°, 138,75°) | 15 seri birebir aynı |
+| Lagos | 6985 (7°, 3,75°) | 15 seri birebir aynı |
+| Amazon (Manaus) | 6239 (−3°, −61,25°) | 15 seri birebir aynı |
+| Svalbard (Longyearbyen) | 12174 (79°, 16,25°) | 15 seri birebir aynı |
+
+- CO₂ API'de günlük (365 değer); `co2_daily.bin` ile 365/365 aynı.
+- CO ve FIRE (uygulamada kapalı) `referans/v3` küpüyle aynı.
+- **Bilinçli farklar (bizim kaynağa dayalı düzeltmelerimiz):**
+  - Deniz buzu: karadaki 0 → bizde −1.
+  - Toprak nemi (SMAP/GWETTOP): deniz dolgusu → bizde −1.
+  - Bu 5 noktada farklı çıkan tek şey deniz buzunun kara ayları (Svalbard'da 5, diğerlerinde 12 ay).
+
+**Bağlantı (uygulamada):**
+- **Birincil:** statik dosyalar (`public/data/m24/`); internet olmadan da çalışır. Statik kipte API'ye hiç istek gitmez (tarayıcıda doğrulandı: 0 istek).
+- **Yedek:** `monthly.bin` yüklenemezse API.
+  - Yalnız radarın örneklediği hücreler istenir: en çok 6 eşzamanlı istek, Sivas 2000 km için ~250–310 hücre.
+  - Aynı düzeltmeler uygulanır (deniz buzu ve toprak nemi maskeleri; kara tanımı aynı MERRA-2 lnd dosyasındaki PRECTOTLAND'den).
+  - Yüklenirken radar sessiz kalır; yarım veriyle nota çalınmaz. Sivas'ta ~20 sn sürdü.
+  - Sonra statik dosyayla **birebir aynı ses olayları** üretildi (tarayıcıda `monthly.bin` engellenerek sınandı: 33/33 satır aynı).
+- **Yedekteki tek yaklaşık değer:** aylık CO₂ API'de yok; günlük serinin ay ortalamasından hesaplanır. Statik aylık değerden ortalama 0,07 ppm, en çok ~1 ppm farklı olabilir. Arayüzde "kaynak: API yedeği (… aylık CO₂ günlük ortalamadan)" diye yazar.
+- `meta.json` (12 KB) uygulamayla aynı yerden gelir; o da yüklenemiyorsa site zaten açılmamıştır.
+
+**FIRE ve CO kapalı kalıyor:** Ceyhun `scripts/verify-granule.mjs` sonucunu gönderene kadar.

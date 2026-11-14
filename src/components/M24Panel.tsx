@@ -40,8 +40,8 @@ export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onSh
     engine.unlock(); setBusy(true);
     const my = ++run.current;
     try {
-      if (!m24.dailyLoaded) { announce(en ? 'Loading 365 days of carbon dioxide…' : '365 günlük karbondioksit yükleniyor…'); await m24.loadDaily(import.meta.env.BASE_URL); }
-      const s = m24.dailyCo2(place);
+      if (!m24.dailyLoaded) announce(en ? 'Loading 365 days of carbon dioxide…' : '365 günlük karbondioksit yükleniyor…');
+      const s = await m24.dailyCo2Async(place, import.meta.env.BASE_URL);
       const valid = s.map((v, d) => ({ v, d })).filter((x) => !Number.isNaN(x.v));
       if (!valid.length) { announce(en ? 'No daily data here.' : 'Burada günlük veri yok.'); return; }
       const hi = valid.reduce((a, b) => (b.v > a.v ? b : a)), lo = valid.reduce((a, b) => (b.v < a.v ? b : a));
@@ -130,7 +130,7 @@ export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onSh
         </ul>
       )}
       <p className="small muted">{en ? 'Data: NASA GES DISC (MERRA-2, OCO-2 GEOS L3), prepared by our team member Ceyhun.' : 'Veri: NASA GES DISC (MERRA-2, OCO-2 GEOS L3); ekibimizden Ceyhun hazırladı.'} {en ? 'Audit:' : 'Denetim:'} data/audit_ceyhun.md</p>
-      {m24 && <p className="small muted" data-testid="m24-version">{en ? 'Data package version' : 'Veri paketi sürüm'} {m24.meta.surum ?? '?'} · public/data/m24/meta.json · {m24.meta.layers.length} {en ? 'layers' : 'katman'}</p>}
+      {m24 && <p className="small muted" data-testid="m24-version">{en ? 'Data package version' : 'Veri paketi sürüm'} {m24.meta.surum ?? '?'} · {m24.meta.layers.length} {en ? 'layers' : 'katman'} · {m24.source === 'static' ? (en ? 'source: static files (public/data/m24)' : 'kaynak: statik dosyalar (public/data/m24)') : (en ? 'source: API backup (static file could not be loaded; monthly CO₂ from daily means)' : 'kaynak: API yedeği (statik dosya yüklenemedi; aylık CO₂ günlük ortalamadan)')}</p>}
     </section>
   );
 }

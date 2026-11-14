@@ -1,5 +1,7 @@
 // Aylık NASA katmanları (MERRA-2 2024 + OCO-2 GEOS L3 2021) — Ceyhun'un paketinden (sürüm 3) denetimden geçenler (public/data/m24).
-// Yalnız statik dosyalar; canlı API (sürüm 2) kullanılmaz.
+// Birincil kaynak statik dosyalar (internetsiz de çalışır). monthly.bin yüklenemezse YEDEK: Ceyhun'un API'si (sürüm 3;
+// statik dosyalarla 5 noktada birebir aynı — data/api_v3_tutarlilik.json). API yalnız nokta veriyor → radarın örneklediği
+// hücreler istendikçe çekilir (en çok 6 eşzamanlı); aynı düzeltmeler uygulanır (SMAP denizde, deniz buzu karada "yok").
 // Statik ikili dosya okuyucu: int16 LE, q ∈ 0..1000, -1 = veri yok. API gerekmez.
 import type { LatLon } from './geo.ts';
 import type { RadarLayer, Timbre } from './radar.ts';
@@ -27,19 +29,82 @@ export function m24Phys(L: M24LayerMeta, q: number): number {
   return Math.expm1(Math.log1p(L.vmin) + t * (Math.log1p(L.vmax) - Math.log1p(L.vmin)));
 }
 
+export const M24_API = 'https://jukebox-api-h5ve.onrender.com';
+export type M24Source = 'static' | 'api';
+const DAYS_2021 = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
 export class M24 {
   readonly meta: M24Meta;
   readonly monthly: Int16Array;
+  /** Veri kaynağı: statik dosya (birincil) ya da API yedeği. */
+  source: M24Source = 'static';
+  /** API yedeğinde yeni hücreler gelince çağrılır (radar yeniden örneklesin). */
+  onUpdate: (() => void) | null = null;
+  apiFailures = 0;
+  /** API yedeğinde istekler sürüyor mu (sürerken radar sessiz kalır). */
+  get pending() { return this.queue.length + this.inflight > 0; }
   private daily: Int16Array | null = null;
   private ranges = new Map<string, { min: number; max: number }>();
+  private cellState: Uint8Array | null = null;   // API: 0 yok · 1 bekliyor · 2 geldi · 3 hata
+  private queue: number[] = []; private inflight = 0; private updTimer = 0;
+  private apiDaily = new Map<number, number[]>();
   constructor(meta: M24Meta, monthly: ArrayBuffer) { this.meta = meta; this.monthly = new Int16Array(monthly); }
 
+  /** Birincil: statik dosyalar. monthly.bin yüklenemezse API yedeği (hücre hücre). meta.json (12 KB) uygulamayla aynı yerden gelir. */
   static async load(base: string): Promise<M24> {
     const meta = await (await fetch(`${base}data/m24/meta.json`)).json() as M24Meta;
-    const r = await fetch(`${base}data/m24/${meta.files.monthly}`);
-    if (!r.ok) throw new Error(`m24 monthly: HTTP ${r.status}`);
-    return new M24(meta, await r.arrayBuffer());
+    try {
+      const r = await fetch(`${base}data/m24/${meta.files.monthly}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return new M24(meta, await r.arrayBuffer());
+    } catch (e) {
+      console.warn('m24: statik monthly.bin yüklenemedi → API yedeği', e);
+      const [n, , np] = meta.files.monthlyShape;
+      const m = new M24(meta, new ArrayBuffer(n * 12 * np * 2));
+      m.monthly.fill(-1); m.source = 'api'; m.cellState = new Uint8Array(np);
+      return m;
+    }
   }
+
+  // ---------- API yedeği
+  private request(cell: number) {
+    const st = this.cellState; if (!st || st[cell] !== 0) return;
+    st[cell] = 1; this.queue.push(cell);
+    if (this.queue.length > 400) { const old = this.queue.shift()!; st[old] = 0; } // yer değişince eski istekler düşer
+    this.pump();
+  }
+  private pump() {
+    while (this.inflight < 6 && this.queue.length) {
+      const cell = this.queue.pop()!; this.inflight++;                       // son istenen önce (yeni yer)
+      fetch(`${M24_API}/api/point-sonify?id=${cell}`, { signal: AbortSignal.timeout(30000) })
+        .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+        .then((j) => this.fill(cell, j))
+        .catch(() => { this.apiFailures++; if (this.cellState) this.cellState[cell] = 3; })
+        .finally(() => { this.inflight--; this.pump(); if (!this.pending) this.onUpdate?.(); }); // son hücre: radar tam veriyle yeniden örneklesin
+    }
+  }
+  private fill(cell: number, j: { nokta_id: number; seriler: Record<string, { degerler?: number[] }> }) {
+    if (j.nokta_id !== cell) throw new Error('nokta_id uyuşmuyor');
+    const np = this.meta.files.monthlyShape[2], S = j.seriler;
+    const land = (m: number) => (S.IMERG?.degerler?.[m] ?? -1) !== -1;     // MERRA-2 lnd dosyasının kara tanımı
+    for (const L of this.meta.layers) {
+      const v = S[L.src]?.degerler; if (!v) continue;
+      let months: number[];
+      if (v.length === 365) { // CO₂: API günlük veriyor → ay ortalaması (statik aylık değerden ort. 0,07 ppm, en çok ~1 ppm farklı olabilir)
+        this.apiDaily.set(cell, v); let d0 = 0;
+        months = DAYS_2021.map((n) => { const xs = v.slice(d0, d0 + n).filter((x) => x >= 0); d0 += n; return xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : -1; });
+      } else months = v.slice(0, 12);
+      months.forEach((q, m) => {
+        if (L.src === 'SMAP' && !land(m)) q = -1;                             // aynı düzeltme: deniz dolgusu
+        if (L.src === 'SEAICE' && q === 0 && land(m)) q = -1;                 // karadaki 0 → yok
+        this.monthly[(L.index * 12 + m) * np + cell] = q;
+      });
+    }
+    if (this.cellState) this.cellState[cell] = 2;
+    this.ranges.clear();
+    if (!this.updTimer) this.updTimer = window.setTimeout(() => { this.updTimer = 0; this.onUpdate?.(); }, 250);
+  }
+  private cellOf(k: number, i: number) { const g = this.meta.grid; return Math.max(0, Math.min(g.nLat - 1, k)) * g.nLon + (((i % g.nLon) + g.nLon) % g.nLon); }
 
   private q(arr: Int16Array, slab: number, k: number, i: number): number {
     const g = this.meta.grid;
@@ -59,7 +124,12 @@ export class M24 {
     }
     return w > 1e-6 ? s / w : NaN;
   }
-  value(layerIdx: number, month: number, p: LatLon): number { return this.sampleSlab(this.monthly, layerIdx * 12 + month, this.meta.layers[layerIdx], p); }
+  /** want = true (radar): API yedeğinde eksik hücreleri ister. Boyama ister değildir (12.960 isteği önlemek için). */
+  value(layerIdx: number, month: number, p: LatLon, want = false): number {
+    if (want && this.cellState) { const g = this.meta.grid, fk = (p.lat - g.lat0) / g.dLat, fi = (p.lon - g.lon0) / g.dLon, k0 = Math.floor(fk), i0 = Math.floor(fi); let ready = true; for (const [dk, di] of [[0, 0], [0, 1], [1, 0], [1, 1]]) { const c = this.cellOf(k0 + dk, i0 + di); this.request(c); if (this.cellState[c] < 2) ready = false; }
+      if (!ready || this.pending) return NaN; } // yükleme bitmeden (eksik hücre/halka) hiç nota yok: kısa sessizlik, yanlış değer değil
+    return this.sampleSlab(this.monthly, layerIdx * 12 + month, this.meta.layers[layerIdx], p);
+  }
 
   /** O ayın küresel min/max'ı (gerçek birim; görsel renk ölçeği için). */
   monthRange(layerIdx: number, month: number) {
@@ -77,7 +147,7 @@ export class M24 {
     return {
       id: L.id as Timbre, label: en ? L.en : L.tr, instrument: INSTRUMENT_LABEL[L.id]?.[lang] ?? '', unit,
       min: L.vmin, max: L.vmax, baseHz: 0, when: `${monthName(month, lang)} ${L.year} · ${L.product} ${L.variable}`,
-      sample: (p) => this.value(layerIdx, month, p),
+      sample: (p) => this.value(layerIdx, month, p, true),
       // kırpılmış pakette (sürüm 2) sınırdaki değer "≥ / ≤" okunur; sürüm 3'te kırpma yok → kesin değer
       fmt: (v) => { const tol = (L.vmax - L.vmin) * 0.002; const pre = !this.meta.clipped ? '' : v >= L.vmax - tol ? '≥ ' : v <= L.vmin + tol ? '≤ ' : ''; return `${pre}${v.toFixed(dec)}${L.unit && L.unit !== '0–1' ? ' ' + L.unit : ''}`; },
     };
@@ -90,6 +160,15 @@ export class M24 {
     const r = await fetch(`${base}data/m24/${this.meta.files.co2Daily}`);
     if (!r.ok) throw new Error(`co2 daily: HTTP ${r.status}`);
     this.daily = new Int16Array(await r.arrayBuffer());
+  }
+  /** Günlük CO₂: önce statik dosya, olmazsa API (en yakın hücre). */
+  async dailyCo2Async(p: LatLon, base: string): Promise<number[]> {
+    if (this.source === 'static') { try { await this.loadDaily(base); return this.dailyCo2(p); } catch { /* API'ye düş */ } }
+    const g = this.meta.grid, cell = this.cellOf(Math.round((p.lat - g.lat0) / g.dLat), Math.round((p.lon - g.lon0) / g.dLon));
+    let v = this.apiDaily.get(cell);
+    if (!v) { const r = await fetch(`${M24_API}/api/point-sonify?id=${cell}`, { signal: AbortSignal.timeout(30000) }); if (!r.ok) throw new Error(`API HTTP ${r.status}`); v = (await r.json()).seriler?.CO2?.degerler as number[]; }
+    const L = this.meta.layers.find((l) => l.daily)!;
+    return (v ?? []).map((q) => m24Phys(L, q));
   }
   /** Bir yerin 365 günlük CO₂ serisi (ppm). */
   dailyCo2(p: LatLon): number[] {

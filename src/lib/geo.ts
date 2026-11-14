@@ -25,8 +25,9 @@ export function bearing(a: LatLon, b: LatLon): number {
 }
 
 const DIR8 = ['kuzey', 'kuzeydoğu', 'doğu', 'güneydoğu', 'güney', 'güneybatı', 'batı', 'kuzeybatı'];
+const DIR8_EN = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
 const DIR8_SHORT = ['K', 'KD', 'D', 'GD', 'G', 'GB', 'B', 'KB'];
-export const compass8 = (deg: number) => DIR8[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+export const compass8 = (deg: number, lang: 'tr' | 'en' = 'tr') => (lang === 'en' ? DIR8_EN : DIR8)[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 export const compass8Short = (deg: number) => DIR8_SHORT[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 
 export function formatLatLon(p: LatLon): string {

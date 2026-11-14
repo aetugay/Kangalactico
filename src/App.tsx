@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { engine } from './audio/engine.ts';
+import { speech } from './audio/speech.ts';
 import { IconBars, IconBreath, IconStrings, IconWave } from './components/icons.tsx';
 import { PlacePicker } from './components/PlacePicker.tsx';
 import { RadarView } from './components/RadarView.tsx';
@@ -7,7 +8,7 @@ import { About, Dialog, Intro, LayerPills, NowCard, Timeline, TopBar, type Pill 
 import { WorldMap } from './components/WorldMap.tsx';
 import { useRadar } from './hooks/useRadar.ts';
 import { tr, type Lang } from './i18n.ts';
-import { formatLatLon, type LatLon } from './lib/geo.ts';
+import { destination, formatLatLon, type LatLon } from './lib/geo.ts';
 import { colorFor } from './lib/grid.ts';
 import { LandMask, type LandFile } from './lib/land.ts';
 import { loadAerosols, loadCo2, loadJson, loadSst, loadTemperature, type AerosolSource, type Co2Source, type SstSource, type TemperatureSource } from './lib/layers.ts';
@@ -19,10 +20,10 @@ import { Globe3D, hasWebGL, type GlobeSource } from './three/Globe3D.tsx';
 const BASE = import.meta.env.BASE_URL;
 type LayerId = 'co2' | 'temp' | 'sst' | 'aerosol';
 const LAYER_UI: Record<LayerId, { label: { tr: string; en: string }; instrument: { tr: string; en: string }; color: string; icon: React.ReactNode }> = {
-  co2: { label: { tr: 'Karbondioksit', en: 'Carbon dioxide' }, instrument: { tr: 'nefes', en: 'breath' }, color: '#ffb547', icon: <IconBreath /> },
-  temp: { label: { tr: 'Yüzey sıcaklığı', en: 'Surface temperature' }, instrument: { tr: 'teller', en: 'strings' }, color: '#ff6b6b', icon: <IconStrings /> },
-  sst: { label: { tr: 'Okyanus sıcaklığı', en: 'Ocean temperature' }, instrument: { tr: 'su sesi', en: 'water tone' }, color: '#4dd8e8', icon: <IconWave /> },
-  aerosol: { label: { tr: 'Aerosoller', en: 'Aerosols' }, instrument: { tr: '4 enstrüman', en: '4 instruments' }, color: '#c49bff', icon: <IconBars /> },
+  co2: { label: { tr: 'Karbondioksit', en: 'Carbon dioxide' }, instrument: { tr: 'keman', en: 'violin' }, color: '#ffb547', icon: <IconBreath /> },
+  temp: { label: { tr: 'Yüzey sıcaklığı', en: 'Surface temperature' }, instrument: { tr: 'gitar', en: 'guitar' }, color: '#ff6b6b', icon: <IconStrings /> },
+  sst: { label: { tr: 'Okyanus sıcaklığı', en: 'Ocean temperature' }, instrument: { tr: 'arp + dalga sesi', en: 'harp + waves' }, color: '#4dd8e8', icon: <IconWave /> },
+  aerosol: { label: { tr: 'Aerosoller', en: 'Aerosols' }, instrument: { tr: 'çello, çelesta, flüt, marimba', en: 'cello, celesta, flute, marimba' }, color: '#c49bff', icon: <IconBars /> },
 };
 const store = { get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* yok say */ } } };
 const params = new URLSearchParams(location.search);
@@ -38,7 +39,16 @@ export default function App() {
   const [slowNote, setSlowNote] = useState(false);
   const [reduced, setReduced] = useState(() => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => { const m = matchMedia('(prefers-reduced-motion: reduce)'); const f = () => setReduced(m.matches); m.addEventListener('change', f); return () => m.removeEventListener('change', f); }, []);
-  const setLang = (l: Lang) => { setLangS(l); store.set('lang', l); };
+  const [guide, setGuideS] = useState(() => store.get('guide') !== '0'); // sesli rehber: her şeyi sesli söyler (varsayılan açık)
+  const guideRef = useRef(guide); guideRef.current = guide;
+  const langRef = useRef(lang); langRef.current = lang;
+  speech.setLang(lang);
+  const setLang = (l: Lang) => { setLangS(l); store.set('lang', l); speech.setLang(l); if (guideRef.current) void speech.say(l === 'en' ? 'Language: English.' : 'Dil: Türkçe.'); };
+  const setGuide = (v: boolean) => {
+    setGuideS(v); store.set('guide', v ? '1' : '0');
+    if (v) void speech.say(langRef.current === 'en' ? 'Voice guide on.' : 'Sesli rehber açık.');
+    else { speech.stop(); setLive(''); requestAnimationFrame(() => setLive(langRef.current === 'en' ? 'Voice guide off.' : 'Sesli rehber kapalı.')); }
+  };
   const setHc = (v: boolean) => { setHcS(v); store.set('hc', v ? '1' : '0'); };
   const setView3d = (v: boolean) => { setView3dS(v); store.set('view', v ? '3d' : '2d'); setSlowNote(false); };
   useEffect(() => { document.documentElement.classList.toggle('hc', hc); document.documentElement.lang = lang; }, [hc, lang]);
@@ -61,7 +71,7 @@ export default function App() {
   // ---------- durum
   const [place, setPlace] = useState<Place | null>(null);
   const [rangeKm, setRange] = useState(2000);
-  const [mode, setMode] = useState<Mode>('bilim');
+  const [mode, setMode] = useState<Mode>('hikaye'); // müzikal mod varsayılan: notalar seçilen yerin çevresindeki farkı tüm aralığa yayar
   const [month, setMonth] = useState(0);
   const [advance, setAdvance] = useState(true);
   const [tFrame, setTFrame] = useState(0);
@@ -72,7 +82,11 @@ export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [live, setLive] = useState('');
   const [audioOk, setAudioOk] = useState(true);
-  const announce = useCallback((t: string) => { setLive(''); requestAnimationFrame(() => setLive(t)); }, []);
+  // Duyuru: sesli rehber açıksa tarayıcı konuşur; kapalıysa ekran okuyucuya (aria-live) bırakılır — ikisi üst üste binmez.
+  const announce = useCallback((t: string) => {
+    if (guideRef.current && speech.supported) { void speech.say(t); return; }
+    setLive(''); requestAnimationFrame(() => setLive(t));
+  }, []);
   useEffect(() => engine.onStatus(setAudioOk) as unknown as void, []);
 
   // katmanlar açılınca yükle
@@ -112,25 +126,19 @@ export default function App() {
     else { u.searchParams.delete('q'); u.searchParams.set('lat', place.lat.toFixed(3)); u.searchParams.set('lon', place.lon.toFixed(3)); }
     history.replaceState(null, '', u);
   }, [place]);
-  useEffect(() => {
-    if (!place || !co2) return;
-    announce(`${placeLabel(place)} seçildi. Merkezde karbondioksit ${co2.grid.bilinear(place, month).toFixed(1)} ppm, ${co2.monthLabel(month)}. Radarı çalmak için Boşluk tuşu ya da Radarı çal düğmesi. İlk kez dinliyorsan önce sesli lejant.`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [place, co2]);
-
   // ---------- radar katmanları
   const layers = useMemo(() => {
     const L: RadarLayer[] = [];
-    if (on.co2 && co2) L.push(co2.radarLayer(month));
-    if (on.temp && temp) L.push(temp.radarLayer(tFrame));
-    if (on.sst && sst) L.push(sst.radarLayer(sstFrame));
-    if (on.aerosol && aer) L.push(...aer.radarLayers());
+    if (on.co2 && co2) L.push(co2.radarLayer(month, lang));
+    if (on.temp && temp) L.push(temp.radarLayer(tFrame, lang));
+    if (on.sst && sst) L.push(sst.radarLayer(sstFrame, lang));
+    if (on.aerosol && aer) L.push(...aer.radarLayers(lang));
     return L;
-  }, [on, co2, temp, sst, aer, month, tFrame, sstFrame]);
+  }, [on, co2, temp, sst, aer, month, tFrame, sstFrame, lang]);
 
   const advanceRef = useRef(advance); advanceRef.current = advance;
   const radar = useRadar({
-    placeName: place ? placeLabel(place) : '', center: place, layers, rangeKm, mode, announce,
+    placeName: place ? placeLabel(place) : '', center: place, layers, rangeKm, mode, lang, announce,
     onRevolution: () => { if (advanceRef.current && on.co2) setMonth((m) => (m + 1) % 12); },
   });
 
@@ -139,8 +147,105 @@ export default function App() {
     setOn((o) => ({ ...o, [id]: v }));
     if (v) setVisual(id);
     else if (visual === id) { const rest = (Object.keys(on) as LayerId[]).find((k) => k !== id && on[k]); if (rest) setVisual(rest); }
-    announce(`${LAYER_UI[id].label.tr} ${v ? 'açıldı' : 'kapandı'}.`);
+    const U = LAYER_UI[id];
+    announce(lang === 'en' ? `${U.label.en} ${v ? `on: ${U.instrument.en}` : 'off'}.` : `${U.label.tr} ${v ? `açıldı: ${U.instrument.tr}` : 'kapandı'}.`);
   };
+
+  // ---------- yer değişince duyuru. Radar çalıyorsa kısa tut (müzik kesilmeden yeni yerin sesi gelir).
+  const playingRef = useRef(false); playingRef.current = radar.playing;
+  useEffect(() => {
+    if (!place || !co2) return;
+    const name = placeLabel(place);
+    if (playingRef.current) { announce(`${name}.`); return; }
+    const ppm = co2.grid.bilinear(place, month).toFixed(1);
+    announce(lang === 'en'
+      ? `${name} selected. Carbon dioxide at the center: ${ppm} ppm, ${co2.monthLabel(month, 'en')}. Press Space to play the radar. Press L for the audio legend, H for help.`
+      : `${name} seçildi. Merkezde karbondioksit ${ppm} ppm, ${co2.monthLabel(month)}. Radarı çalmak için Boşluk tuşuna bas. Sesli lejant için L, yardım için H.`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [place, co2]);
+
+  // ---------- sesli rehber: karşılama, yardım, düğme adlarını okuma, kısayollar
+  const helpText = useCallback(() => (langRef.current === 'en'
+    ? 'EarthEar help. Press C to choose a place: type a city name, pick with the down arrow, confirm with Enter. Space plays or stops the radar. Each data layer is an instrument: keys 1 to 4 turn layers on and off. 1 carbon dioxide, violin. 2 surface temperature, guitar. 3 ocean temperature, harp and waves. 4 aerosols. While the music plays, travel across the Earth with I for north, K for south, J for west and M for east. Left and right arrows turn the beam by hand. S reads a summary, L plays the audio legend, Escape silences speech, G turns this voice guide off if you use a screen reader. H repeats this help.'
+    : 'EarthEar yardım. Yer seçmek için C tuşuna bas: şehir adını yaz, aşağı okla seç, Enter ile onayla. Boşluk radarı çalar ya da durdurur. Her veri katmanı bir enstrümandır: 1 ile 4 arası tuşlar katmanları açıp kapatır. 1 karbondioksit, keman. 2 yüzey sıcaklığı, gitar. 3 okyanus sıcaklığı, arp ve dalga sesi. 4 aerosoller. Müzik çalarken Dünya üzerinde gezmek için I kuzey, K güney, J batı, M doğu tuşlarını kullan. Sol ve sağ ok ışını elle çevirir. S özeti okur, L sesli lejantı çalar, Escape konuşmayı susturur. Ekran okuyucu kullanıyorsan G tuşu bu sesli rehberi kapatır. H bu yardımı tekrarlar.'), []);
+  const welcomed = useRef(false);
+  const welcome = useCallback(() => {
+    if (welcomed.current) return; welcomed.current = true;
+    if (!guideRef.current) return;
+    void speech.say(langRef.current === 'en'
+      ? 'Welcome to EarthEar. Here you listen to NASA Earth data as music. To begin, press C and type a city name. Press H for help at any time. If you use a screen reader, press G to turn this voice guide off.'
+      : 'EarthEar\'a hoş geldin. Burada NASA\'nın Dünya verilerini müzik olarak dinlersin. Başlamak için C tuşuna bas ve bir şehir adı yaz. Yardım için istediğin zaman H tuşuna bas. Ekran okuyucu kullanıyorsan G tuşu bu sesli rehberi kapatır.');
+  }, []);
+
+  // düğmenin, bağlantının, kaydırıcının adını oku (fare üstüne gelince ya da klavyeyle odaklanınca)
+  useEffect(() => {
+    let last: Element | null = null, timer = 0;
+    const nameOf = (el: Element): string => {
+      const h = el as HTMLElement;
+      const aria = h.getAttribute('aria-label');
+      let t = aria ?? '';
+      if (!t && h.getAttribute('aria-labelledby')) t = h.getAttribute('aria-labelledby')!.split(' ').map((id) => document.getElementById(id)?.innerText ?? '').join(' ');
+      if (!t && h instanceof HTMLInputElement) t = (h.labels?.[0]?.innerText ?? h.closest('label')?.innerText ?? h.placeholder ?? '');
+      if (!t && h instanceof HTMLSelectElement) t = `${h.closest('label')?.childNodes[0]?.textContent ?? ''} ${h.selectedOptions[0]?.text ?? ''}`;
+      if (!t) t = h.innerText ?? '';
+      t = t.replace(/\s+/g, ' ').trim();
+      const en = langRef.current === 'en';
+      const pressed = h.getAttribute('aria-pressed') ?? (h instanceof HTMLInputElement && (h.type === 'checkbox' || h.type === 'radio') ? String(h.checked) : null);
+      if (pressed === 'true') t += en ? ', on' : ', açık'; else if (pressed === 'false') t += en ? ', off' : ', kapalı';
+      const vt = h.getAttribute('aria-valuetext'); if (vt) t += `, ${vt}`;
+      return t;
+    };
+    const handle = (target: EventTarget | null, viaMouse: boolean) => {
+      if (!guideRef.current || !(target instanceof Element)) return;
+      const el = target.closest('button, a[href], input, select, [role="option"], [role="combobox"]');
+      if (!el || el === last) return;
+      last = el;
+      clearTimeout(timer);
+      timer = window.setTimeout(() => { const t = nameOf(el); if (t) speech.hint(t); }, viaMouse ? 160 : 30);
+    };
+    const over = (e: Event) => handle(e.target, true);
+    const focus = (e: Event) => handle(e.target, false);
+    const out = (e: Event) => { if (e.target instanceof Element && last && e.target.closest('button, a[href], input, select, [role="option"]') === last) last = null; };
+    document.addEventListener('mouseover', over); document.addEventListener('focusin', focus); document.addEventListener('mouseout', out);
+    return () => { clearTimeout(timer); document.removeEventListener('mouseover', over); document.removeEventListener('focusin', focus); document.removeEventListener('mouseout', out); };
+  }, []);
+
+  // yer seçme penceresi açılınca ne yapılacağını söyle
+  useEffect(() => {
+    if (!pickOpen) return;
+    welcomed.current = true;
+    announce(lang === 'en' ? 'Choose a place. Type a city name, move through results with the down arrow, press Enter to select. Escape closes.' : 'Bir yer seç. Şehir adını yaz, sonuçlarda aşağı okla gez, Enter ile seç. Escape kapatır.');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickOpen]);
+
+  // genel kısayollar: C yer seç · H yardım · G sesli rehber · Esc sustur · 1-4 katman · I/J/K/M gez
+  const globalKeys = useRef<(e: KeyboardEvent) => void>(() => {});
+  globalKeys.current = (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Escape') { radar.hush(); return; }
+    const el = e.target instanceof HTMLElement ? e.target : null;
+    const tag = (el?.tagName ?? '').toLowerCase();
+    const type = (el as HTMLInputElement | null)?.type ?? '';
+    const typing = tag === 'textarea' || tag === 'select' || (tag === 'input' && !['range', 'checkbox', 'radio', 'button'].includes(type)) || !!el?.isContentEditable;
+    if (typing || el?.closest('[role="dialog"]')) return;
+    const k = e.key.toLowerCase();
+    if (k === 'c') { e.preventDefault(); setPickOpen(true); }
+    else if (k === 'h') { e.preventDefault(); welcomed.current = true; radar.hush(); if (guideRef.current) void speech.say(helpText()); else announce(helpText()); }
+    else if (k === 'g') { e.preventDefault(); setGuide(!guideRef.current); }
+    else if (['1', '2', '3', '4'].includes(k)) { e.preventDefault(); toggleLayer((['co2', 'temp', 'sst', 'aerosol'] as LayerId[])[+k - 1]); }
+    else if (place && ['i', 'j', 'k', 'm'].includes(k)) {
+      e.preventDefault();
+      const bearing = k === 'i' ? 0 : k === 'm' ? 90 : k === 'k' ? 180 : 270;
+      pickPoint(destination(place, bearing, rangeKm / 8), 'harita');
+    } else if (!welcomed.current && !['enter', ' ', 'tab', 'shift'].includes(k)) welcome();
+  };
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => globalKeys.current(e);
+    const first = (e: Event) => { if (!(e.target instanceof Element && e.target.closest('button, a, input, select, canvas, [role="dialog"]'))) welcome(); };
+    const tab = (e: KeyboardEvent) => { if (e.key === 'Tab') welcome(); };
+    document.addEventListener('keydown', key); document.addEventListener('pointerdown', first); document.addEventListener('keyup', tab);
+    return () => { document.removeEventListener('keydown', key); document.removeEventListener('pointerdown', first); document.removeEventListener('keyup', tab); };
+  }, [welcome]);
 
   // ---------- görsel: küre dokusu ve 2D boyama (görünen katman)
   const paintLL = useCallback((p: LatLon): [number, number, number] | null => {
@@ -194,7 +299,7 @@ export default function App() {
           onSlow={() => { if (forced !== '3d') { setView3dS(false); setSlowNote(true); } }} />
       )}
 
-      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => setPickOpen(true)} onAbout={() => setAboutOpen(true)} hasPlace={!!place} />
+      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => setPickOpen(true)} onAbout={() => setAboutOpen(true)} hasPlace={!!place} guide={guide} setGuide={setGuide} />
 
       <main className="stage">
         {!audioOk && <p role="alert" className="glass alert">{lang === 'tr' ? 'Ses başlatılamadı. Sessiz modu kapat, sesi aç ve bir düğmeye tekrar dokun.' : 'Audio could not start. Turn off silent mode, raise the volume and tap a button again.'}</p>}
@@ -212,20 +317,20 @@ export default function App() {
 
         {place && (
           <>
-            <NowCard lang={lang} placeLabel={placeLabel(place)} playing={radar.playing} onToggle={radar.toggle} onLegend={radar.runLegend} legendBusy={!!radar.legend}
-              onSummary={radar.summary} headline={headline} instruments={instruments} rangeKm={rangeKm} setRange={(km) => { setRange(km); announce(`Menzil ${km} km.`); }}
-              revSec={radar.revSec} setRevSec={radar.setRevSec} mode={mode} setMode={(m) => { setMode(m); announce(m === 'hikaye' ? 'Hikâye modu: pentatonik perde, radar içine göre şiddet.' : 'Bilim modu: doğrusal perde, sabit ölçekte şiddet.'); }} legend={radar.legend} />
+            <NowCard lang={lang} placeLabel={placeLabel(place)} playing={radar.playing} onToggle={radar.toggle} onLegend={radar.runLegend} 
+              onSummary={radar.summary} headline={headline} instruments={instruments} rangeKm={rangeKm} setRange={(km) => { setRange(km); announce(lang === 'en' ? `Range ${km} kilometers.` : `Menzil ${km} kilometre.`); }}
+              revSec={radar.revSec} setRevSec={radar.setRevSec} mode={mode} setMode={(m) => { setMode(m); announce(m === 'hikaye' ? (lang === 'en' ? 'Musical mode: notes spread across the differences around this place.' : 'Müzikal mod: notalar bu yerin çevresindeki farkı tüm aralığa yayar.') : (lang === 'en' ? 'Science mode: the same value is always the same note, everywhere.' : 'Bilim modu: aynı değer her yerde aynı notadır.')); }} legend={radar.legend} talking={radar.talking} />
             <LayerPills lang={lang} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => setVisual(id as LayerId)}>
               {on.temp && temp && (
                 <div className="sub-time">
-                  <label htmlFor="t-frame" className="small">{lang === 'tr' ? 'Sıcaklık zamanı' : 'Temperature time'}: <b>{temp.dateLabel(tFrame)}</b></label>
-                  <input id="t-frame" type="range" min={0} max={temp.frames - 1} value={tFrame} aria-valuetext={temp.dateLabel(tFrame)} onChange={(e) => setTFrame(+e.target.value)} />
+                  <label htmlFor="t-frame" className="small">{lang === 'tr' ? 'Sıcaklık zamanı' : 'Temperature time'}: <b>{temp.dateLabel(tFrame, lang)}</b></label>
+                  <input id="t-frame" type="range" min={0} max={temp.frames - 1} value={tFrame} aria-valuetext={temp.dateLabel(tFrame, lang)} onChange={(e) => setTFrame(+e.target.value)} />
                 </div>
               )}
               {on.sst && <p className="small muted">{lang === 'tr' ? 'Okyanus: ECCO2 model, Mart 2007 – Mart 2008; video akarken radar sesi de ilerler.' : 'Ocean: ECCO2 model, Mar 2007 – Mar 2008; radar sound follows the video.'}</p>}
               {on.aerosol && <p className="small muted">{lang === 'tr' ? 'Aerosoller: 19 Ağu 2025 20:00 UTC; yoğunluk göreli.' : 'Aerosols: 19 Aug 2025 20:00 UTC; relative density.'}</p>}
             </LayerPills>
-            {on.co2 && co2 && <Timeline lang={lang} month={month} setMonth={(m) => { setMonth(m); announce(`${co2.monthLabel(m)}: merkezde ${co2.grid.bilinear(place, m).toFixed(1)} ppm.`); }} label={co2.monthLabel(month)} advance={advance} setAdvance={setAdvance} />}
+            {on.co2 && co2 && <Timeline lang={lang} month={month} setMonth={(m) => { setMonth(m); announce(lang === 'en' ? `${co2.monthLabel(m, 'en')}: ${co2.grid.bilinear(place, m).toFixed(1)} ppm at the center.` : `${co2.monthLabel(m)}: merkezde ${co2.grid.bilinear(place, m).toFixed(1)} ppm.`); }} label={co2.monthLabel(month, lang)} advance={advance} setAdvance={setAdvance} />}
           </>
         )}
       </main>

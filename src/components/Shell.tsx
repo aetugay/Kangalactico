@@ -40,13 +40,14 @@ export function Dialog({ open, onClose, title, children, className = '', lang }:
 }
 
 // ---------------- Üst çubuk
-export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean; setHc: (v: boolean) => void; view3d: boolean; can3d: boolean; setView3d: (v: boolean) => void; onPick: () => void; onAbout: () => void; hasPlace: boolean }) {
+export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean; setHc: (v: boolean) => void; view3d: boolean; can3d: boolean; setView3d: (v: boolean) => void; onPick: () => void; onAbout: () => void; hasPlace: boolean; guide: boolean; setGuide: (v: boolean) => void }) {
   const { lang } = p;
   return (
     <header className="topbar">
       <div className="brand" aria-label="EarthEar">Earth<span>Ear</span></div>
       <nav className="top-actions" aria-label={lang === 'tr' ? 'Genel ayarlar' : 'General settings'}>
         {p.hasPlace && <button type="button" className="chip" onClick={p.onPick}><IconPin /> {tr(lang, 'change')}</button>}
+        <button type="button" className="chip" aria-pressed={p.guide} aria-keyshortcuts="G" onClick={() => p.setGuide(!p.guide)}><IconSpeak /> {tr(lang, 'guide')}</button>
         <button type="button" className="chip" aria-pressed={p.hc} onClick={() => p.setHc(!p.hc)}><IconContrast /> {tr(lang, 'highContrast')}</button>
         {p.can3d && <button type="button" className="chip" aria-pressed={p.view3d} onClick={() => p.setView3d(!p.view3d)}><IconGlobe /> {p.view3d ? tr(lang, 'view3d') : tr(lang, 'view2d')}</button>}
         <button type="button" className="chip" onClick={() => p.setLang(lang === 'tr' ? 'en' : 'tr')} aria-label={lang === 'tr' ? 'Switch to English' : 'Türkçeye geç'} lang={lang === 'tr' ? 'en' : 'tr'}>{lang === 'tr' ? 'EN' : 'TR'}</button>
@@ -63,7 +64,7 @@ export function Intro({ lang, onPick }: { lang: Lang; onPick: () => void }) {
       <h1 id="intro-h">EarthEar</h1>
       <p className="tagline">{tr(lang, 'tagline')}</p>
       <p className="intro-sub">{tr(lang, 'intro')}</p>
-      <button type="button" className="cta" onClick={onPick}><IconPin /> {tr(lang, 'pick')}</button>
+      <button type="button" className="cta" onClick={onPick} autoFocus aria-keyshortcuts="C"><IconPin /> {tr(lang, 'pick')}</button>
       <p className="intro-hint">{tr(lang, 'orTap')}</p>
     </section>
   );
@@ -71,7 +72,7 @@ export function Intro({ lang, onPick }: { lang: Lang; onPick: () => void }) {
 
 // ---------------- Şu an çalıyor kartı + denetimler
 export interface NowProps {
-  lang: Lang; placeLabel: string; playing: boolean; onToggle: () => void; onLegend: () => void; legendBusy: boolean; onSummary: () => void;
+  lang: Lang; placeLabel: string; playing: boolean; onToggle: () => void; onLegend: () => void; onSummary: () => void; talking: 'summary' | 'legend' | null;
   headline: { label: string; center: string; maxDir: string | null; maxVal: string; when: string } | null;
   instruments: { id: string; label: string; instrument: string; color: string }[];
   rangeKm: number; setRange: (km: number) => void; revSec: number; setRevSec: (s: number) => void; mode: Mode; setMode: (m: Mode) => void;
@@ -94,8 +95,8 @@ export function NowCard(p: NowProps) {
       )}
       <div className="btn-row">
         <button type="button" className="btn primary" onClick={p.onToggle} aria-keyshortcuts="Space">{p.playing ? <IconPause /> : <IconPlay />} {p.playing ? tr(lang, 'stop') : tr(lang, 'play')}</button>
-        <button type="button" className="btn" onClick={p.onLegend} disabled={p.legendBusy}><IconHeadphones /> {tr(lang, 'legend')}</button>
-        <button type="button" className="btn" onClick={p.onSummary} aria-keyshortcuts="S"><IconSpeak /> {tr(lang, 'summary')} (S)</button>
+        <button type="button" className="btn" onClick={p.onLegend} aria-pressed={p.talking === 'legend'} aria-keyshortcuts="L">{p.talking === 'legend' ? <IconPause /> : <IconHeadphones />} {p.talking === 'legend' ? tr(lang, 'stopLegend') : `${tr(lang, 'legend')} (L)`}</button>
+        <button type="button" className="btn" onClick={p.onSummary} aria-pressed={p.talking === 'summary'} aria-keyshortcuts="S">{p.talking === 'summary' ? <IconPause /> : <IconSpeak />} {p.talking === 'summary' ? tr(lang, 'stopSummary') : `${tr(lang, 'summary')} (S)`}</button>
       </div>
       {p.legend && <p className="legend-caption" aria-hidden="true">{p.legend}</p>}
       {p.instruments.length > 0 && (
@@ -171,8 +172,8 @@ export function About({ open, onClose, lang, credits }: { open: boolean; onClose
   return (
     <Dialog open={open} onClose={onClose} title={tr(lang, 'about')} className="drawer" lang={lang}>
       <p>{lang === 'tr'
-        ? 'EarthEar, Kangalactico ekibinin NASA Space Apps Challenge 2026 (The Earth Information Jukebox) projesidir. Seçtiğin yerin çevresinde dönen bir radar, veriyi sese çevirir: yön → stereo konum, uzaklık → perde, katman → enstrüman, değer → ses şiddeti.'
-        : 'EarthEar is the Kangalactico team\'s project for the NASA Space Apps Challenge 2026 (The Earth Information Jukebox). A radar sweeping around the place you choose turns data into sound: direction → stereo position, distance → pitch, layer → instrument, value → loudness.'}</p>
+        ? 'EarthEar, Kangalactico ekibinin NASA Space Apps Challenge 2026 (The Earth Information Jukebox) projesidir. Seçtiğin yerin çevresinde dönen bir radar, veriyi küçük bir orkestraya çevirir: yön → stereo konum, katman → enstrüman, değer → nota (yüksek değer ince nota). Işını elle çevirince (←/→) yakın, orta ve uzak değerler üç nota olarak çalar.'
+        : 'EarthEar is the Kangalactico team\'s project for the NASA Space Apps Challenge 2026 (The Earth Information Jukebox). A radar sweeping around the place you choose turns data into a small orchestra: direction → stereo position, layer → instrument, value → note (higher value, higher note). Turning the beam by hand (←/→) plays the near, middle and far values as three notes.'}</p>
       <h3>{lang === 'tr' ? 'Kaynaklar' : 'Sources'}</h3>
       <ul className="credits">
         {credits.map((c) => <li key={c.title}><b>{c.title}:</b> {c.text}{c.href && <> — <a href={c.href} target="_blank" rel="noreferrer">{c.href.replace('https://', '')}</a></>}</li>)}

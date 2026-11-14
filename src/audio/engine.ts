@@ -170,23 +170,49 @@ class AudioEngine {
     return Math.min(1, Math.sqrt(s / this.levelBuf.length) * 4);
   }
 
-  // ---------------- Radar sesleri ----------------
+  // ---------------- Radar sesleri: küçük bir orkestra ----------------
   /** Ses saati (saniye). */
   get now(): number { return this.ctx().currentTime; }
 
+  private bus: GainNode | null = null;
+  private ksCache = new Map<string, AudioBuffer>();
+  private waveGain: GainNode | null = null;
+
+  /** Enstrümanların ortak çıkışı: kuru sinyal + salon yankısı (konvolüsyon). */
+  private out(): GainNode {
+    if (this.bus) return this.bus;
+    const ac = this.ctx();
+    const bus = ac.createGain();
+    bus.connect(this.master);
+    try {
+      const len = Math.floor(ac.sampleRate * 2.4);
+      const ir = ac.createBuffer(2, len, ac.sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = ir.getChannelData(ch);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
+      }
+      const conv = ac.createConvolver(); conv.buffer = ir;
+      const wet = ac.createGain(); wet.gain.value = 0.3;
+      bus.connect(conv).connect(wet).connect(this.master);
+    } catch { /* yankısız da çalışır */ }
+    this.bus = bus;
+    return bus;
+  }
+
   private panNode(pan: number): AudioNode {
     const ac = this.ctx();
+    const bus = this.out();
     if (typeof ac.createStereoPanner === 'function') {
       const p = ac.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan));
-      p.connect(this.master); return p;
+      p.connect(bus); return p;
     }
-    return this.master; // çok eski tarayıcı: stereo yok
+    return bus; // çok eski tarayıcı: stereo yok
   }
 
   private noise(): AudioBuffer {
     const ac = this.ctx();
     if (!this.noiseBuf) {
-      this.noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.2, ac.sampleRate);
+      this.noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
       const d = this.noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
@@ -194,8 +220,45 @@ class AudioEngine {
   }
 
   /**
-   * Enstrüman sesi. timbre: katman türü; gain 0..1 (değer); pan -1..+1 (yön).
-   * Her katmanın tınısı ayırt edilebilir olacak şekilde seçildi (lejantta tanıtılır).
+   * Çekilen tel (Karplus-Strong): gitar, arp ve pizzicato çello için gerçekçi tel sesi.
+   * Her perde bir kez üretilir ve saklanır; çalarken yalnızca tampon oynatılır (işlemciyi yormaz).
+   */
+  private string(kind: 'guitar' | 'harp' | 'cello', freq: number): { buf: AudioBuffer; rate: number } {
+    const ac = this.ctx(), sr = ac.sampleRate;
+    const N = Math.max(2, Math.round(sr / freq));
+    const key = `${kind}:${N}`;
+    let buf = this.ksCache.get(key);
+    if (!buf) {
+      const P = kind === 'guitar' ? { dur: 2.2, decay: 0.9975, blend: 0.5, soft: 2 }
+        : kind === 'harp' ? { dur: 2.6, decay: 0.9988, blend: 0.38, soft: 1 }
+          : { dur: 1.3, decay: 0.990, blend: 0.5, soft: 5 };
+      const len = Math.floor(sr * P.dur);
+      buf = ac.createBuffer(1, len, sr);
+      const o = buf.getChannelData(0);
+      const line = new Float32Array(N);
+      for (let i = 0; i < N; i++) line[i] = Math.random() * 2 - 1;
+      for (let p = 0; p < P.soft; p++) { let prev = line[N - 1]; for (let i = 0; i < N; i++) { const c = line[i]; line[i] = (c + prev) / 2; prev = c; } }
+      let mean = 0; for (let i = 0; i < N; i++) mean += line[i]; mean /= N;
+      let peak = 1e-6; for (let i = 0; i < N; i++) { line[i] -= mean; peak = Math.max(peak, Math.abs(line[i])); }
+      for (let i = 0; i < N; i++) line[i] /= peak;
+      let idx = 0;
+      for (let i = 0; i < len; i++) {
+        const cur = line[idx], nxt = line[(idx + 1) % N];
+        o[i] = cur;
+        line[idx] = P.decay * ((1 - P.blend) * cur + P.blend * nxt);
+        idx = (idx + 1) % N;
+      }
+      const fade = Math.floor(sr * 0.05);
+      for (let i = 0; i < fade; i++) o[len - 1 - i] *= i / fade;
+      this.ksCache.set(key, buf);
+    }
+    return { buf, rate: freq / (sr / N) };
+  }
+
+  /**
+   * Enstrüman sesi. timbre: katman kimliği; gain 0..1 (vurgu); pan -1..+1 (yön).
+   *   co2 → keman (yaylı, uzun)        temp → gitar (çekilen tel)      sst → arp
+   *   black_carbon → çello (pizzicato)  dust → çelesta (çan)            sea_salt → flüt     sulfate → marimba
    */
   voice(timbre: string, freq: number, when: number, dur: number, gain: number, pan: number) {
     if (gain <= 0.001) return;
@@ -203,94 +266,129 @@ class AudioEngine {
     const out = this.panNode(pan);
     const g = ac.createGain();
     g.connect(out);
-    const amp = 0.02 + gain * 0.16; // sessiz değil, ama değerle belirgin şekilde artar
-    const env = (attack: number, decay: number, peak = amp) => {
-      g.gain.setValueAtTime(0.0001, when);
-      g.gain.exponentialRampToValueAtTime(peak, when + attack);
-      g.gain.exponentialRampToValueAtTime(0.0001, when + attack + decay);
-    };
-    const osc = (type: OscillatorType, f: number, level: number, dest: AudioNode, len: number) => {
-      const o = ac.createOscillator(); o.type = type; o.frequency.value = f;
+    const lvl = 0.45 + 0.55 * Math.min(1, gain); // değer vurguyu artırır ama ses hiç kaybolmaz
+    const osc = (type: OscillatorType, f: number, level: number, dest: AudioNode, len: number, detune = 0) => {
+      const o = ac.createOscillator(); o.type = type; o.frequency.value = f; o.detune.value = detune;
       const lg = ac.createGain(); lg.gain.value = level; o.connect(lg).connect(dest);
       o.start(when); o.stop(when + len + 0.05);
+      return o;
+    };
+    const vibrato = (targets: OscillatorNode[], rateHz: number, depth: number, delay: number, len: number) => {
+      const lfo = ac.createOscillator(); lfo.frequency.value = rateHz;
+      const lg = ac.createGain(); lg.gain.setValueAtTime(0, when); lg.gain.linearRampToValueAtTime(depth, when + delay + 0.25);
+      lfo.connect(lg); for (const t of targets) lg.connect(t.frequency);
+      lfo.start(when); lfo.stop(when + len + 0.05);
+    };
+    const pluck = (kind: 'guitar' | 'harp' | 'cello', amp: number, cutoff: number) => {
+      const { buf, rate } = this.string(kind, freq);
+      const s = ac.createBufferSource(); s.buffer = buf; s.playbackRate.value = rate;
+      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = cutoff;
+      s.connect(lp).connect(g);
+      g.gain.setValueAtTime(amp * lvl, when);
+      s.start(when);
     };
     switch (timbre) {
-      case 'co2': { // nefes: yumuşak atak, sinüs + bant geçiren gürültü (soluk)
-        osc('sine', freq, 1, g, dur + 0.15); osc('sine', freq * 1.5, 0.12, g, dur + 0.15);
+      case 'co2': { // keman: iki testere + gövde filtresi, yumuşak yay atağı, gecikmeli vibrato
+        const len = Math.max(0.5, dur);
+        const body = ac.createBiquadFilter(); body.type = 'lowpass'; body.frequency.value = Math.min(5200, 1400 + freq * 2.6); body.Q.value = 0.8;
+        const form = ac.createBiquadFilter(); form.type = 'peaking'; form.frequency.value = 1150; form.gain.value = 5; form.Q.value = 1.2;
+        body.connect(form).connect(g);
+        const a = osc('sawtooth', freq, 0.5, body, len + 0.3, -5), b = osc('sawtooth', freq, 0.5, body, len + 0.3, 5);
+        vibrato([a, b], 5.6, freq * 0.007, 0.12, len + 0.3);
+        const peak = 0.11 * lvl;
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.linearRampToValueAtTime(peak, when + 0.09);
+        g.gain.setValueAtTime(peak, when + len - 0.05);
+        g.gain.linearRampToValueAtTime(0.0001, when + len + 0.25);
+        break;
+      }
+      case 'temp': pluck('guitar', 0.5, 3200); break;   // gitar
+      case 'sst': pluck('harp', 0.42, 6000); break;     // arp
+      case 'black_carbon': pluck('cello', 0.75, 1500); break; // pizzicato çello
+      case 'dust': { // çelesta: çan gibi, inharmonik kısmi sesler
+        osc('sine', freq, 1, g, 0.9); osc('sine', freq * 2.76, 0.3, g, 0.5); osc('sine', freq * 5.4, 0.12, g, 0.25);
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.exponentialRampToValueAtTime(0.1 * lvl, when + 0.003);
+        g.gain.exponentialRampToValueAtTime(0.0001, when + 0.85);
+        break;
+      }
+      case 'sea_salt': { // flüt: sinüs + hafif oktav + nefes gürültüsü, yumuşak atak
+        const len = Math.max(0.45, dur);
+        const a = osc('sine', freq, 1, g, len + 0.2); osc('sine', freq * 2, 0.16, g, len + 0.2); osc('sine', freq * 3, 0.05, g, len + 0.2);
+        vibrato([a], 5, freq * 0.004, 0.15, len + 0.2);
         const s = ac.createBufferSource(); s.buffer = this.noise(); s.loop = true;
-        const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq * 2; bp.Q.value = 4;
-        const ng = ac.createGain(); ng.gain.value = 0.35; s.connect(bp).connect(ng).connect(g); s.start(when); s.stop(when + dur + 0.2);
-        env(0.08, dur + 0.1, amp * 0.9); break;
+        const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq * 2; bp.Q.value = 1.5;
+        const ng = ac.createGain(); ng.gain.value = 0.07; s.connect(bp).connect(ng).connect(g); s.start(when); s.stop(when + len + 0.25);
+        const peak = 0.13 * lvl;
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.linearRampToValueAtTime(peak, when + 0.07);
+        g.gain.setValueAtTime(peak, when + len - 0.05);
+        g.gain.linearRampToValueAtTime(0.0001, when + len + 0.18);
+        break;
       }
-      case 'sst': { // su: sinüs + yavaş titreşim (vibrato), yumuşak
-        const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
-        const lfo = ac.createOscillator(); lfo.frequency.value = 5.5; const lg = ac.createGain(); lg.gain.value = freq * 0.012;
-        lfo.connect(lg).connect(o.frequency); o.connect(g); o.start(when); lfo.start(when); o.stop(when + dur + 0.1); lfo.stop(when + dur + 0.1);
-        osc('sine', freq * 3, 0.08, g, dur);
-        env(0.03, dur + 0.05); break;
+      case 'sulfate': { // marimba: sinüs + 4. harmonik, tahta tokmak
+        osc('sine', freq, 1, g, 0.5); osc('sine', freq * 4, 0.22, g, 0.09);
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.exponentialRampToValueAtTime(0.16 * lvl, when + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, when + 0.45);
+        break;
       }
-      case 'temp': { // yumuşak telli: üçgen + oktav sinüs, alçak geçiren
-        const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900 + freq * 3; f.connect(g);
-        osc('triangle', freq, 1, f, dur); osc('sine', freq * 2, 0.2, f, dur);
-        env(0.012, dur); break;
-      }
-      case 'black_carbon': { // marimba: sinüs + 4. harmonik, kısa
-        osc('sine', freq, 1, g, 0.35); osc('sine', freq * 4, 0.25, g, 0.08);
-        env(0.003, 0.3); break;
-      }
-      case 'dust': { // glockenspiel: parlak, inharmonik kısmi sesler
-        osc('sine', freq, 1, g, 0.7); osc('sine', freq * 2.76, 0.35, g, 0.4); osc('sine', freq * 5.4, 0.15, g, 0.2);
-        env(0.002, 0.6, amp * 0.8); break;
-      }
-      case 'sea_salt': { // koro/ped: akortsuz testere üçlüsü, yumuşak atak
-        const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1100; f.connect(g);
-        for (const d of [-7, 0, 7]) { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq; o.detune.value = d; const lg = ac.createGain(); lg.gain.value = 0.33; o.connect(lg).connect(f); o.start(when); o.stop(when + dur + 0.2); }
-        env(0.06, dur + 0.1, amp * 0.7); break;
-      }
-      case 'sulfate': { // kare dalga çekme, filtre süpürmeli
-        const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 6;
-        f.frequency.setValueAtTime(freq * 8, when); f.frequency.exponentialRampToValueAtTime(freq * 1.5, when + 0.15); f.connect(g);
-        osc('square', freq, 0.6, f, 0.2);
-        env(0.003, 0.18, amp * 0.8); break;
-      }
-      case 'lightning': { // olay alarmı: gürültü çatırtısı + alçak gümbürtü (inharmonik)
-        const s = ac.createBufferSource(); s.buffer = this.noise();
-        const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2500;
-        s.connect(hp).connect(g); s.start(when); s.stop(when + 0.15);
-        osc('sine', 55 + freq * 0.05, 0.8, g, 0.25);
-        env(0.002, 0.2, Math.min(0.35, amp * 1.6)); break;
-      }
-      default: osc('sine', freq, 1, g, dur); env(0.01, dur);
+      default: pluck('guitar', 0.5, 3200);
     }
   }
 
-  /** Kuzey işareti: her tur başında kısa, ortada, yüksek "tık". */
+  /** Yaylı çalgılar yatağı: çok hafif, uzun bir akor (kök + beşli). Veri taşımaz; müziğe zemin verir. */
+  pad(freqs: number[], when: number, dur: number) {
+    const ac = this.ctx();
+    const g = ac.createGain(); g.connect(this.out());
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520; lp.connect(g);
+    for (const f of freqs) for (const d of [-6, 6]) {
+      const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = d;
+      const lg = ac.createGain(); lg.gain.value = 0.25; o.connect(lg).connect(lp);
+      o.start(when); o.stop(when + dur + 0.7);
+    }
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.linearRampToValueAtTime(0.05, when + Math.min(0.8, dur / 3));
+    g.gain.setValueAtTime(0.05, when + dur - 0.1);
+    g.gain.linearRampToValueAtTime(0.0001, when + dur + 0.6);
+  }
+
+  /** Dalga sesi (okyanus katmanı): süzülmüş gürültü, yavaşça kabarıp çekilir. level 0..1 = ışının denize denk gelen payı. */
+  waves(level: number) {
+    const ac = this.ctx();
+    if (!this.waveGain) {
+      const s = ac.createBufferSource(); s.buffer = this.noise(); s.loop = true;
+      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 650; lp.Q.value = 0.4;
+      const swell = ac.createGain(); swell.gain.value = 0.6;
+      const lfo = ac.createOscillator(); lfo.frequency.value = 0.17; const ld = ac.createGain(); ld.gain.value = 0.4;
+      lfo.connect(ld).connect(swell.gain); lfo.start();
+      const lfo2 = ac.createOscillator(); lfo2.frequency.value = 0.11; const ld2 = ac.createGain(); ld2.gain.value = 260;
+      lfo2.connect(ld2).connect(lp.frequency); lfo2.start();
+      this.waveGain = ac.createGain(); this.waveGain.gain.value = 0;
+      s.connect(lp).connect(swell).connect(this.waveGain).connect(this.out());
+      s.start();
+    }
+    this.waveGain.gain.setTargetAtTime(Math.max(0, Math.min(1, level)) * 0.22, ac.currentTime, 0.35);
+  }
+  wavesOff() { if (this.ac && this.waveGain) this.waveGain.gain.setTargetAtTime(0, this.ac.currentTime, 0.25); }
+
+  /** Kuzey işareti: her tur başında hafif bir üçgen (zil) vuruşu. */
   northTick(when: number) {
     const ac = this.ctx();
-    const o = ac.createOscillator(); o.type = 'square'; o.frequency.value = 2400;
-    const g = ac.createGain(); g.gain.setValueAtTime(0.0001, when);
-    g.gain.exponentialRampToValueAtTime(0.08, when + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
-    o.connect(g).connect(this.master); o.start(when); o.stop(when + 0.05);
+    const g = ac.createGain(); g.connect(this.out());
+    for (const [m, l] of [[1, 1], [2.41, 0.4], [3.9, 0.2]] as const) {
+      const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = 2093 * m;
+      const lg = ac.createGain(); lg.gain.value = l; o.connect(lg).connect(g); o.start(when); o.stop(when + 0.7);
+    }
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(0.045, when + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.6);
   }
 }
 
 export const engine = new AudioEngine();
-
-/** Sesli anlatım; bitince çözülen Promise (lejant için sıralama). Ses yoksa süre tahminiyle çözülür. */
-export function say(text: string, rate = 1.05): Promise<void> {
-  return new Promise((resolve) => {
-    const fallback = setTimeout(resolve, 600 + text.length * 70);
-    if (!('speechSynthesis' in window)) return;
-    try {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'tr-TR'; u.rate = rate;
-      u.onend = () => { clearTimeout(fallback); resolve(); };
-      u.onerror = () => { clearTimeout(fallback); resolve(); };
-      speechSynthesis.speak(u);
-    } catch { /* yok say */ }
-  });
-}
-export const stopSpeech = () => { try { speechSynthesis.cancel(); } catch { /* yok say */ } };
+// geliştirme sırasında tarayıcı konsolundan ses seviyesini sınamak için
+if (import.meta.env?.DEV && typeof window !== 'undefined') (window as unknown as { __engine?: AudioEngine }).__engine = engine;
 
 /** Sadece Android'de çalışır; iOS web'de navigator.vibrate yok. */
 export function vibrate(ms: number) {
@@ -299,13 +397,6 @@ export function vibrate(ms: number) {
   } catch { /* yok say */ }
 }
 
-export function speak(text: string) {
-  if (!('speechSynthesis' in window)) return;
-  try {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'tr-TR';
-    u.rate = 1.1;
-    speechSynthesis.speak(u);
-  } catch { /* yok say */ }
-}
+// Konuşma artık speech.ts'te; eski demo (legacy/) için ince sarmalayıcı.
+import { speech } from './speech.ts';
+export function speak(text: string) { void speech.say(text, 1.1); }

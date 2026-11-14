@@ -4,10 +4,12 @@ import type { RadarLayer } from './radar.ts';
 
 export interface SourceInfo { id: string; title: string; titleTr: string; credit: string; page: string; when: string; notes: string[] }
 
+type Lang = 'tr' | 'en';
 const MONTHS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-export function fmtUtc(iso: string): string {
+const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export function fmtUtc(iso: string, lang: Lang = 'tr'): string {
   const d = new Date(iso);
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()} ${String(d.getUTCHours()).padStart(2, '0')}:00 UTC`;
+  return `${d.getUTCDate()} ${(lang === 'en' ? MONTHS_EN : MONTHS)[d.getUTCMonth()]} ${d.getUTCFullYear()} ${String(d.getUTCHours()).padStart(2, '0')}:00 UTC`;
 }
 
 // ---------- Yüzey sıcaklığı (SVS 5147, GEOS-FP T2M)
@@ -22,13 +24,14 @@ export class TemperatureSource {
   readonly cs: ColorScale;
   constructor(file: TempFile, cs: ColorScale) { this.file = file; this.cs = cs; this.layer = new Layer(file.grid, file.data, file.quant); }
   get frames() { return this.file.frames.count; }
-  dateLabel(f: number) { return fmtUtc(this.file.frames.dates[f]) + (this.file.frames.forecastAtDownload[f] ? ' (tahmin)' : ''); }
-  radarLayer(frame: number): RadarLayer {
+  dateLabel(f: number, lang: Lang = 'tr') { return fmtUtc(this.file.frames.dates[f], lang) + (this.file.frames.forecastAtDownload[f] ? (lang === 'en' ? ' (forecast)' : ' (tahmin)') : ''); }
+  radarLayer(frame: number, lang: Lang = 'tr'): RadarLayer {
+    const en = lang === 'en';
     return {
-      id: 'temp', label: 'Yüzey sıcaklığı', instrument: 'yumuşak telli ses', unit: '°C',
-      min: this.cs.min, max: this.cs.max, baseHz: 130.81, when: this.dateLabel(frame),
+      id: 'temp', label: en ? 'Surface temperature' : 'Yüzey sıcaklığı', instrument: en ? 'guitar' : 'gitar', unit: '°C',
+      min: this.cs.min, max: this.cs.max, baseHz: 130.81, when: this.dateLabel(frame, lang),
       sample: (p) => this.layer.sample(frame, p),
-      fmt: (v) => `${Math.round(v)} derece`,
+      fmt: (v) => `${Math.round(v)} ${en ? 'degrees' : 'derece'}`,
     };
   }
   info(): SourceInfo {
@@ -54,11 +57,12 @@ export class Co2Source {
   readonly range: { min: number; max: number };
   constructor(g: Co2GridFile, s: Co2StationsFile) { this.grid = new Co2Grid(g); this.stations = new Co2Stations(s); this.range = this.grid.yearRange(); }
   get months() { return this.grid.months.length; }
-  monthLabel(m: number) { return `${monthName(m)} 2021 (ayın 1. günü)`; }
-  radarLayer(month: number): RadarLayer {
+  monthLabel(m: number, lang: Lang = 'tr') { return `${monthName(m, lang)} 2021 ${lang === 'en' ? '(1st of the month)' : '(ayın 1. günü)'}`; }
+  radarLayer(month: number, lang: Lang = 'tr'): RadarLayer {
+    const en = lang === 'en';
     return {
-      id: 'co2', label: 'Karbondioksit (CO₂)', instrument: 'nefes gibi yumuşak ses', unit: 'ppm',
-      min: this.range.min, max: this.range.max, baseHz: 196, when: this.monthLabel(month),
+      id: 'co2', label: en ? 'Carbon dioxide' : 'Karbondioksit', instrument: en ? 'violin' : 'keman', unit: 'ppm',
+      min: this.range.min, max: this.range.max, baseHz: 196, when: this.monthLabel(month, lang),
       sample: (p) => this.grid.bilinear(p, month),
       fmt: (v) => `${v.toFixed(1)} ppm`,
     };
@@ -100,12 +104,13 @@ export class SstSource {
   get frames() { return this.file.frames.count; }
   /** Video zamanı (sn) → ızgara karesi. */
   frameAt(videoSec: number) { return Math.max(0, Math.min(this.frames - 1, Math.floor(videoSec * this.file.frames.fps))); }
-  radarLayer(frame: number): RadarLayer {
+  radarLayer(frame: number, lang: Lang = 'tr'): RadarLayer {
+    const en = lang === 'en';
     return {
-      id: 'sst', label: 'Deniz yüzeyi sıcaklığı', instrument: 'su gibi titreyen ses', unit: '°C',
-      min: this.cs.min, max: this.cs.max, baseHz: 220, when: 'model, Mart 2007 – Mart 2008',
+      id: 'sst', label: en ? 'Ocean temperature' : 'Okyanus sıcaklığı', instrument: en ? 'harp and wave sound' : 'arp ve dalga sesi', unit: '°C',
+      min: this.cs.min, max: this.cs.max, baseHz: 220, when: en ? 'model, March 2007 – March 2008' : 'model, Mart 2007 – Mart 2008',
       sample: (p) => this.layer.sample(frame, p),
-      fmt: (v) => `${Math.round(v)} derece deniz`,
+      fmt: (v) => `${Math.round(v)} ${en ? 'degrees sea' : 'derece deniz'}`,
     };
   }
 }
@@ -120,11 +125,11 @@ interface AerosolFile {
   categories: { index: number; id: string; label: string; rgb: [number, number, number] }[];
   layers: Record<string, { data: string; quant: Quant }>;
 }
-const AEROSOL_META: Record<string, { label: string; instrument: string; baseHz: number }> = {
-  black_carbon: { label: 'Kara karbon (is, duman)', instrument: 'marimba', baseHz: 98 },
-  dust: { label: 'Toz', instrument: 'çan (glockenspiel)', baseHz: 523 },
-  sea_salt: { label: 'Deniz tuzu', instrument: 'koro', baseHz: 175 },
-  sulfate: { label: 'Sülfat', instrument: 'kısa çekme', baseHz: 330 },
+const AEROSOL_META: Record<string, { label: { tr: string; en: string }; instrument: { tr: string; en: string }; baseHz: number }> = {
+  black_carbon: { label: { tr: 'Kara karbon (is, duman)', en: 'Black carbon (soot, smoke)' }, instrument: { tr: 'çello', en: 'cello' }, baseHz: 98 },
+  dust: { label: { tr: 'Toz', en: 'Dust' }, instrument: { tr: 'çelesta (çan)', en: 'celesta (bells)' }, baseHz: 523 },
+  sea_salt: { label: { tr: 'Deniz tuzu', en: 'Sea salt' }, instrument: { tr: 'flüt', en: 'flute' }, baseHz: 175 },
+  sulfate: { label: { tr: 'Sülfat', en: 'Sulfate' }, instrument: { tr: 'marimba', en: 'marimba' }, baseHz: 330 },
 };
 export class AerosolSource {
   readonly file: AerosolFile;
@@ -134,13 +139,14 @@ export class AerosolSource {
     this.layers = Object.fromEntries(Object.entries(file.layers).map(([k, L]) => [k, new Layer(file.grid, L.data, L.quant)]));
   }
   /** Dört tür ayrı radar katmanı. Değer GÖRELİ yoğunluk (0..1, renk skalasında miktar yok); şiddet ölçeği 0..0.6. */
-  radarLayers(): RadarLayer[] {
+  radarLayers(lang: Lang = 'tr'): RadarLayer[] {
+    const en = lang === 'en';
     return Object.keys(this.layers).map((id) => {
       const m = AEROSOL_META[id];
       return {
-        id: id as RadarLayer['id'], label: m.label, instrument: m.instrument, unit: null, min: 0, max: 0.6, baseHz: m.baseHz,
-        when: '19 Ağu 2025 20:00 UTC', sample: (p) => this.layers[id].sample(0, p),
-        fmt: (v) => (v < 0.05 ? 'yok denecek kadar az' : `göreli yoğunluk ${Math.round(v * 100)}`),
+        id: id as RadarLayer['id'], label: m.label[lang], instrument: m.instrument[lang], unit: null, min: 0, max: 0.6, baseHz: m.baseHz,
+        when: en ? '19 Aug 2025 20:00 UTC' : '19 Ağu 2025 20:00 UTC', sample: (p) => this.layers[id].sample(0, p),
+        fmt: (v) => (v < 0.05 ? (en ? 'almost none' : 'yok denecek kadar az') : `${en ? 'relative density' : 'göreli yoğunluk'} ${Math.round(v * 100)}`),
       };
     });
   }

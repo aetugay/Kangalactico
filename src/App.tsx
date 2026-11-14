@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { engine } from './audio/engine.ts';
 import { speech } from './audio/speech.ts';
+import { listener } from './audio/listen.ts';
 import { IconBars, IconBreath, IconStrings, IconWave } from './components/icons.tsx';
 import { DEFAULT_MIX, EventsDialog, Explore, instrumentName, SoundDialog, StoriesDialog, type EarthEvent, type Mix, type StoryInfo } from './components/Extras.tsx';
 import { PlacePicker } from './components/PlacePicker.tsx';
@@ -14,7 +15,7 @@ import { monthName } from './lib/co2.ts';
 import { colorFor } from './lib/grid.ts';
 import { LandMask, type LandFile } from './lib/land.ts';
 import { loadAerosols, loadCo2, loadJson, loadSst, loadTemperature, type AerosolSource, type Co2Source, type SstSource, type TemperatureSource } from './lib/layers.ts';
-import { Cities, countryName, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
+import { Cities, countryName, fold, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
 import { noteHz, PARTS, type Mode, type RadarLayer } from './lib/radar.ts';
 import { landTexture, paintEquirect } from './lib/textures.ts';
 import { Globe3D, hasWebGL, type GlobeSource } from './three/Globe3D.tsx';
@@ -69,6 +70,7 @@ export default function App() {
     loadJson<LandFile>(BASE, 'land_mask.json').then((d) => setLand(new LandMask(d))).catch(() => { /* kıyısız da çalışır */ });
   }, []);
   const landCanvas = useMemo(() => (land ? landTexture(land) : null), [land]);
+  const landRef = useRef(land); landRef.current = land;
 
   // ---------- durum
   const [place, setPlace] = useState<Place | null>(null);
@@ -179,6 +181,12 @@ export default function App() {
   };
   const radar = useRadar({
     placeName: active ? placeLabel(active) : '', center: active, layers, rangeKm, mode, lang, announce,
+    beamPlaces: (br) => {
+      if (!cities || !active) return '';
+      const hits = cities.inSector(active, br, 180 / 32 + 3, rangeKm, 2);
+      if (!hits.length) return lang === 'en' ? 'No large city in this direction.' : 'Bu yönde büyük şehir yok.';
+      return (lang === 'en' ? 'In this direction: ' : 'Bu yönde: ') + hits.sort((x, y) => x.km - y.km).map((h) => `${h.row[0]}, ${formatKm(h.km)}`).join('; ') + '.';
+    },
     onRevolution: () => {
       if (live2.current.compare) { setCmpTurn((t) => t + 1); return; }          // karşılaştırmada zaman sabit kalır, yer değişir
       if (advanceRef.current && on.co2 && !live2.current.story) setMonth((m) => (m + 1) % 12);
@@ -204,22 +212,22 @@ export default function App() {
     if (playingRef.current) { announce(`${name}.`); return; }
     const ppm = co2.grid.bilinear(place, month).toFixed(1);
     announce(lang === 'en'
-      ? `${name} selected. Carbon dioxide at the center: ${ppm} ppm, ${co2.monthLabel(month, 'en')}. Press Space to play the radar. Press L for the audio legend, H for help.`
-      : `${name} seçildi. Merkezde karbondioksit ${ppm} ppm, ${co2.monthLabel(month)}. Radarı çalmak için Boşluk tuşuna bas. Sesli lejant için L, yardım için H.`);
+      ? `${name} selected. Carbon dioxide at the center: ${ppm} ppm, ${co2.monthLabel(month, 'en')}. Press Space to play the radar, or press T and say "play". Press L for the audio legend, H for help.`
+      : `${name} seçildi. Merkezde karbondioksit ${ppm} ppm, ${co2.monthLabel(month)}. Radarı çalmak için Boşluk tuşuna bas ya da T tuşuna basıp "çal" de. Sesli lejant için L, yardım için H.`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [place, co2]);
 
   // ---------- sesli rehber: karşılama, yardım, düğme adlarını okuma, kısayollar
   const helpText = useCallback(() => (langRef.current === 'en'
-    ? 'EarthEar help. Press C to choose a place: type a city name, pick with the down arrow, confirm with Enter. Space plays or stops the radar. Each data layer is an instrument: keys 1 to 4 turn layers on and off. 1 carbon dioxide, violin. 2 surface temperature, guitar. 3 ocean temperature, harp and waves. 4 aerosols. While the music plays, travel across the Earth with I for north, K for south, J for west and M for east. Left and right arrows turn the beam by hand. B compares with a second place, Y opens Earth stories, E lists natural events near you, V opens your soundscape settings, N turns the narrator on. Dates are chosen in the layers panel and the date bar. S reads a summary, L plays the audio legend, Escape silences speech, G turns this voice guide off if you use a screen reader. H repeats this help.'
-    : 'EarthEar yardım. Yer seçmek için C tuşuna bas: şehir adını yaz, aşağı okla seç, Enter ile onayla. Boşluk radarı çalar ya da durdurur. Her veri katmanı bir enstrümandır: 1 ile 4 arası tuşlar katmanları açıp kapatır. 1 karbondioksit, keman. 2 yüzey sıcaklığı, gitar. 3 okyanus sıcaklığı, arp ve dalga sesi. 4 aerosoller. Müzik çalarken Dünya üzerinde gezmek için I kuzey, K güney, J batı, M doğu tuşlarını kullan. Sol ve sağ ok ışını elle çevirir. B ikinci bir yerle karşılaştırır, Y Dünya hikâyelerini açar, E yakındaki doğa olaylarını listeler, V ses sahneni açar, N anlatıcıyı açar. Tarihler katmanlar panelinden ve tarih çubuğundan seçilir. S özeti okur, L sesli lejantı çalar, Escape konuşmayı susturur. Ekran okuyucu kullanıyorsan G tuşu bu sesli rehberi kapatır. H bu yardımı tekrarlar.'), []);
+    ? 'EarthEar help. Press T and speak a command, for example: go to Ankara, play, stop, temperature on, summary. Moving the mouse over the globe says the name of the place under it. Press C to choose a place: type a city name, pick with the down arrow, confirm with Enter. Space plays or stops the radar. Each data layer is an instrument: keys 1 to 4 turn layers on and off. 1 carbon dioxide, violin. 2 surface temperature, guitar. 3 ocean temperature, harp and waves. 4 aerosols. While the music plays, travel across the Earth with I for north, K for south, J for west and M for east. Left and right arrows turn the beam by hand. B compares with a second place, Y opens Earth stories, E lists natural events near you, V opens your soundscape settings, N turns the narrator on. Dates are chosen in the layers panel and the date bar. S reads a summary, L plays the audio legend, Escape silences speech, G turns this voice guide off if you use a screen reader. H repeats this help.'
+    : 'EarthEar yardım. T tuşuna basıp komut söyleyebilirsin, örneğin: Ankara\'ya git, çal, dur, sıcaklığı aç, özet. Fareyi Dünya üzerinde gezdirince altındaki yerin adı söylenir. Yer seçmek için C tuşuna bas: şehir adını yaz, aşağı okla seç, Enter ile onayla. Boşluk radarı çalar ya da durdurur. Her veri katmanı bir enstrümandır: 1 ile 4 arası tuşlar katmanları açıp kapatır. 1 karbondioksit, keman. 2 yüzey sıcaklığı, gitar. 3 okyanus sıcaklığı, arp ve dalga sesi. 4 aerosoller. Müzik çalarken Dünya üzerinde gezmek için I kuzey, K güney, J batı, M doğu tuşlarını kullan. Sol ve sağ ok ışını elle çevirir. B ikinci bir yerle karşılaştırır, Y Dünya hikâyelerini açar, E yakındaki doğa olaylarını listeler, V ses sahneni açar, N anlatıcıyı açar. Tarihler katmanlar panelinden ve tarih çubuğundan seçilir. S özeti okur, L sesli lejantı çalar, Escape konuşmayı susturur. Ekran okuyucu kullanıyorsan G tuşu bu sesli rehberi kapatır. H bu yardımı tekrarlar.'), []);
   const welcomed = useRef(false);
   const welcome = useCallback(() => {
     if (welcomed.current) return; welcomed.current = true;
     if (!guideRef.current) return;
     void speech.say(langRef.current === 'en'
-      ? 'Welcome to EarthEar. Here you listen to NASA Earth data as music. To begin, press C and type a city name. Press H for help at any time. If you use a screen reader, press G to turn this voice guide off.'
-      : 'EarthEar\'a hoş geldin. Burada NASA\'nın Dünya verilerini müzik olarak dinlersin. Başlamak için C tuşuna bas ve bir şehir adı yaz. Yardım için istediğin zaman H tuşuna bas. Ekran okuyucu kullanıyorsan G tuşu bu sesli rehberi kapatır.');
+      ? 'Welcome to EarthEar. Here you listen to NASA Earth data as music. To begin, press C and type a city name, or press T and say, for example: go to Ankara. Press H for help at any time. If you use a screen reader, press G to turn this voice guide off.'
+      : 'EarthEar\'a hoş geldin. Burada NASA\'nın Dünya verilerini müzik olarak dinlersin. Başlamak için C tuşuna bas ve bir şehir adı yaz; ya da T tuşuna basıp konuş, örneğin: Ankara\'ya git. Yardım için istediğin zaman H tuşuna bas. Ekran okuyucu kullanıyorsan G tuşu bu sesli rehberi kapatır.');
   }, []);
 
   // düğmenin, bağlantının, kaydırıcının adını oku (fare üstüne gelince ya da klavyeyle odaklanınca)
@@ -419,6 +427,159 @@ export default function App() {
     }
   };
 
+  // ---------- haritadaki yerlerin adları: fare küre/harita üstünde gezerken altındaki yeri söyle
+  const describePoint = useCallback((p: LatLon): string => {
+    const C = live2.current.cities, en = langRef.current === 'en';
+    const big = C?.notable(p, 150);
+    if (big) return `${big[0]}, ${countryName(big[1])}`;
+    const sea = landRef.current ? !landRef.current.isLand(p) : false;
+    const near = C?.nearest(p, 900);
+    // deniz adı: kaba kutularla (kıyı ayrıntısı yok; yalnızca yön bulmaya yardım için)
+    const seaName = (): [string, string] => {
+      const { lat, lon } = p;
+      if (lat > 40.5 && lat < 47.5 && lon > 27 && lon < 42) return ['Karadeniz', 'Black Sea'];
+      if (lat > 30 && lat < 46 && lon > -6 && lon < 36.5) return ['Akdeniz', 'Mediterranean Sea'];
+      if (lat > 66) return ['Arktik Okyanusu', 'Arctic Ocean'];
+      if (lat < -60) return ['Güney Okyanusu', 'Southern Ocean'];
+      if ((lon > -70 && lon <= 20) || (lon > -100 && lon <= -70 && lat > 8 && lat < 31) || (lon > -82 && lon <= -70 && lat >= 31)) return ['Atlas Okyanusu', 'Atlantic Ocean'];
+      if ((lon > 20 && lon <= 120 && lat < 30) || (lon > 120 && lon <= 147 && lat < -10)) return ['Hint Okyanusu', 'Indian Ocean'];
+      return ['Büyük Okyanus', 'Pacific Ocean'];
+    };
+    const where = sea ? seaName()[en ? 1 : 0] : (en ? 'Land' : 'Kara');
+    if (near) return en ? `${where}. Nearest city ${near.row[0]}, ${formatKm(near.km)}.` : `${where}. En yakın şehir ${near.row[0]}, ${formatKm(near.km)}.`;
+    const la = Math.round(Math.abs(p.lat)), lo = Math.round(Math.abs(p.lon));
+    return en ? `${where}. ${la} degrees ${p.lat >= 0 ? 'north' : 'south'}, ${lo} degrees ${p.lon >= 0 ? 'east' : 'west'}.`
+      : `${where}. ${la} derece ${p.lat >= 0 ? 'kuzey' : 'güney'}, ${lo} derece ${p.lon >= 0 ? 'doğu' : 'batı'}.`;
+  }, []);
+  const lastHover = useRef('');
+  const onHover = useCallback((p: LatLon | null) => {
+    if (!p) { lastHover.current = ''; return; }
+    if (!guideRef.current) return;
+    const t = describePoint(p);
+    if (t === lastHover.current) return;
+    lastHover.current = t;
+    speech.hint(t);
+  }, [describePoint]);
+
+  // ---------- sesli komutlar: T tuşuna (ya da mikrofon düğmesine) bas, konuş; söyleneni yapar
+  const [listening, setListening] = useState(false);
+  const [heard, setHeard] = useState<string | null>(null);
+  const findCity = (raw: string) => {
+    const C = live2.current.cities; if (!C) return undefined;
+    const STOP = new Set(['git', 'gidelim', 'gotur', 'goturur', 'musun', 'yer', 'sec', 'sehir', 'sehri', 'sehrine', 'lutfen', 'bana', 'beni', 'oraya', 'karsilastir', 'kiyasla', 'ile', 've', 'icin', 'dinle', 'dinlemek', 'istiyorum', 'ac',
+      'go', 'to', 'take', 'me', 'choose', 'select', 'place', 'city', 'please', 'compare', 'with', 'the', 'listen', 'i', 'want']);
+    const words = raw.replace(/[’'`]\S*/g, ' ').replace(/[.,!?]/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(fold(w)));
+    const exact = (cand: string) => {
+      for (let cut = 0; cut <= 4 && cand.length - cut >= 3; cut++) { // Türkçe ekler: "ankaraya", "sivasa", "izmire"
+        const c = cand.slice(0, cand.length - cut), row = C.find(c);
+        if (row && (fold(row[0]) === fold(c) || (cut === 0 && c.includes(' ') && fold(row[0]).startsWith(fold(c))))) return row; // "New York" → "New York City"
+      }
+      return undefined;
+    };
+    if (!words.length) return undefined;
+    return exact(words.join(' ')) ?? (words.length > 1 ? exact(words.slice(-2).join(' ')) : undefined) ?? words.map(exact).find(Boolean)
+      ?? (words.join(' ').length >= 4 ? C.find(words.join(' ')) : undefined);
+  };
+  const MONTH_WORDS = [['ocak', 'january'], ['subat', 'february'], ['mart', 'march'], ['nisan', 'april'], ['mayis', 'may'], ['haziran', 'june'], ['temmuz', 'july'], ['agustos', 'august'], ['eylul', 'september'], ['ekim', 'october'], ['kasim', 'november'], ['aralik', 'december']];
+  const commandHelp = () => (lang === 'en'
+    ? 'You can say: go to Ankara. Play. Stop. Temperature on. Ocean off. Summary. Legend. Go north. Range two thousand. July. Compare with Tokyo. Tell the breath story. Events. Help.'
+    : 'Şunları söyleyebilirsin: Ankara\'ya git. Çal. Dur. Sıcaklığı aç. Okyanusu kapat. Özet. Lejant. Kuzeye git. Menzil iki bin. Temmuz. Tokyo ile karşılaştır. Nefes hikâyesini anlat. Olaylar. Yardım.');
+  /** Söylenen cümleyi komuta çevir ve uygula. Anlaşıldıysa true. */
+  const runCommand = (text: string): boolean => {
+    const en = lang === 'en', R = radarRef.current;
+    const t = ` ${fold(text).replace(/[.,!?’'`]/g, ' ').replace(/\s+/g, ' ').trim()} `;
+    const has = (...w: string[]) => w.some((x) => t.includes(x));
+    const word = (...w: string[]) => w.some((x) => t.includes(` ${x} `));
+    const needPlace = () => { if (place) return true; announce(en ? 'Choose a place first. Say, for example: go to Ankara.' : 'Önce bir yer seç. Örneğin şöyle söyle: Ankara\'ya git.'); return false; };
+
+    if (has('ingilizce', 'english')) { setLang('en'); return true; }
+    if (has('turkce', 'turkish')) { setLang('tr'); return true; }
+    if (word('yardim', 'help', 'komutlar', 'commands') || has('ne soyleyebilirim', 'what can i say')) { announce(commandHelp()); return true; }
+    if (word('sus', 'sessiz', 'sessizlik', 'quiet', 'silence')) { R.hush(); stopStory(); return true; }
+
+    if (has('hikaye', 'story', 'stories', 'oyku', 'gezegenin nefesi', 'planet breathes')) {
+      if (!needPlace()) return true;
+      if (has('nefes', 'breath')) { void runStory('breath'); return true; }
+      if (has('ekvator', 'equator', 'yolculuk', 'journey')) { void runStory('journey'); return true; }
+      if (has('toz', 'dust', 'yolcu', 'traveler')) { void runStory('dust'); return true; }
+      setStoriesOpen(true);
+      announce(en ? 'Three stories: the planet breathes, journey toward the equator, travelers in the air. Say, for example: tell the breath story.' : 'Üç hikâye var: Gezegenin nefesi, Ekvatora yolculuk, Havadaki yolcular. Örneğin şöyle söyle: nefes hikâyesini anlat.');
+      return true;
+    }
+    if (has('olay', 'event')) { if (needPlace()) openEvents(); return true; }
+    if (has('karsilastir', 'kiyasla', 'compare')) {
+      if (!needPlace()) return true;
+      const row = findCity(text);
+      if (row) { const p = rowToPlace(row, 'arama'); setPlaceB(p); setCompare(true); setCmpTurn(0); announce(en ? `Comparing with ${placeLabel(p)}: one sweep here, one sweep there. Say "difference" to hear the numbers.` : `${placeLabel(p)} ile karşılaştırılıyor: bir tur burası, bir tur orası. Sayıları duymak için "fark" de.`); if (!R.playing) setTimeout(() => radarRef.current.play(), 300); }
+      else { setPickFor('B'); setPickOpen(true); }
+      return true;
+    }
+    if (has('fark', 'difference')) { if (placeB) sayDiff(); else announce(en ? 'There is no second place yet. Say: compare with Tokyo.' : 'Henüz ikinci yer yok. Şöyle söyle: Tokyo ile karşılaştır.'); return true; }
+    if (has('neredeyim', 'where am i', 'burasi neresi')) { if (needPlace()) announce(en ? `You are at ${placeLabel(active ?? place!)}.` : `${placeLabel(active ?? place!)} üzerindesin.`); return true; }
+    if (has(' ozet', 'summary')) { if (needPlace()) R.summary(); return true; }
+    if (has('lejant', 'legend', 'enstrumanlari tanit')) { if (needPlace()) void R.runLegend(); return true; }
+    if (has('anlatici', 'narrator')) { setNarrator(!has('kapat', ' off ', 'kapa ')); return true; }
+
+    const layer: LayerId | null = has('okyanus', 'deniz', 'ocean', ' sea ') ? 'sst' : has('karbon', 'co2', 'c o 2', 'carbon') ? 'co2' : has('sicakl', 'temperature', ' isi ') ? 'temp' : has('aerosol', 'toz', 'duman', 'dust', 'smoke') ? 'aerosol' : null;
+    if (layer) {
+      const want = has('kapat', 'kapa ', 'kaldir', ' off ', 'remove') ? false : has(' ac ', 'ekle', 'goster', ' on ', ' add ', 'dinle', 'listen') ? true : !on[layer];
+      if (on[layer] !== want) toggleLayer(layer);
+      else announce(en ? `${LAYER_UI[layer].label.en} is already ${want ? 'on' : 'off'}.` : `${LAYER_UI[layer].label.tr} zaten ${want ? 'açık' : 'kapalı'}.`);
+      return true;
+    }
+
+    if (has('sonraki ay', 'next month')) { setMonth((m) => (m + 1) % 12); return true; }
+    if (has('onceki ay', 'previous month')) { setMonth((m) => (m + 11) % 12); return true; }
+    const mi = MONTH_WORDS.findIndex((names) => names.some((n) => t.includes(` ${n} `) || t.includes(` ${n}a `) || t.includes(` ${n}e `)));
+    if (mi >= 0 && co2) { setMonth(mi); announce(en ? `${co2.monthLabel(mi, 'en')}.` : `${co2.monthLabel(mi)}.`); return true; }
+
+    if (has('menzil', 'range', 'kilometre', 'kilometer', 'yakinlas', 'uzaklas', 'zoom')) {
+      const km = has('5000', 'bes bin', 'five thousand') ? 5000 : has('2000', 'iki bin', 'two thousand') ? 2000 : has('500', 'bes yuz', 'five hundred') ? 500
+        : has('yakinlas', 'zoom in', 'daralt', 'kucult') ? (rangeKm === 5000 ? 2000 : 500) : has('uzaklas', 'zoom out', 'genislet', 'buyut') ? (rangeKm === 500 ? 2000 : 5000) : 0;
+      if (km) { setRange(km); announce(en ? `Range ${km} kilometers.` : `Menzil ${km} kilometre.`); return true; }
+    }
+    if (word('hizli', 'hizlan', 'hizlandir', 'faster', 'fast')) { R.setRevSec(5); announce(en ? 'Faster.' : 'Hızlandı.'); return true; }
+    if (word('yavas', 'yavasla', 'yavaslat', 'slower', 'slow')) { R.setRevSec(12); announce(en ? 'Slower.' : 'Yavaşladı.'); return true; }
+
+    const dir = word('kuzey', 'kuzeye', 'north') ? 0 : word('dogu', 'doguya', 'east') ? 90 : word('guney', 'guneye', 'south') ? 180 : word('bati', 'batiya', 'west') ? 270 : -1;
+    if (dir >= 0) { if (needPlace()) pickPoint(destination(place!, dir, rangeKm / 4), 'harita'); return true; }
+
+    if (word('dur', 'durdur', 'stop', 'pause', 'duraklat', 'yeter')) { R.stop(); stopStory(); return true; }
+    if (word('cal', 'baslat', 'basla', 'oynat', 'play', 'start', 'devam', 'dinle', 'muzik')) { if (needPlace() && !R.playing) R.play(); return true; }
+
+    const goWords = has(' git ', 'gidelim', 'gotur', 'yer sec', ' go to ', 'take me', ' sehir');
+    const row = findCity(text);
+    if (row && (goWords || fold(row[0]) === fold(text.replace(/[’'`]\S*/g, '').trim()))) {
+      setPlace(rowToPlace(row, 'arama')); setPickOpen(false);
+      if (!R.playing) setTimeout(() => radarRef.current.play(), 2500); // yer duyurusundan sonra müzik başlasın
+      return true;
+    }
+    if (goWords) { setPickFor('A'); setPickOpen(true); return true; }
+    return false;
+  };
+  const cmdRef = useRef(runCommand); cmdRef.current = runCommand;
+  const talk = () => {
+    const en = langRef.current === 'en';
+    if (listener.active) { listener.cancel(); setListening(false); engine.setMaster(mix.master); return; }
+    if (!listener.supported) { announce(en ? 'Voice commands are not supported in this browser. Please use Chrome or Edge.' : 'Bu tarayıcı sesli komutu desteklemiyor. Chrome ya da Edge kullan.'); return; }
+    welcomed.current = true;
+    radarRef.current.hush();                      // rehber sussun ki mikrofon kendi sesimizi duymasın
+    engine.unlock(); engine.northTick(engine.now + 0.02);
+    engine.setMaster(mix.master * 0.2);           // dinlerken müziği kıs
+    setListening(true); setHeard(null);
+    listener.once(langRef.current, (alts) => {
+      setHeard(alts[0]);
+      if (!alts.some((a) => cmdRef.current(a))) announce(en ? `I heard: ${alts[0]}. I did not understand. Say "help" to hear the commands.` : `Şunu duydum: ${alts[0]}. Anlamadım. Komutları duymak için "yardım" de.`);
+    }, (err) => {
+      announce(err === 'denied' ? (en ? 'Microphone permission was not given. Allow the microphone from the address bar.' : 'Mikrofon izni verilmedi. Adres çubuğundan mikrofona izin ver.')
+        : err === 'network' ? (en ? 'Voice commands need an internet connection.' : 'Sesli komut için internet bağlantısı gerekli.')
+          : err === 'nospeech' ? (en ? 'I did not hear anything. Press T and speak.' : 'Bir şey duymadım. T tuşuna basıp konuş.')
+            : (en ? 'Voice command failed. Try again.' : 'Sesli komut çalışmadı. Tekrar dene.'));
+    }, () => { setListening(false); engine.setMaster(mix.master); });
+  };
+  // geliştirme: mikrofon olmadan komutları sınamak için
+  if (import.meta.env.DEV) (window as unknown as { __cmd?: (t: string) => boolean }).__cmd = (t) => cmdRef.current(t);
+
   // genel kısayollar: C yer seç · H yardım · G sesli rehber · Esc sustur · 1-4 katman · I/J/K/M gez
   const globalKeys = useRef<(e: KeyboardEvent) => void>(() => {});
   globalKeys.current = (e) => {
@@ -438,6 +599,7 @@ export default function App() {
     else if (k === 'e' && place) { e.preventDefault(); openEvents(); }
     else if (k === 'v') { e.preventDefault(); setSoundOpen(true); }
     else if (k === 'n') { e.preventDefault(); setNarrator(!live2.current.narrator); }
+    else if (k === 't') { e.preventDefault(); talk(); }
     else if (['1', '2', '3', '4'].includes(k)) { e.preventDefault(); toggleLayer((['co2', 'temp', 'sst', 'aerosol'] as LayerId[])[+k - 1]); }
     else if (place && ['i', 'j', 'k', 'm'].includes(k)) {
       e.preventDefault();
@@ -509,23 +671,24 @@ export default function App() {
     <div className={`app${view3d ? ' is3d' : ' is2d'}`}>
       {view3d && (
         <Globe3D source={globeSource} landCanvas={landCanvas} center={active} rangeKm={rangeKm} angle={radar.angle} level={() => engine.level()}
-          reducedMotion={reduced} onPick={(p) => pickPoint(p, 'harita')}
+          reducedMotion={reduced} onPick={(p) => pickPoint(p, 'harita')} onHover={onHover}
           onSlow={() => { if (forced !== '3d') { setView3dS(false); setSlowNote(true); } }} />
       )}
 
-      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => { setPickFor('A'); setPickOpen(true); }} onAbout={() => setAboutOpen(true)} hasPlace={!!place} guide={guide} setGuide={setGuide} />
+      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => { setPickFor('A'); setPickOpen(true); }} onAbout={() => setAboutOpen(true)} hasPlace={!!place} guide={guide} setGuide={setGuide} listening={listening} onTalk={talk} />
 
       <main className="stage">
         {!audioOk && <p role="alert" className="glass alert">{lang === 'tr' ? 'Ses başlatılamadı. Sessiz modu kapat, sesi aç ve bir düğmeye tekrar dokun.' : 'Audio could not start. Turn off silent mode, raise the volume and tap a button again.'}</p>}
         {err && <p role="alert" className="glass alert">{err}</p>}
         {slowNote && <p role="status" className="glass note">{tr(lang, 'fallback')}</p>}
 
-        {!place && <Intro lang={lang} onPick={() => { setPickFor('A'); setPickOpen(true); }} />}
+        {!place && <Intro lang={lang} onPick={() => { setPickFor('A'); setPickOpen(true); }} onTalk={listener.supported ? talk : undefined} />}
+        {(listening || heard) && <p role="status" className="glass note heard">{listening ? tr(lang, 'listening') : `“${heard}”`}</p>}
 
         {!view3d && (
           <section className={`flat${place ? '' : ' empty'}`} aria-label={lang === 'tr' ? '2D harita ve radar' : '2D map and radar'}>
             {active && <div className="flat-radar"><RadarView center={active} rangeKm={rangeKm} paint={paintLL} paintKey={paintKey} angle={radar.angle} land={land} /></div>}
-            <div className="flat-map"><WorldMap paint={paintLL} paintKey={paintKey} land={land} center={active} rangeKm={rangeKm} onPick={(p) => pickPoint(p, 'harita')} /></div>
+            <div className="flat-map"><WorldMap paint={paintLL} paintKey={paintKey} land={land} center={active} rangeKm={rangeKm} onPick={(p) => pickPoint(p, 'harita')} onHover={onHover} /></div>
           </section>
         )}
 

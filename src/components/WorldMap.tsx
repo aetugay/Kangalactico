@@ -10,10 +10,12 @@ interface Props {
   center: LatLon | null;
   rangeKm: number;
   onPick: (p: LatLon) => void;
+  onHover?: (p: LatLon | null) => void;
 }
 
 /** Eşdikdörtgen dünya haritası (1° ızgara). Dokunarak konum seçilir; klavye için şehir arama kullanılır. */
-export function WorldMap({ paint, paintKey, center, rangeKm, onPick, land }: Props) {
+export function WorldMap({ paint, paintKey, center, rangeKm, onPick, onHover, land }: Props) {
+  const lastMove = useRef(0);
   const cv = useRef<HTMLCanvasElement>(null);
   const base = useRef<HTMLCanvasElement | null>(null);
 
@@ -77,6 +79,13 @@ export function WorldMap({ paint, paintKey, center, rangeKm, onPick, land }: Pro
       className="worldmap"
       role="img"
       aria-label="Dünya haritası. Dokunarak radar merkezini seçebilirsin; klavye ve ekran okuyucu için şehir arama kutusunu kullan."
+      onMouseMove={(e) => {
+        if (!onHover) return;
+        const now = performance.now(); if (now - lastMove.current < 140) return; lastMove.current = now;
+        const r = e.currentTarget.getBoundingClientRect();
+        onHover({ lat: Math.max(-89.5, Math.min(89.5, 90 - ((e.clientY - r.top) / r.height) * 180)), lon: ((e.clientX - r.left) / r.width) * 360 - 180 });
+      }}
+      onMouseLeave={() => onHover?.(null)}
       onClick={(e) => {
         const r = e.currentTarget.getBoundingClientRect();
         const lon = ((e.clientX - r.left) / r.width) * 360 - 180;

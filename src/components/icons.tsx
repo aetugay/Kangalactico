@@ -31,3 +31,4 @@ export const IconSpeak = () => (<svg {...S}><path d="M4 9h4l5-4v14l-5-4H4z" /><p
 export const IconInfo = () => (<svg {...S}><circle cx="12" cy="12" r="9" /><path d="M12 11v6" /><path d="M12 7.5v.5" /></svg>);
 export const IconContrast = () => (<svg {...S}><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" /></svg>);
 export const IconGlobe = () => (<svg {...S}><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18" /></svg>);
+export const IconMic = () => (<svg {...S}><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M12 18v3" /></svg>);

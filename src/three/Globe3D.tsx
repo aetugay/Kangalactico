@@ -16,6 +16,7 @@ interface Props {
   level: () => number;         // 0..1 ses seviyesi
   reducedMotion: boolean;
   onPick: (p: LatLon) => void;
+  onHover?: (p: LatLon | null) => void; // fare küre üstünde gezerken altındaki nokta (yer adını söylemek için)
   onSlow: () => void;          // FPS düşük → 2D'ye düş
 }
 
@@ -195,6 +196,18 @@ export function Globe3D(props: Props) {
     };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
+    let lastMove = 0;
+    const onMove = (e: PointerEvent) => {
+      if (!P.current.onHover || e.buttons !== 0 || e.pointerType === 'touch') return;
+      const now = performance.now(); if (now - lastMove < 140) return; lastMove = now;
+      const r = renderer.domElement.getBoundingClientRect();
+      ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+      const hit = ray.intersectObject(earth)[0];
+      P.current.onHover(hit ? vecToLl(hit.point) : null);
+    };
+    const onLeave = () => P.current.onHover?.(null);
+    renderer.domElement.addEventListener('pointermove', onMove);
+    renderer.domElement.addEventListener('pointerleave', onLeave);
 
     // --- boyut
     const resize = () => { const w = el.clientWidth, h = el.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix(); };
@@ -242,6 +255,7 @@ export function Globe3D(props: Props) {
     return () => {
       cancelAnimationFrame(raf); ro.disconnect(); controls.dispose();
       renderer.domElement.removeEventListener('pointerdown', onDown); renderer.domElement.removeEventListener('pointerup', onUp);
+      renderer.domElement.removeEventListener('pointermove', onMove); renderer.domElement.removeEventListener('pointerleave', onLeave);
       scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose(); const mat = m.material as THREE.Material | undefined; mat?.dispose?.(); });
       [uniforms.uTexA.value, uniforms.uTexB.value, uniforms.uLand.value].forEach((t) => t !== empty && t.dispose());
       renderer.dispose(); el.removeChild(renderer.domElement); api.current = null;

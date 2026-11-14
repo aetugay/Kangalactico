@@ -1,33 +1,27 @@
 // Radar zamanlayıcısı: ses saatine göre ileri bakışlı planlama (setInterval sadece uyandırır, zamanlama AudioContext'te).
 // Radar bir adım sıralayıcı (step sequencer) gibi çalar: 32 ışın = 2 ölçü. Her katman bir enstrüman ve bir ritim rolüdür.
+//
+// KURAL (Adım 1): her nota bir veri değerinden üretilir (lib/radar.ts → beamEvents). Veri yoksa ses yok.
+//  - Bilim modu: yalnızca veri notaları + kuzey işareti (yön referansı; veri değil, tek istisna).
+//  - Hikâye modu: ayrıca merkez değerden türeyen zemin akoru ve deniz payına bağlı dalga sesi (ikisi de veriye bağlı).
 import { engine } from './engine.ts';
-import { bearingOf, gainFor, groupMean, noteHz, panFor, PARTS, pentaHz, type Mode, type RadarLayer, type RadarParams } from '../lib/radar.ts';
+import { beamEvents, groupMean, noteHz, gainFor, PARTS, type FrameData, type SoundEvent } from '../lib/radar.ts';
 
-export interface RadarFrame {
-  P: RadarParams;
-  mode: Mode;
+export interface RadarFrame extends FrameData {
   revSec: number; // bir tur süresi
-  layers: { layer: RadarLayer; vals: Float32Array; local: { min: number; max: number } }[];
 }
-
-// Yaylı yatağın akor yürüyüşü (her turda bir akor): Do – La – Fa – Sol. pentaHz indeksleri: C3=5, A2=4, F2≈(elle), G2=3.
-const BED: number[][] = [
-  [pentaHz(5), pentaHz(8)],          // C3 + G3
-  [pentaHz(4), pentaHz(7)],          // A2 + E3
-  [87.307, pentaHz(5)],              // F2 + C3
-  [pentaHz(3), pentaHz(6)],          // G2 + D3
-];
 
 export class RadarPlayer {
   private timer: number | undefined;
   private next = 0;   // sonraki adımın ses zamanı
   private beam = 0;
-  private rev = 0;    // tur sayacı (akor yürüyüşü için)
   private t0 = 0;     // 0. ışının (kuzey) ses zamanı — görsel açı hesabı için
   private get: () => RadarFrame | null;
   playing = false;
   /** Her tur tamamlandığında (kuzeye dönüşte) çağrılır — örn. zaman çizelgesini ilerletmek için. */
   onRevolution: (() => void) | null = null;
+  /** Bir ışın adımı ÇALINDIĞI anda (ses saatine hizalı) o adımın notaları — canlı gösterge için. */
+  onEvents: ((ev: SoundEvent[], beam: number) => void) | null = null;
 
   constructor(get: () => RadarFrame | null) { this.get = get; }
 
@@ -69,7 +63,6 @@ export class RadarPlayer {
       this.beam = (this.beam + 1) % F.P.beams;
       this.next += step;
       if (this.beam === 0) {
-        this.rev++;
         this.t0 = this.next; // tur başı yeniden hizala (hız değişirse kaymasın)
         const cb = this.onRevolution; if (cb) setTimeout(cb, Math.max(0, (this.next - engine.now) * 1000));
       }
@@ -80,22 +73,29 @@ export class RadarPlayer {
   playBeam(F: RadarFrame, b: number, when: number, step: number) {
     const { P } = F;
     if (b === 0) {
-      engine.northTick(when);
-      if (F.layers.length) engine.pad(BED[this.rev % BED.length], when, F.revSec);
+      engine.northTick(when); // yön referansı (kuzey) — veri değil; bilinçli tek istisna
+      if (F.mode === 'hikaye') this.storyBed(F, when);
     }
-    let sea = -1;
-    for (const { layer, vals, local } of F.layers) {
-      const part = PARTS[layer.id];
-      if (layer.id === 'sst') sea = groupMean(vals, P, b, 1).cover;
-      if ((((b - part.offset) % part.every) + part.every) % part.every !== 0) continue;
-      const { mean } = groupMean(vals, P, b, part.every);
-      if (Number.isNaN(mean)) continue; // veri yok → sessizlik (ör. arp karada susar)
-      const t = gainFor(mean, layer, F.mode, local);
-      if (t < part.gate) continue;      // aerosol yok denecek kadar az → sessizlik
-      const pan = panFor(bearingOf(b + (part.every - 1) / 2, P.beams));
-      engine.voice(layer.id, noteHz(t, part), when, step * part.every * 0.92, t, pan);
-    }
-    if (sea >= 0) engine.waves(sea); else engine.wavesOff();
+    const events = beamEvents(F, b);
+    for (const e of events) engine.voice(e.layerId, e.freq, when, step * e.durBeams, e.gain, e.pan);
+    if (F.mode === 'hikaye') {
+      // dalga sesi: yalnız hikâye modunda; düzeyi bu ışının denize düşen payı (veri yoksa 0 → sessiz)
+      const sea = F.layers.find((l) => l.layer.id === 'sst');
+      if (sea) engine.waves(groupMean(sea.vals, P, b, 1).cover); else engine.wavesOff();
+    } else engine.wavesOff();
+    const cb = this.onEvents;
+    if (cb) setTimeout(() => cb(events, b), Math.max(0, (when - engine.now) * 1000));
+  }
+
+  /** Hikâye modu zemin akoru: ilk katmanın MERKEZ değerinden türeyen nota + beşlisi. Merkezde veri yoksa akor yok. */
+  private storyBed(F: RadarFrame, when: number) {
+    const first = F.layers[0];
+    if (!first) return;
+    const v = first.layer.sample(F.P.center);
+    if (Number.isNaN(v)) return;
+    const part = PARTS[first.layer.id];
+    const root = noteHz(gainFor(v, first.layer, F.mode, first.local), { ...part, start: Math.max(0, part.start - 10) });
+    engine.pad([root, root * 1.5], when, F.revSec);
   }
 
   /** Elle yön çevirme (←/→): o yöndeki yakın → orta → uzak değerler her katmanın enstrümanıyla üç nota olarak çalar. */
@@ -103,12 +103,12 @@ export class RadarPlayer {
     const { P } = F;
     const third = Math.max(1, Math.round(P.rings / 3));
     const bands: [number, number][] = [[0, third], [third, P.rings - third], [P.rings - third, P.rings]];
-    const pan = panFor(bearingOf(b, P.beams));
+    const pan = Math.sin(((b * 360) / P.beams) * (Math.PI / 180));
     for (const { layer, vals, local } of F.layers) {
       const part = PARTS[layer.id];
       bands.forEach(([k0, k1], i) => {
         const { mean } = groupMean(vals, P, b, 1, k0, k1);
-        if (Number.isNaN(mean)) return;
+        if (Number.isNaN(mean)) return; // veri yok → sessizlik
         const t = gainFor(mean, layer, F.mode, local);
         if (t < part.gate) return;
         engine.voice(layer.id, noteHz(t, part), when + i * 0.22, 0.4, t, pan);

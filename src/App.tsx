@@ -75,7 +75,7 @@ export default function App() {
   // ---------- durum
   const [place, setPlace] = useState<Place | null>(null);
   const [rangeKm, setRange] = useState(2000);
-  const [mode, setMode] = useState<Mode>('hikaye'); // müzikal mod varsayılan: notalar seçilen yerin çevresindeki farkı tüm aralığa yayar
+  const [mode, setMode] = useState<Mode>('bilim'); // Adım 1: bilim modu varsayılan — aynı değer her yerde aynı nota; yalnız veri sesleri
   const [month, setMonth] = useState(0);
   const [advance, setAdvance] = useState(true);
   const [tFrame, setTFrame] = useState(0);
@@ -696,7 +696,7 @@ export default function App() {
           <>
             <NowCard lang={lang} placeLabel={(compare && placeB ? (active === placeB ? 'B · ' : 'A · ') : '') + placeLabel(active ?? place)} playing={radar.playing} onToggle={radar.toggle} onLegend={radar.runLegend} 
               onSummary={radar.summary} headline={headline} instruments={instruments} rangeKm={rangeKm} setRange={(km) => { setRange(km); announce(lang === 'en' ? `Range ${km} kilometers.` : `Menzil ${km} kilometre.`); }}
-              revSec={radar.revSec} setRevSec={radar.setRevSec} mode={mode} setMode={(m) => { setMode(m); announce(m === 'hikaye' ? (lang === 'en' ? 'Musical mode: notes spread across the differences around this place.' : 'Müzikal mod: notalar bu yerin çevresindeki farkı tüm aralığa yayar.') : (lang === 'en' ? 'Science mode: the same value is always the same note, everywhere.' : 'Bilim modu: aynı değer her yerde aynı notadır.')); }} legend={radar.legend} talking={radar.talking}>
+              revSec={radar.revSec} setRevSec={radar.setRevSec} mode={mode} setMode={(m) => { setMode(m); announce(m === 'hikaye' ? (lang === 'en' ? 'Musical mode: notes spread across the differences around this place.' : 'Müzikal mod: notalar bu yerin çevresindeki farkı tüm aralığa yayar.') : (lang === 'en' ? 'Science mode: the same value is always the same note, everywhere.' : 'Bilim modu: aynı değer her yerde aynı notadır.')); }} legend={radar.legend} talking={radar.talking} nowLines={radar.nowLines} liveLine={radar.liveLine}>
               <Explore lang={lang} placeA={placeLabel(place)} placeB={placeB ? placeLabel(placeB) : null} compare={compare}
                 setCompare={(v) => { setCompare(v); setCmpTurn(0); announce(v ? (lang === 'en' ? 'Listening in turns: one sweep for A, one sweep for B. Time stays fixed.' : 'Sırayla dinleme açık: bir tur A, bir tur B. Zaman sabit kalır.') : (lang === 'en' ? 'Listening in turns off.' : 'Sırayla dinleme kapalı.')); }}
                 onPickB={() => { setPickFor('B'); setPickOpen(true); }} onClearB={() => { setPlaceB(null); setCompare(false); setCmpTurn(0); }} onDiff={sayDiff}

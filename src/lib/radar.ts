@@ -150,3 +150,83 @@ export function describeBeam(layer: RadarLayer, vals: Float32Array, P: RadarPara
   return en ? `${compass8(br, 'en')}, ${Math.round(br)} degrees. Near ${near}, middle ${mid}, far ${far}.`
     : `${compass8(br)}, ${Math.round(br)} derece. Yakın ${near}, orta ${mid}, uzak ${far}.`;
 }
+
+// ---------------- Ses olayları: YALNIZCA veriden (saf fonksiyon; Node testinde de çalışır) ----------------
+/** Radarın bir anlık durumu (ses için gereken her şey). */
+export interface FrameData {
+  P: RadarParams;
+  mode: Mode;
+  layers: { layer: RadarLayer; vals: Float32Array; local: { min: number; max: number } }[];
+}
+/** Bir nota olayı ve onu üreten veri. Her alan veriden türetilir; veriden bağımsız ses olayı yoktur. */
+export interface SoundEvent {
+  layerId: Timbre; label: string; unit: string | null;
+  beam: number; bearing: number;     // ışın ve yönü (derece)
+  kmFrom: number; kmTo: number;      // değerin ortalandığı uzaklık aralığı
+  value: number;                     // gerçek değer (ölçek dönüşümünden önce)
+  valueText: string;                 // ekran okuyucu için gerçek değer metni
+  t: number;                         // değerin ölçekteki yeri 0..1
+  freq: number; gain: number; pan: number; durBeams: number;
+}
+
+/**
+ * b. ışın adımında çalınacak notalar. Kurallar:
+ *  - her olay bir veri değerinden (o ışının halkalarındaki ortalama) üretilir;
+ *  - veri yoksa (NaN: ızgara dışı, okyanus katmanı karada…) olay YOK → sessizlik;
+ *  - aynı veri → aynı olay (rastgelelik yok).
+ */
+export function beamEvents(F: FrameData, b: number): SoundEvent[] {
+  const { P } = F;
+  const out: SoundEvent[] = [];
+  for (const { layer, vals, local } of F.layers) {
+    const part = PARTS[layer.id];
+    if ((((b - part.offset) % part.every) + part.every) % part.every !== 0) continue; // bu katmanın ritim adımı değil
+    const { mean } = groupMean(vals, P, b, part.every);
+    if (Number.isNaN(mean) || beamCover(vals, P, b, part.every) < 0.5) continue; // veri yok (ya da grubun çoğunda yok) → sessizlik
+    const t = gainFor(mean, layer, F.mode, local);
+    if (t < part.gate) continue;                      // (aerosol) yok denecek kadar az → sessizlik
+    const bearing = bearingOf(b + (part.every - 1) / 2, P.beams);
+    out.push({ layerId: layer.id, label: layer.label, unit: layer.unit, beam: b, bearing, kmFrom: 0, kmTo: P.rangeKm,
+      value: mean, valueText: layer.fmt(mean), t, freq: noteHz(t, part), gain: t, pan: panFor(bearing), durBeams: part.every * 0.92 });
+  }
+  return out;
+}
+
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+/** Frekans → nota adı (A4 = 440 Hz), ör. 659.3 → "E5". */
+export function noteName(hz: number): string {
+  const m = Math.round(69 + 12 * Math.log2(hz / 440));
+  return `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
+}
+
+/** Canlı gösterge satırı: "Karbondioksit · kuzeydoğu 45° · 0–2000 km ort. → 414.2 ppm → E5 (659 Hz)". */
+export function formatEvent(e: SoundEvent, lang: 'tr' | 'en' = 'tr'): string {
+  const dir = `${compass8(e.bearing, lang)} ${Math.round(e.bearing)}°`;
+  const dist = lang === 'en' ? `${Math.round(e.kmFrom)}–${formatKm(e.kmTo)} avg.` : `${Math.round(e.kmFrom)}–${formatKm(e.kmTo)} ort.`;
+  return `${e.label} · ${dir} · ${dist} → ${e.valueText} → ${noteName(e.freq)} (${Math.round(e.freq)} Hz)`;
+}
+/** Veri olmayan ışın için: "kuzeydoğu 45°: veri yok → ses yok". */
+export function formatSilent(bearing: number, lang: 'tr' | 'en' = 'tr'): string {
+  return lang === 'en' ? `${compass8(bearing, 'en')} ${Math.round(bearing)}°: no data → silence` : `${compass8(bearing)} ${Math.round(bearing)}°: veri yok → ses yok`;
+}
+
+/** Bu adımda çalma sırası gelmiş ama verisi OLMAYAN katmanlar (ör. okyanus katmanı karada) — "sessizlik" göstergesi için. */
+export function beamSilences(F: FrameData, b: number): { label: string; bearing: number }[] {
+  const out: { label: string; bearing: number }[] = [];
+  for (const { layer, vals } of F.layers) {
+    const part = PARTS[layer.id];
+    if ((((b - part.offset) % part.every) + part.every) % part.every !== 0) continue;
+    if (Number.isNaN(groupMean(vals, F.P, b, part.every).mean) || beamCover(vals, F.P, b, part.every) < 0.5) out.push({ label: layer.label, bearing: bearingOf(b + (part.every - 1) / 2, F.P.beams) });
+  }
+  return out;
+}
+
+/** [b, b+count) ışınlarından kaçında (en az bir halkada) veri var — 0..1. Grubun çoğunda veri yoksa nota çalmaz. */
+export function beamCover(vals: Float32Array, P: RadarParams, b: number, count: number): number {
+  let n = 0;
+  for (let i = 0; i < count; i++) {
+    const bb = (b + i) % P.beams;
+    for (let k = 0; k < P.rings; k++) if (!Number.isNaN(vals[bb * P.rings + k])) { n++; break; }
+  }
+  return count ? n / count : 0;
+}

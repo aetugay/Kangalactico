@@ -7,10 +7,17 @@ const SILENT =
 
 type Listener = (running: boolean) => void;
 
+/** Sabit tohumlu sözde rastgele üreteç (mulberry32): aynı veri → oturumdan oturuma bit bit aynı ses. */
+function seeded(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const hashStr = (k: string) => { let h = 2166136261; for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 16777619); return h >>> 0; };
+
 class AudioEngine {
   private ac: AudioContext | null = null;
   private master!: GainNode;
-  private droneOsc!: OscillatorNode;
+  private droneOsc: OscillatorNode | null = null;
   private droneGain!: GainNode;
   private scanOsc!: OscillatorNode;
   private scanGain!: GainNode;
@@ -38,27 +45,21 @@ class AudioEngine {
     comp.connect(this.analyser);
     this.levelBuf = new Float32Array(this.analyser.fftSize);
 
-    // Genel seviyeyi izleyen yumuşak drone
-    this.droneOsc = ac.createOscillator();
-    this.droneOsc.type = 'sine';
-    this.droneGain = ac.createGain();
-    this.droneGain.gain.value = 0;
-    this.droneOsc.connect(this.droneGain).connect(this.master);
-    this.droneOsc.start();
-
-    // Tarama modu için sürekli osilatör
-    this.scanOsc = ac.createOscillator();
-    this.scanOsc.type = 'triangle';
-    const lp = ac.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = 2200;
-    this.scanGain = ac.createGain();
-    this.scanGain.gain.value = 0;
-    this.scanOsc.connect(lp).connect(this.scanGain).connect(this.master);
-    this.scanOsc.start();
-
     this.ac = ac;
     return ac;
+  }
+
+  /** Eski CO₂ demosunun (src/legacy) sürekli osilatörleri — radar KULLANMAZ; yalnız istenirse oluşturulur. */
+  private legacyOsc() {
+    const ac = this.ctx();
+    if (this.droneOsc) return;
+    this.droneOsc = ac.createOscillator(); this.droneOsc.type = 'sine';
+    this.droneGain = ac.createGain(); this.droneGain.gain.value = 0;
+    this.droneOsc.connect(this.droneGain).connect(this.master); this.droneOsc.start();
+    this.scanOsc = ac.createOscillator(); this.scanOsc.type = 'triangle';
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
+    this.scanGain = ac.createGain(); this.scanGain.gain.value = 0;
+    this.scanOsc.connect(lp).connect(this.scanGain).connect(this.master); this.scanOsc.start();
   }
 
   /** Her kullanıcı dokunuşunda çağır. Tablet (özellikle iPad) kilidini açar. */
@@ -125,8 +126,8 @@ class AudioEngine {
     const when = ac.currentTime + 0.01;
     if (!this.noiseBuf) {
       this.noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.2, ac.sampleRate);
-      const d = this.noiseBuf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const d = this.noiseBuf.getChannelData(0); const r = seeded(11);
+      for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1;
     }
     const s = ac.createBufferSource();
     s.buffer = this.noiseBuf;
@@ -142,23 +143,23 @@ class AudioEngine {
   }
 
   droneTo(freq: number) {
-    const ac = this.ctx();
-    this.droneOsc.frequency.setTargetAtTime(freq, ac.currentTime, 0.3);
+    const ac = this.ctx(); this.legacyOsc();
+    this.droneOsc!.frequency.setTargetAtTime(freq, ac.currentTime, 0.3);
   }
 
   droneLevel(level: number) {
-    if (!this.ac) return;
+    if (!this.ac || !this.droneOsc) return;
     this.droneGain.gain.setTargetAtTime(level, this.ac.currentTime, level > 0 ? 0.4 : 0.3);
   }
 
   scanTo(freq: number) {
-    const ac = this.ctx();
+    const ac = this.ctx(); this.legacyOsc();
     this.scanOsc.frequency.setTargetAtTime(freq, ac.currentTime, 0.02);
     this.scanGain.gain.setTargetAtTime(0.18, ac.currentTime, 0.03);
   }
 
   scanOff() {
-    if (!this.ac) return;
+    if (!this.ac || !this.droneOsc) return;
     this.scanGain.gain.setTargetAtTime(0, this.ac.currentTime, 0.05);
   }
 
@@ -193,8 +194,8 @@ class AudioEngine {
       const len = Math.floor(ac.sampleRate * 2.4);
       const ir = ac.createBuffer(2, len, ac.sampleRate);
       for (let ch = 0; ch < 2; ch++) {
-        const d = ir.getChannelData(ch);
-        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
+        const d = ir.getChannelData(ch); const r = seeded(101 + ch);
+        for (let i = 0; i < len; i++) d[i] = (r() * 2 - 1) * Math.pow(1 - i / len, 2.6);
       }
       const conv = ac.createConvolver(); conv.buffer = ir;
       const wet = ac.createGain(); wet.gain.value = this.mix.reverb; this.wet = wet;
@@ -218,8 +219,8 @@ class AudioEngine {
     const ac = this.ctx();
     if (!this.noiseBuf) {
       this.noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
-      const d = this.noiseBuf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const d = this.noiseBuf.getChannelData(0); const r = seeded(7);
+      for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1;
     }
     return this.noiseBuf;
   }
@@ -241,7 +242,8 @@ class AudioEngine {
       buf = ac.createBuffer(1, len, sr);
       const o = buf.getChannelData(0);
       const line = new Float32Array(N);
-      for (let i = 0; i < N; i++) line[i] = Math.random() * 2 - 1;
+      const r = seeded(hashStr(key)); // aynı tel + aynı perde → hep aynı uyarım
+      for (let i = 0; i < N; i++) line[i] = r() * 2 - 1;
       for (let p = 0; p < P.soft; p++) { let prev = line[N - 1]; for (let i = 0; i < N; i++) { const c = line[i]; line[i] = (c + prev) / 2; prev = c; } }
       let mean = 0; for (let i = 0; i < N; i++) mean += line[i]; mean /= N;
       let peak = 1e-6; for (let i = 0; i < N; i++) { line[i] -= mean; peak = Math.max(peak, Math.abs(line[i])); }

@@ -5,7 +5,7 @@ import { RadarPlayer, type RadarFrame } from '../audio/radarPlayer.ts';
 import { speech } from '../audio/speech.ts';
 import type { Lang } from '../i18n.ts';
 import { compass8, type LatLon } from '../lib/geo.ts';
-import { DEFAULTS, describeBeam, extremes, localRange, noteHz, PARTS, sampleLayer, summarize, type Mode, type RadarLayer } from '../lib/radar.ts';
+import { beamSilences, DEFAULTS, describeBeam, extremes, formatEvent, formatSilent, localRange, noteHz, PARTS, sampleLayer, summarize, type Mode, type RadarLayer } from '../lib/radar.ts';
 
 interface Opts {
   placeName: string;
@@ -42,6 +42,23 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, lang, annou
   const revCb = useRef(onRevolution); revCb.current = onRevolution;
   useEffect(() => { player.onRevolution = () => revCb.current?.(); }, [player]);
 
+  // Canlı gösterge (Adım 1): çalınan her notanın verisi. Ekranda her adımda; ekran okuyucuya (aria-live) en fazla 2.5 sn'de bir.
+  const [nowLines, setNowLines] = useState<string[]>([]);
+  const [liveLine, setLiveLine] = useState('');
+  const lastLive = useRef(0);
+  const langRef = useRef(lang); langRef.current = lang;
+  useEffect(() => {
+    player.onEvents = (events, b) => {
+      const F = frameRef.current; if (!F) return;
+      const lines = [...events.map((e) => formatEvent(e, langRef.current)), ...beamSilences(F, b).map((s) => `${s.label}: ${formatSilent(s.bearing, langRef.current)}`)];
+      if (!lines.length) return; // bu adımda sırası gelen katman yok (ritim) — gösterge son notada kalır
+      setNowLines(lines);
+      const now = Date.now();
+      if (now - lastLive.current > 2500) { lastLive.current = now; setLiveLine(lines.join('. ')); }
+    };
+    return () => { player.onEvents = null; };
+  }, [player]);
+
   // konuşma bitince (ya da kesilince) "özet/lejant sürüyor" durumunu kapat
   useEffect(() => speech.onChange((active) => { if (!active) setTalking((t) => (t === 'summary' ? null : t)); }), []);
 
@@ -51,7 +68,7 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, lang, annou
   /** Özeti ve lejantı sustur (radar çalmaya devam eder). */
   const hush = useCallback(() => { legendRun.current++; speech.stop(); setLegend(null); setTalking(null); }, []);
 
-  const stop = useCallback(() => { player.stop(); setPlaying(false); }, [player]);
+  const stop = useCallback(() => { player.stop(); setPlaying(false); setLiveLine(''); }, [player]);
   const play = useCallback(() => {
     if (!P) return;
     if (!layers.length) { announce(en ? 'No layer is on. Turn on at least one layer.' : 'Hiç katman açık değil. En az bir katmanı aç.'); return; }
@@ -150,5 +167,5 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, lang, annou
     return { layer: first.layer, center: c, maxDir: ex ? compass8(ex.bearing, lang) : null, maxVal: ex?.v ?? NaN };
   }, [computed, P, lang]);
 
-  return { playing, play, stop, toggle, revSec, setRevSec, legend, runLegend, summary, stepBeam, angle, computed, headline, P, talking, hush };
+  return { playing, play, stop, toggle, revSec, setRevSec, legend, runLegend, summary, stepBeam, angle, computed, headline, P, talking, hush, nowLines, liveLine };
 }

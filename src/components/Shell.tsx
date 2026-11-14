@@ -79,6 +79,9 @@ export interface NowProps {
   instruments: { id: string; label: string; instrument: string; color: string }[];
   rangeKm: number; setRange: (km: number) => void; revSec: number; setRevSec: (s: number) => void; mode: Mode; setMode: (m: Mode) => void;
   legend: string | null;
+  /** Canlı gösterge: şu an çalan notaların verisi (her adımda) ve ekran okuyucu satırı (seyreltilmiş). */
+  nowLines?: string[];
+  liveLine?: string;
   children?: React.ReactNode;
 }
 const RANGES = [500, 2000, 5000];
@@ -96,6 +99,13 @@ export function NowCard(p: NowProps) {
           <span className="small muted">{p.headline.when}</span>
         </div>
       )}
+      {p.playing && p.nowLines && p.nowLines.length > 0 && (
+        <div className="nowline" aria-hidden="true">
+          <span className="eyebrow">{lang === 'en' ? 'Sounding now (data → note)' : 'Şu an çalan (veri → nota)'}</span>
+          {p.nowLines.map((l, i) => <span key={i} className="nowline-item">{l}</span>)}
+        </div>
+      )}
+      <p className="sr" aria-live="polite" aria-atomic="true">{p.playing ? p.liveLine : ''}</p>
       <div className="btn-row">
         <button type="button" className="btn primary" onClick={p.onToggle} aria-keyshortcuts="Space">{p.playing ? <IconPause /> : <IconPlay />} {p.playing ? tr(lang, 'stop') : tr(lang, 'play')}</button>
         <button type="button" className="btn" onClick={p.onLegend} aria-pressed={p.talking === 'legend'} aria-keyshortcuts="L">{p.talking === 'legend' ? <IconPause /> : <IconHeadphones />} {p.talking === 'legend' ? tr(lang, 'stopLegend') : `${tr(lang, 'legend')} (L)`}</button>

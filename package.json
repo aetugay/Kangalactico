@@ -12,7 +12,8 @@
     "data:co2": "node scripts/co2.mjs",
     "test:sound": "node scripts/test-sound.mjs",
     "test:worlds": "node scripts/test-worlds.mjs",
-    "forecast": "node scripts/forecast.mjs"
+    "forecast": "node scripts/forecast.mjs",
+    "sounds": "node scripts/sounds.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

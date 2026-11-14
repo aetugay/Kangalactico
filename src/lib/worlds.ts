@@ -20,6 +20,7 @@ export const WORLD_PART: Record<World, { every: number; gate: number }> = {
 /** Sentez parametreleri (motor bunları seslendirir). Aynı girdi → aynı parametre (rastgele olaylar da seed'e bağlı). */
 export interface WorldParams {
   world: World;
+  t: number;          // değerin küresel ölçekteki yeri 0..1 (kayıtlı seslerde hafif ↔ şiddetli geçiş)
   level: number;      // genel şiddet 0..1 (uzaklık dahil)
   cutoff: number;     // alçak geçiren üst sınır Hz (uzaklıkla düşer: boğuklaşma)
   rate: number;       // ayrık olay sıklığı (olay/sn): kum tanesi, çıtırtı, çakma, kuş, buz çatırtısı
@@ -34,7 +35,7 @@ export function worldParams(world: World, v: number, t: number, dist: number): W
   const near = 1 - 0.65 * dist;                 // uzakta daha kısık
   const muffle = 1 - 0.75 * dist;               // uzakta daha boğuk
   const p = (level: number, cutoff: number, rate: number, sharp: number, mix: Record<string, number> = {}, delay = 0): WorldParams =>
-    ({ world, level: +clamp(level * near).toFixed(4), cutoff: Math.round(Math.max(120, cutoff * muffle)), rate: +rate.toFixed(3), sharp: +clamp(sharp).toFixed(3), delay: +delay.toFixed(3), mix });
+    ({ world, t: +clamp(t).toFixed(3), level: +clamp(level * near).toFixed(4), cutoff: Math.round(Math.max(120, cutoff * muffle)), rate: +rate.toFixed(3), sharp: +clamp(sharp).toFixed(3), delay: +delay.toFixed(3), mix });
   switch (world) {
     case 'dust': return p(0.25 + 0.75 * t, 2200 + 3800 * t, 4 + 40 * t * t, 0.3 + 0.7 * t);                  // kum fırtınası: hışırtı + savrulan taneler
     case 'smoke': return p(0.25 + 0.75 * t, 3000 + 3000 * t, 2 + 22 * t, 0.4 + 0.6 * t);                     // yangın: çıtırtı + alçak uğultu

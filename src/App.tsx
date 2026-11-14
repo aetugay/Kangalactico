@@ -8,6 +8,7 @@ import { WorldThemes } from './components/WorldThemes.tsx';
 import { Weather } from './components/Weather.tsx';
 import { Forecast, spokenDetail, spokenSummary } from './lib/forecast.ts';
 import { WORLD_OF, describeWorld } from './lib/worlds.ts';
+import { soundBank, WEATHER_SOUNDS, WORLD_SOUNDS } from './audio/soundbank.ts';
 import { DEFAULT_MIX, EventsDialog, Explore, instrumentName, SoundDialog, StoriesDialog, type EarthEvent, type Mix, type StoryInfo } from './components/Extras.tsx';
 import { PlacePicker } from './components/PlacePicker.tsx';
 import { isFormTarget, shortcutAllowed } from './lib/keys.ts';
@@ -103,7 +104,7 @@ export default function App() {
   const loadWx = () => { if (!wxLoad.current) wxLoad.current = Forecast.load(BASE).then((f) => { setWx(f); return f; }).catch((e) => { setWxErr(String(e)); wxLoad.current = null; throw e; }); return wxLoad.current; };
   /** Hava durumunu aç ve kısa anlatımı söyle (yer: verilen ya da seçili). */
   const openWeather = (t: (LatLon & { name: string }) | null) => {
-    setWxTarget(t); setWxOpen(true);
+    setWxTarget(t); setWxOpen(true); void soundBank.load(BASE, WEATHER_SOUNDS);
     if (!t) return;
     loadWx().then((f) => { announce(spokenSummary(f, t.name, t, langRef.current)); }).catch(() => announce(langRef.current === 'en' ? 'The forecast file could not be loaded.' : 'Tahmin dosyası yüklenemedi.'));
   };
@@ -265,6 +266,8 @@ export default function App() {
 
   const advanceRef = useRef(advance); advanceRef.current = advance;
   const layersRef = useRef(layers); layersRef.current = layers;
+  // kayıtlı sesler: açık ses dünyalarının dosyaları ilk açıldıklarında yüklenir (yüklenene kadar sentez çalar)
+  useEffect(() => { const names = [...new Set(layers.flatMap((l) => { const w = WORLD_OF[l.id]; return w ? WORLD_SOUNDS[w] : []; }))]; if (names.length) void soundBank.load(BASE, names); }, [layers]);
   const anyM24RefOn = useRef(false); anyM24RefOn.current = anyM24On;
   // zaman uyumsuz akışların (hikâye, anlatıcı, tur geri çağrısı) güncel durumu okuması için
   const live2 = useRef({ compare: false, story: null as string | null, narrator: false, place: null as Place | null, placeB: null as Place | null, co2, temp, aer, cities, rangeKm, month, tFrame, lang });
@@ -941,6 +944,9 @@ export default function App() {
     { title: lang === 'tr' ? 'Aylık katmanlar (paket sürüm 3)' : 'Monthly layers (package v3)', text: lang === 'tr' ? 'NASA GES DISC: MERRA-2 (M2TMNXAER SO2SMASS, TOTEXTTAU; M2TMNXSLV T2M, TS, TO3; M2TMNXRAD ALBEDO; M2TMNXOCN TSKINWTR, FRSEAICE; M2TMNXLND PRECTOTLAND, TWLAND, LAI) ve OCO-2 GEOS L3 CO₂ (OCO2_GEOS_L3CO2_DAY) 2021; MERRA-2 2024; 2° × 2.5°. Ekibimizden Ceyhun hazırladı; yalnız veri denetiminden geçen katmanlar.' : 'NASA GES DISC: MERRA-2 (M2TMNXAER SO2SMASS, TOTEXTTAU; M2TMNXSLV T2M, TS, TO3; M2TMNXRAD ALBEDO; M2TMNXOCN TSKINWTR, FRSEAICE; M2TMNXLND PRECTOTLAND, TWLAND, LAI) and OCO-2 GEOS L3 CO₂ (OCO2_GEOS_L3CO2_DAY) 2021; MERRA-2 2024; 2° × 2.5°. Prepared by our team member Ceyhun; only layers that passed our data audit.', href: 'https://disc.gsfc.nasa.gov/' },
     { title: lang === 'tr' ? 'Şehirler' : 'Cities', text: 'GeoNames (geonames.org), CC BY 4.0' },
     { title: lang === 'tr' ? 'Taban Dünya görüntüsü (3B küre)' : 'Base Earth image (3D globe)', text: lang === 'tr' ? 'NASA Earth Observatory, Blue Marble: Next Generation (Reto Stöckli, NASA GSFC), Aralık 2004; 5400×2700 görüntüden 4096×2048 / 2048×1024. Yalnız altlık; veri değildir.' : 'NASA Earth Observatory, Blue Marble: Next Generation (Reto Stöckli, NASA GSFC), December 2004; resized from 5400×2700 to 4096×2048 / 2048×1024. Base map only, not data.', href: 'https://earthobservatory.nasa.gov/features/BlueMarble' },
+    { title: lang === 'tr' ? 'Sesler: buz çatırtısı' : 'Sounds: ice cracking', text: 'Gregor Quendel — "Ice Effects Sequences 15 (Breaking, Cracking)" (Freesound 422117) ve "Ice Cracking Sequence" (Freesound 424993), CC BY 4.0. İşlendi: mono, ses düzeyi eşitlendi, kırpıldı.', href: 'https://freesound.org/people/GregorQuendel/' },
+    { title: lang === 'tr' ? 'Sesler: kayıtlar' : 'Sounds: recordings', text: lang === 'tr' ? 'Blackatom Productions — ses kayıtları (hangi dosyalar ve lisans: eklenecek).' : 'Blackatom Productions — sound recordings (files and license: to be added).' },
+    { title: lang === 'tr' ? 'Sesler: diğer' : 'Sounds: other', text: lang === 'tr' ? 'Kamp ateşi, orman yangını, kum fırtınası, rüzgâr, dalga, orman, cırcır böceği, yağmur, fırtına, uzak gök gürültüsü, karda ayak sesi — kaynak ve lisans bilgisi eklenecek. Şehir trafiği, kalabalık, ağustos böceği ve volkan sesleri tarayıcıda sentezlenir (Web Audio).' : 'Campfire, wildfire, sandstorm, wind, waves, forest, crickets, rain, thunderstorm, distant thunder, footsteps in snow — source and license to be added. City traffic, crowd, cicadas and volcano are synthesized in the browser (Web Audio).' },
     { title: lang === 'tr' ? 'Kara poligonları (görsel kırpma)' : 'Land polygons (visual clipping)', text: lang === 'tr' ? 'Natural Earth 1:50m Land, kamu malı — yalnız karada / yalnız denizde tanımlı katmanların görüntüsünü kıyıdan kırpmak için; ses gerçek veri hücrelerini kullanır.' : 'Natural Earth 1:50m Land, public domain — only to clip land-only / sea-only layers at the coast in the display; sound uses the real data cells.', href: 'https://www.naturalearthdata.com/' },
     { title: lang === 'tr' ? 'Kıyı çizgileri (3B küre)' : 'Coastlines (3D globe)', text: lang === 'tr' ? 'Natural Earth 1:50m Coastline, kamu malı (naturalearthdata.com). Yalnız altlık; veri katmanlarının çözünürlüğü değişmez.' : 'Natural Earth 1:50m Coastline, public domain (naturalearthdata.com). Base map only; data layer resolution is unchanged.', href: 'https://www.naturalearthdata.com/' },
   ];

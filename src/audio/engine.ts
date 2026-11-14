@@ -1,5 +1,6 @@
 import { INSTRUMENT_OF } from '../lib/radar.ts';
 import { worldParams, type WorldParams } from '../lib/worlds.ts';
+import { soundBank } from './soundbank.ts';
 // Web Audio motoru (demo/index.html'den taşındı). Tek örnek: `engine`.
 // Ses yalnızca kullanıcı dokunuşu içinde unlock() çağrılınca başlar.
 
@@ -384,6 +385,48 @@ class AudioEngine {
     /** dur içinde rate (olay/sn) kadar olayı seed'li zamanlara dağıt. */
     const events = (rate: number, fn: (t: number, k: number) => void) => { const n = Math.round(rate * dur); for (let k = 0; k < n; k++) fn(when + rnd() * dur, k); };
     const L = p.level, atk = Math.min(0.25, dur * 0.3), rel = Math.min(0.35, dur * 0.4);
+    // ---- KAYDEDİLMİŞ SESLER (public/sounds; yüklendiyse): yoğunluğa göre hafif ↔ şiddetli geçiş. Yoksa aşağıdaki SENTEZ.
+    const SB = soundBank, T = p.t;
+    /** Döngü: seed'li bir noktadan başlar, zarfla girer/çıkar (üst üste binen olaylar kesintisiz doku oluşturur). */
+    const loopS = (name: string, peak: number) => {
+      const buf = SB.get(name); if (!buf || peak <= 0.002) return;
+      const b = SB.bounds(name), s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.loopStart = b.start; s.loopEnd = b.end;
+      const g = ac.createGain(); s.connect(g).connect(bus);
+      g.gain.setValueAtTime(0.0001, when); g.gain.linearRampToValueAtTime(peak, when + atk); g.gain.setValueAtTime(peak, Math.max(when + atk, end - rel)); g.gain.linearRampToValueAtTime(0.0001, end);
+      s.start(when, b.start + rnd() * (b.end - b.start - 0.05)); s.stop(end + 0.05);
+    };
+    /** Tek seferlik: tamamı (gök gürültüsü) ya da seed'li kısa dilim (buz çatırtısı). */
+    const shotS = (name: string, t0: number, peak: number, len?: number) => {
+      const buf = SB.get(name); if (!buf) return;
+      const s = ac.createBufferSource(); s.buffer = buf; const g = ac.createGain(); s.connect(g).connect(bus);
+      const off = len ? rnd() * Math.max(0, buf.duration - len) : 0, L2 = len ?? buf.duration;
+      g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0 + 0.01); g.gain.setValueAtTime(peak, t0 + L2 * 0.7); g.gain.linearRampToValueAtTime(0.0001, t0 + L2);
+      s.start(t0, off, L2 + 0.05);
+    };
+    let sampledHeat = false;
+    switch (p.world) {
+      case 'dust': if (SB.has('toz_hafif', 'toz_siddetli')) { loopS('toz_hafif', 0.9 * L * (1 - T)); loopS('toz_siddetli', 0.9 * L * T); return; } break;
+      case 'smoke': if (SB.has('ates_kucuk', 'ates_buyuk')) { loopS('ates_kucuk', 0.9 * L * (1 - T)); loopS('ates_buyuk', 0.9 * L * T); return; } break;
+      case 'spray': if (SB.has('deniz_serpinti')) { loopS('deniz_serpinti', 0.8 * L); return; } break;
+      case 'thunder': if (SB.has('gok_yakin_1', 'gok_yakin_2', 'gok_yakin_3', 'gok_uzak_1', 'gok_uzak_2')) { // olay tetikleyici: rastgele varyant; yakın = sert, uzak = boğuk + gecikmeli
+        const n = Math.max(1, Math.round(p.rate * dur));
+        for (let k = 0; k < n; k++) shotS(p.sharp > 0.55 ? `gok_yakin_${1 + Math.floor(rnd() * 3)}` : `gok_uzak_${1 + Math.floor(rnd() * 2)}`, when + p.delay + rnd() * dur * 0.8, 0.9 * L);
+        return;
+      } break;
+      case 'forest': if (SB.has('orman_kus', 'yaprak_hisirti', 'ruzgar_hafif')) {
+        const { leaves = 0, birds = 0, wind = 0 } = p.mix; loopS('orman_kus', 0.85 * L * birds); loopS('yaprak_hisirti', 0.6 * L * Math.max(leaves, 0.15)); loopS('ruzgar_hafif', 0.7 * L * wind); return;
+      } break;
+      case 'ocean': if (SB.has('dalga_sakin', 'dalga_sert')) {
+        const { cold = 0, ice = 0 } = p.mix; loopS('dalga_sakin', 0.85 * L * (1 - cold)); loopS('dalga_sert', 0.85 * L * cold);
+        if (ice > 0.02 && SB.has('buz_catirti_1', 'buz_catirti_2')) events(p.rate, (t) => shotS(`buz_catirti_${1 + Math.floor(rnd() * 2)}`, t, 0.7 * L * ice, 0.8));
+        return;
+      } break;
+      case 'heat': if (SB.has('kis_ruzgari', 'ruzgar_hafif')) { // buz + esinti kayıtlı; sıcak (ağustos böceği) dosyası yok → aşağıda sentez
+        const { icy = 0, breeze = 0 } = p.mix; loopS('kis_ruzgari', 0.8 * L * icy); loopS('ruzgar_hafif', 0.6 * L * breeze);
+        if (icy > 0.02 && SB.has('buz_catirti_1', 'buz_catirti_2')) events(p.rate, (t) => shotS(`buz_catirti_${1 + Math.floor(rnd() * 2)}`, t, 0.6 * L * icy, 0.7));
+        sampledHeat = true;
+      } break;
+    }
     switch (p.world) {
       case 'dust': // kum fırtınası: geniş hışırtı + rüzgâr savruluşu + savrulan kum taneleri
         noise('bandpass', 2600 + 1200 * p.sharp, 0.7, 0.10 * L, atk, rel);
@@ -435,8 +478,8 @@ class AudioEngine {
       }
       case 'heat': { // soğuk: buzlu ıslıklı rüzgâr + buz çatırtısı · ılık: yumuşak esinti · sıcak: ağustos böcekleri + titreşen hava
         const { icy = 0, hot = 0, breeze = 0 } = p.mix;
-        if (icy > 0.02) { noise('bandpass', 1300, 4, 0.10 * L * icy, atk, rel); events(p.rate, (t) => click(t, 4200 + 1500 * rnd(), 0.02, 0.08 * L * icy)); }
-        if (breeze > 0.02) noise('lowpass', 600, 0.4, 0.07 * L * breeze, atk, rel);
+        if (icy > 0.02 && !sampledHeat) { noise('bandpass', 1300, 4, 0.10 * L * icy, atk, rel); events(p.rate, (t) => click(t, 4200 + 1500 * rnd(), 0.02, 0.08 * L * icy)); }
+        if (breeze > 0.02 && !sampledHeat) noise('lowpass', 600, 0.4, 0.07 * L * breeze, atk, rel);
         if (hot > 0.02) {
           const { g } = noise('bandpass', 4800, 9, 0.16 * L * hot, atk, rel);
           const lfo = ac.createOscillator(); lfo.frequency.value = 24 + 10 * hot; const d = ac.createGain(); d.gain.value = 0.12 * L * hot;
@@ -469,7 +512,23 @@ class AudioEngine {
       g.gain.setValueAtTime(0.0001, when); g.gain.linearRampToValueAtTime(peak, when + atk); g.gain.setValueAtTime(peak, end - rel); g.gain.linearRampToValueAtTime(0.0001, end);
       s.start(when, rnd() * 1.5); s.stop(end + 0.05); return g;
     };
-    if (sc.rain > 0.01) { // yağmur: sürekli hışırtı + damlalar (stereo dağınık)
+    const SB = soundBank;
+    const loopW = (name: string, peak: number) => { // kayıtlı döngü (orta, stereo değil)
+      const buf = SB.get(name); if (!buf || peak <= 0.002) return;
+      const b = SB.bounds(name), s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.loopStart = b.start; s.loopEnd = b.end;
+      const g = ac.createGain(); s.connect(g).connect(out);
+      g.gain.setValueAtTime(0.0001, when); g.gain.linearRampToValueAtTime(peak, when + 0.8); g.gain.setValueAtTime(peak, end - 1.2); g.gain.linearRampToValueAtTime(0.0001, end);
+      s.start(when, b.start + rnd() * (b.end - b.start - 0.05)); s.stop(end + 0.05);
+    };
+    const r = sc.rain;
+    if (r > 0.01 && SB.has('yagmur_cisenti', 'yagmur_orta', 'yagmur_saganak')) { // çiseleme ↔ orta ↔ sağanak (üçlü geçiş)
+      loopW('yagmur_cisenti', 0.8 * Math.max(0, 1 - r / 0.35)); loopW('yagmur_orta', 0.8 * Math.max(0, 1 - Math.abs(r - 0.45) / 0.35)); loopW('yagmur_saganak', 0.85 * Math.max(0, (r - 0.5) / 0.5));
+      sc = { ...sc, rain: 0 };
+    }
+    if (sc.snow > 0.01 && SB.has('kar', 'ruzgar_hafif')) { loopW('kar', 0.4 + 0.4 * sc.snow); loopW('ruzgar_hafif', 0.2 + 0.2 * sc.snow); sc = { ...sc, snow: 0 }; }
+    if (sc.wind > 0.05 && SB.has('ruzgar_hafif', 'ruzgar_kuvvetli')) { loopW('ruzgar_hafif', 0.7 * Math.min(1, sc.wind * 3) * (1 - sc.wind)); loopW('ruzgar_kuvvetli', 0.8 * sc.wind); sc = { ...sc, wind: 0 }; }
+    if (r < 0.02 && sc.snow < 0.02 && sc.tMean > 10 && sc.tMean < 28 && SB.has('gece_circir')) loopW('gece_circir', 0.35); // açık, ılık: cırcır böcekleri
+    if (sc.rain > 0.01) { // yağmur (sentez): sürekli hışırtı + damlalar (stereo dağınık)
       layer('highpass', 1200 + 1800 * sc.rain, 0.5, 0.05 + 0.18 * sc.rain);
       const n = Math.round(dur * (6 + 70 * sc.rain));
       for (let k = 0; k < n; k++) {

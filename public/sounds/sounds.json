@@ -1,0 +1,227 @@
+{
+ "format": "mp3 mono 44.1 kHz 128 kbps, loudnorm I=-20 LUFS",
+ "synth": [
+  "sehir_trafik",
+  "sehir_kalabalik",
+  "agustos_bocegi",
+  "volkan"
+ ],
+ "files": [
+  {
+   "name": "buz_catirti_1",
+   "kind": "shot",
+   "from": "422117__gregorquendel__ice-effects-sequences-15-breaking-cracking.wav",
+   "start": 0,
+   "seconds": 15,
+   "process": "yok",
+   "kb": 236
+  },
+  {
+   "name": "buz_catirti_2",
+   "kind": "shot",
+   "from": "424993__gregorquendel__ice-cracking-sequence.wav",
+   "start": 0,
+   "seconds": 10.59025,
+   "process": "yok",
+   "kb": 161
+  },
+  {
+   "name": "ates_kucuk",
+   "kind": "loop",
+   "from": "campfire.wav",
+   "start": 300,
+   "seconds": 30,
+   "process": "yok",
+   "kb": 470
+  },
+  {
+   "name": "ates_buyuk",
+   "kind": "loop",
+   "from": "wildfire.wav",
+   "start": 3,
+   "seconds": 30,
+   "process": "yok",
+   "kb": 470
+  },
+  {
+   "name": "toz_siddetli",
+   "kind": "loop",
+   "from": "sandstormmix.mp3",
+   "start": 100,
+   "seconds": 40,
+   "process": "yok",
+   "kb": 626
+  },
+  {
+   "name": "toz_hafif",
+   "kind": "loop",
+   "from": "sandstormmix.mp3",
+   "start": 100,
+   "seconds": 40,
+   "process": "lowpass=f=1600,volume=-9dB",
+   "kb": 626
+  },
+  {
+   "name": "ruzgar_kuvvetli",
+   "kind": "loop",
+   "from": "wind.mp3",
+   "start": 40,
+   "seconds": 35,
+   "process": "yok",
+   "kb": 548
+  },
+  {
+   "name": "ruzgar_hafif",
+   "kind": "loop",
+   "from": "wind.mp3",
+   "start": 5,
+   "seconds": 35,
+   "process": "lowpass=f=1200,volume=-7dB",
+   "kb": 548
+  },
+  {
+   "name": "kis_ruzgari",
+   "kind": "loop",
+   "from": "wind.mp3",
+   "start": 20,
+   "seconds": 35,
+   "process": "highpass=f=500,treble=g=6:f=3000,acompressor=threshold=-24dB:ratio=4:attack=5:release=80,volume=2dB",
+   "kb": 548
+  },
+  {
+   "name": "dalga_sakin",
+   "kind": "loop",
+   "from": "wave.wav",
+   "start": 20,
+   "seconds": 40,
+   "process": "yok",
+   "kb": 626
+  },
+  {
+   "name": "deniz_serpinti",
+   "kind": "loop",
+   "from": "wave.wav",
+   "start": 60,
+   "seconds": 40,
+   "process": "highpass=f=2500,volume=-3dB",
+   "kb": 626
+  },
+  {
+   "name": "dalga_sert",
+   "kind": "loop",
+   "from": "wave.wav",
+   "start": 100,
+   "seconds": 40,
+   "process": "acompressor=threshold=-26dB:ratio=5:attack=3:release=60,treble=g=4:f=2500,volume=3dB",
+   "kb": 626
+  },
+  {
+   "name": "orman_kus",
+   "kind": "loop",
+   "from": "-forest.wav",
+   "start": 30,
+   "seconds": 40,
+   "process": "yok",
+   "kb": 626
+  },
+  {
+   "name": "yaprak_hisirti",
+   "kind": "loop",
+   "from": "-forest.wav",
+   "start": 110,
+   "seconds": 40,
+   "process": "lowpass=f=2200,highpass=f=200",
+   "kb": 626
+  },
+  {
+   "name": "gece_circir",
+   "kind": "loop",
+   "from": "crickets.mp3",
+   "start": 1,
+   "seconds": 26,
+   "process": "yok",
+   "kb": 407
+  },
+  {
+   "name": "kar",
+   "kind": "loop",
+   "from": "snow-foot.mp3",
+   "start": 2,
+   "seconds": 35,
+   "process": "yok",
+   "kb": 548
+  },
+  {
+   "name": "yagmur_orta",
+   "kind": "loop",
+   "from": "rain.wav",
+   "start": 30,
+   "seconds": 40,
+   "process": "yok",
+   "kb": 626
+  },
+  {
+   "name": "yagmur_cisenti",
+   "kind": "loop",
+   "from": "rain.wav",
+   "start": 30,
+   "seconds": 40,
+   "process": "lowpass=f=5000,volume=-12dB",
+   "kb": 626
+  },
+  {
+   "name": "yagmur_saganak",
+   "kind": "loop",
+   "from": "thunderstorm.wav",
+   "start": 168,
+   "seconds": 40,
+   "process": "yok",
+   "kb": 626
+  },
+  {
+   "name": "gok_yakin_1",
+   "kind": "shot",
+   "from": "thunderstorm.wav",
+   "start": 1.45,
+   "seconds": 7,
+   "process": "yok",
+   "kb": 110
+  },
+  {
+   "name": "gok_yakin_2",
+   "kind": "shot",
+   "from": "thunderstorm.wav",
+   "start": 63.2,
+   "seconds": 7,
+   "process": "yok",
+   "kb": 110
+  },
+  {
+   "name": "gok_yakin_3",
+   "kind": "shot",
+   "from": "thunderstorm.wav",
+   "start": 238.45,
+   "seconds": 7,
+   "process": "yok",
+   "kb": 110
+  },
+  {
+   "name": "gok_uzak_1",
+   "kind": "shot",
+   "from": "lightrainthunder.wav",
+   "start": 43.25,
+   "seconds": 8,
+   "process": "yok",
+   "kb": 126
+  },
+  {
+   "name": "gok_uzak_2",
+   "kind": "shot",
+   "from": "lightrainthunder.wav",
+   "start": 54.5,
+   "seconds": 8,
+   "process": "yok",
+   "kb": 126
+  }
+ ]
+}

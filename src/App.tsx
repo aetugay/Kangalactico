@@ -5,18 +5,20 @@ import { handsFree, listener } from './audio/listen.ts';
 import { IconBars, IconBolt, IconBreath, IconGlobe, IconStrings, IconWave } from './components/icons.tsx';
 import { DataInventory } from './components/DataInventory.tsx';
 import { WorldThemes } from './components/WorldThemes.tsx';
+import { AppHeader, HelpDialog, LayerCards, PlayerBar, SettingsDialog, SidePanel, type TabId } from './components/Layout.tsx';
+import { moodOf } from './lib/music.ts';
 import { Weather } from './components/Weather.tsx';
 import { Forecast, spokenDetail, spokenSummary } from './lib/forecast.ts';
-import { WORLD_OF, describeWorld } from './lib/worlds.ts';
+import { WORLD_OF, describeWorld, legendLine, type World } from './lib/worlds.ts';
 import { soundBank, WEATHER_SOUNDS, WORLD_SOUNDS } from './audio/soundbank.ts';
 import { DEFAULT_MIX, EventsDialog, Explore, instrumentName, SoundDialog, StoriesDialog, type EarthEvent, type Mix, type StoryInfo } from './components/Extras.tsx';
 import { PlacePicker } from './components/PlacePicker.tsx';
-import { isFormTarget, shortcutAllowed } from './lib/keys.ts';
+import { isFormTarget, setShortcutsEnabled, shortcutAllowed } from './lib/keys.ts';
 import { loadLandRaster, type LandRaster } from './lib/nemask.ts';
 import { Guide, type CmdEntry, type GuideStatus } from './components/Guide.tsx';
 import { monthName } from './lib/co2.ts';
 import { RadarView } from './components/RadarView.tsx';
-import { About, Dialog, Intro, LayerPills, NowCard, Timeline, TopBar, type Pill } from './components/Shell.tsx';
+import { About, Dialog, Intro, type Pill } from './components/Shell.tsx';
 import { WorldMap } from './components/WorldMap.tsx';
 import { useRadar } from './hooks/useRadar.ts';
 import { tr, type Lang } from './i18n.ts';
@@ -26,7 +28,7 @@ import { LandMask, type LandFile } from './lib/land.ts';
 import { co2Color, loadAerosols, loadCo2, loadJson, loadLightning, loadLights, loadNdvi, loadSst, loadTemperature, type AerosolSource, type Co2Source, type LightningSource, type LightsSource, type NdviSource, type SstSource, type TemperatureSource } from './lib/layers.ts';
 import { ImageScan } from './components/ImageScan.tsx';
 import { INSTRUMENT_LABEL, M24 } from './lib/m24.ts';
-import { M24Panel } from './components/M24Panel.tsx';
+
 import { Cities, countryName, fold, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
 import { gainFor, noteHz, PARTS, type Mode, type RadarLayer, type Scale, type SoundMode } from './lib/radar.ts';
 import { landTexture, paintEquirect } from './lib/textures.ts';
@@ -95,8 +97,16 @@ export default function App() {
   const [ndviFrame, setNdviFrame] = useState(0);
   const [lightsYear, setLightsYear] = useState(11);
   const [scanOpen, setScanOpen] = useState(false);
+  // ---------- yeni düzen: sağ panel (sekmeler), ayarlar, yardım, kısayol anahtarı
+  const [panelOpen, setPanelOpenS] = useState(() => store.get('panel') !== '0' && !(typeof matchMedia !== 'undefined' && matchMedia('(max-width: 900px)').matches));
+  const setPanelOpen = (v: boolean) => { setPanelOpenS(v); store.set('panel', v ? '1' : '0'); };
+  const [panelTab, setPanelTab] = useState<TabId>('listen');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [shortcutsOn, setShortcutsOnS] = useState(() => store.get('shortcuts') !== '0');
+  useEffect(() => { setShortcutsEnabled(shortcutsOn); }, [shortcutsOn]);
+  const setShortcuts = (v: boolean) => { setShortcutsOnS(v); store.set('shortcuts', v ? '1' : '0'); };
   // ---------- Meteorolog (NASA GEOS-FP tahmini; statik dosya, internetsiz)
-  const [wxOpen, setWxOpen] = useState(false);
   const [wx, setWx] = useState<Forecast | null>(null);
   const [wxErr, setWxErr] = useState<string | null>(null);
   const [wxTarget, setWxTarget] = useState<(LatLon & { name: string }) | null>(null);
@@ -104,7 +114,7 @@ export default function App() {
   const loadWx = () => { if (!wxLoad.current) wxLoad.current = Forecast.load(BASE).then((f) => { setWx(f); return f; }).catch((e) => { setWxErr(String(e)); wxLoad.current = null; throw e; }); return wxLoad.current; };
   /** Hava durumunu aç ve kısa anlatımı söyle (yer: verilen ya da seçili). */
   const openWeather = (t: (LatLon & { name: string }) | null) => {
-    setWxTarget(t); setWxOpen(true); void soundBank.load(BASE, WEATHER_SOUNDS);
+    setWxTarget(t); setPanelTab('weather'); setPanelOpen(true); void soundBank.load(BASE, WEATHER_SOUNDS);
     if (!t) return;
     loadWx().then((f) => { announce(spokenSummary(f, t.name, t, langRef.current)); }).catch(() => announce(langRef.current === 'en' ? 'The forecast file could not be loaded.' : 'Tahmin dosyası yüklenemedi.'));
   };
@@ -157,7 +167,7 @@ export default function App() {
   };
   const anyM24On = Object.values(m24On).some(Boolean);
   /** Ceyhun'un presetleri: yalnız UYGUN katmanlar açılır, diğer aylık katmanlar kapanır; çıkarılanlar söylenir. */
-  const [activeTheme, setActiveTheme] = useState<string | null>(null);
+  const [, setActiveTheme] = useState<string | null>(null);
   const [worldTheme, setWorldTheme] = useState<string | null>(null);
   const applyWorldTheme = (i: number) => {
     const th = WORLD_THEMES[i];
@@ -166,13 +176,7 @@ export default function App() {
     const en = langRef.current === 'en';
     announce(`${en ? th.en : th.tr}: ${th.layers.map((k) => `${LAYER_UI[k].label[en ? 'en' : 'tr']} (${LAYER_UI[k].instrument[en ? 'en' : 'tr']})`).join(', ')}.`);
   };
-  const applyM24Preset = (ids: string[], name: string, removed: string[]) => {
-    setActiveTheme(name);
-    setM24On(Object.fromEntries(ids.map((id) => [id, true]))); setM24Visual(ids[0] ?? null);
-    setOn({ co2: false, temp: false, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false }); // tema = yalnız o katmanlar
-    const en = langRef.current === 'en', names = ids.map((id) => M24_NAMES[id]?.[en ? 'en' : 'tr'] ?? id).join(', ');
-    announce(en ? `${name}: ${names}.${removed.length ? ` Not included because it did not pass our data audit: ${removed.join(', ')}.` : ''}` : `${name}: ${names}.${removed.length ? ` Veri denetimimizden geçmediği için eklenmedi: ${removed.join(', ')}.` : ''}`);
-  };
+
   const m24Started = useRef(false);
   const [m24Rev, setM24Rev] = useState(0); // API yedeğinde hücreler geldikçe radar yeniden örneklesin
   useEffect(() => { if (m24) m24.onUpdate = () => setM24Rev((r) => r + 1); }, [m24]);
@@ -843,7 +847,7 @@ export default function App() {
     }
     const k = e.key.toLowerCase();
     if (k === 'c') { e.preventDefault(); setPickFor('A'); setPickOpen(true); }
-    else if (k === 'h' || e.key === '?') { e.preventDefault(); welcomed.current = true; radar.hush(); if (guideRef.current) void speech.say(helpText()); else announce(helpText()); }
+    else if (k === 'h' || e.key === '?') { e.preventDefault(); welcomed.current = true; radar.hush(); setHelpOpen(true); if (guideRef.current) void speech.say(helpText()); else announce(helpText()); }
     else if (k === 'g') { e.preventDefault(); setGuide(!guideRef.current); }
     else if (k === 'b' && place) { e.preventDefault(); setPickFor('B'); setPickOpen(true); }
     else if (k === 'y') { e.preventDefault(); setStoriesOpen(true); }
@@ -942,7 +946,6 @@ export default function App() {
   const fmtShort = (l: RadarLayer, v: number) => (Number.isNaN(v) ? '—' : l.unit === '°C' ? `${Math.round(v)} °C` : l.unit === 'ppm' ? `${v.toFixed(1)} ppm` : l.fmt(v));
   const h = radar.headline;
   const headline = h ? { label: h.layer.label, center: fmtShort(h.layer, h.center), maxDir: h.maxDir, maxVal: fmtShort(h.layer, h.maxVal), when: h.layer.when } : null;
-  const instruments = layers.map((l) => ({ id: l.id, label: l.label, instrument: l.instrument, color: l.id === 'co2' ? L('co2').color : l.id === 'temp' ? L('temp').color : l.id === 'sst' ? L('sst').color : L('aerosol').color }));
   const credits = [
     { title: lang === 'tr' ? 'Karbondioksit' : 'Carbon dioxide', text: `${co2?.grid.f.credit ?? 'Veri: NASA OCO-2 GEOS Level 3 Daily CO2 (OCO2_GEOS_L3CO2_DAY), GES DISC'}. 2021; ${lang === 'tr' ? 'aylık katmanlar ayın 1. günü; ekibimiz GES DISC verisinden üretti' : 'monthly layers are the 1st day of each month; produced by our team from GES DISC data'}.` },
     { title: lang === 'tr' ? 'Yüzey sıcaklığı' : 'Surface temperature', text: 'Visualization: NASA Scientific Visualization Studio, Joseph V. Ardizzone (NASA/GSFC); GEOS-FP (NASA GMAO)', href: 'https://svs.gsfc.nasa.gov/5147/' },
@@ -964,8 +967,68 @@ export default function App() {
     onCommand={(t) => execCommand([t], 'text')} narrator={narrator} setNarrator={setNarrator} inputRef={guideInput}
     handsFree={hfLive} handsFreeWanted={hfWanted} setHandsFreeWanted={setHfWanted} open={guideOpen} setOpen={setGuideOpen} />;
 
+  // ---------- yeni düzen: alt çalar çubuğu verileri
+  const moodNow = radar.P && radar.computed.length ? moodOf({ P: radar.P, mode, layers: radar.computed }) : null;
+  const centerDesc = (() => {
+    if (!active) return '';
+    for (const l of layers) { const w = WORLD_OF[l.id]; if (!w) continue; const v = l.sample(active); if (!Number.isNaN(v)) return describeWorld(w, v, gainFor(v, l, 'global'), lang); }
+    return '';
+  })();
+  const placeShort = active ? placeLabel(active).split(',')[0] : '';
+  const moodWord = moodNow && moodNow.energy > 0 ? (moodNow.minor ? (lang === 'en' ? 'tense' : 'gergin') : (lang === 'en' ? 'calm' : 'sakin')) : '';
+  const playerSummary = active ? [placeShort, centerDesc, moodWord].filter(Boolean).join(' · ') : (lang === 'en' ? 'Search for a place above, tap the globe or say "Earth, go to Sivas".' : 'Yukarıdan bir yer ara, Dünya\'ya dokun ya da "Dünya, Sivas\'a git" de.');
+  /** Görünen katmanın zamanı (alt çubuktaki önceki/sonraki ve ince zaman çubuğu). */
+  const timeCtl: { i: number; n: number; label: (i: number) => string; set: (i: number) => void } | null =
+    visual === 'temp' && on.temp && temp ? { i: tFrame, n: temp.frames, label: (i) => temp.dateLabel(i, lang), set: setTFrame }
+      : visual === 'sst' && on.sst && sst ? { i: sstFrame, n: sst.frames, label: (i) => sst.dateLabel(i, lang), set: (f) => { setSstFrame(f); try { video.currentTime = f / sst.file.frames.fps; } catch { /* video hazır değil */ } } }
+        : visual === 'ndvi' && on.ndvi && ndvi ? { i: ndviFrame, n: ndvi.frames, label: (i) => ndvi.dateLabel(i, lang), set: setNdviFrame }
+          : visual === 'lights' && on.lights && lights ? { i: lightsYear, n: lights.years.length, label: (i) => String(lights.years[i]), set: setLightsYear }
+            : on.co2 && co2 ? { i: month, n: 12, label: (i) => co2.monthLabel(i, lang), set: setMonth } : null;
+  const stepTime = (d: number) => { if (!timeCtl) return; const i = Math.max(0, Math.min(timeCtl.n - 1, timeCtl.i + d)); timeCtl.set(i); announce(timeCtl.label(i)); };
+  const WORLD_OF_LAYER: Partial<Record<LayerId, World>> = { temp: 'heat', sst: 'ocean', aerosol: 'dust', ndvi: 'forest', lights: 'city', lightning: 'thunder' };
+  const layerInfo = (id: string) => {
+    const pill = pills.find((x) => x.id === id), w = WORLD_OF_LAYER[id as LayerId];
+    const extra = id === 'lightning' ? (lang === 'tr' ? ' ISS LIS 2017–2023 toplamı (kareler tarihsiz).' : ' ISS LIS 2017–2023 total (frames undated).') : id === 'aerosol' ? (lang === 'tr' ? ' 19 Ağu 2025 20:00 UTC; yoğunluk göreli. Toz = kum fırtınası, kara karbon = yangın, deniz tuzu = serpinti, sülfat = volkan uğultusu.' : ' 19 Aug 2025 20:00 UTC; relative density. Dust = sandstorm, black carbon = fire, sea salt = spray, sulfate = volcanic rumble.') : '';
+    return <>{pill?.note && <b>{pill.note}. </b>}{w ? legendLine(w, lang) : ''}{extra}</>;
+  };
+  const wxShown = wxTarget ?? (place ? { ...place, name: placeLabel(place).split(',')[0] } : null);
+  const listenTab = (
+    <>
+      <WorldThemes lang={lang} active={worldTheme} onPick={applyWorldTheme} />
+      <h3 className="sec-title">{lang === 'en' ? 'Sound worlds — from NASA EIC visualizations' : 'Ses dünyaları — NASA EIC görsellerinden'}</h3>
+      <LayerCards lang={lang} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }} info={layerInfo} />
+      <button type="button" className="btn scan-btn" onClick={() => setScanOpen(true)}>{lang === 'tr' ? '🌳 Orman yüksekliğini dinle (GEDI küre görseli)' : '🌳 Listen to forest height (GEDI globe visual)'}</button>
+      <details className="adv">
+        <summary>{lang === 'en' ? 'Advanced' : 'Gelişmiş'}</summary>
+        <fieldset className="fs"><legend>{tr(lang, 'range')}</legend>
+          <div className="seg">{[500, 2000, 5000].map((km) => <label key={km} className={km === rangeKm ? 'on' : ''}><input type="radio" name="range" value={km} checked={km === rangeKm} onChange={() => { setRange(km); announce(lang === 'en' ? `Range ${km} kilometers.` : `Menzil ${km} kilometre.`); }} />{formatKm(km)}</label>)}</div>
+        </fieldset>
+        <fieldset className="fs"><legend>{lang === 'en' ? 'Note scale' : 'Nota ölçeği'}</legend>
+          <div className="seg">{(['local', 'global'] as Scale[]).map((s) => <label key={s} className={s === scale ? 'on' : ''}><input type="radio" name="scale" value={s} checked={s === scale} onChange={() => setScale(s)} />{s === 'local' ? (lang === 'en' ? 'Local' : 'Yerel') : (lang === 'en' ? 'Global' : 'Küresel')}</label>)}</div>
+          {radar.scaleInfo.length > 0 && <p className="small muted">{radar.scaleInfo.join(' · ')}</p>}
+        </fieldset>
+        <label className="lbl-inline">{tr(lang, 'speed')} <select value={radar.revSec} onChange={(e) => radar.setRevSec(+e.target.value)}><option value={12}>12 s</option><option value={8}>8 s</option><option value={5}>5 s</option></select></label>
+        <label className="switch set-row"><input type="checkbox" checked={showCells} onChange={(e) => setShowCells(e.target.checked)} /> <span>{lang === 'en' ? 'Show data cells' : 'Veri hücrelerini göster'}</span></label>
+        {on.temp && temp && <div className="sub-time"><label htmlFor="t-date" className="small">{lang === 'tr' ? 'Sıcaklık tarihi' : 'Temperature date'}</label><select id="t-date" value={tFrame} onChange={(e) => { const f = +e.target.value; setTFrame(f); announce(temp.dateLabel(f, lang)); }}>{Array.from({ length: temp.frames }, (_, f) => <option key={f} value={f}>{temp.dateLabel(f, lang)}</option>)}</select></div>}
+        {on.sst && sst && <div className="sub-time"><label htmlFor="s-date" className="small">{lang === 'tr' ? 'Okyanus tarihi (ECCO2 modeli)' : 'Ocean date (ECCO2 model)'}</label><select id="s-date" value={sstFrame} onChange={(e) => { const f = +e.target.value; setSstFrame(f); try { video.currentTime = f / sst.file.frames.fps; } catch { /* video hazır değil */ } announce(sst.dateLabel(f, lang)); }}>{Array.from({ length: sst.frames }, (_, f) => <option key={f} value={f}>{`${sst.dateLabel(f, lang)} · ${f + 1}/${sst.frames}`}</option>)}</select></div>}
+        {on.ndvi && ndvi && <div className="sub-time"><label htmlFor="n-frame" className="small">{lang === 'tr' ? 'NDVI karesi' : 'NDVI frame'}: {ndvi.dateLabel(ndviFrame, lang)}</label><input id="n-frame" type="range" min={0} max={ndvi.frames - 1} value={ndviFrame} aria-valuetext={ndvi.dateLabel(ndviFrame, lang)} onChange={(e) => setNdviFrame(+e.target.value)} /></div>}
+        {on.lights && lights && <div className="sub-time"><label htmlFor="l-year" className="small">{lang === 'tr' ? 'Gece ışıkları yılı' : 'Night lights year'}: {lights.years[lightsYear]}</label><input id="l-year" type="range" min={0} max={lights.years.length - 1} value={lightsYear} aria-valuetext={String(lights.years[lightsYear])} onChange={(e) => { setLightsYear(+e.target.value); announce(String(lights.years[+e.target.value])); }} /></div>}
+        {on.co2 && <label className="switch set-row"><input type="checkbox" checked={advance} onChange={(e) => setAdvance(e.target.checked)} /> <span>{tr(lang, 'advance')}</span></label>}
+      </details>
+    </>
+  );
+  const exploreTab = place ? (
+    <Explore lang={lang} placeA={placeLabel(place)} placeB={placeB ? placeLabel(placeB) : null} compare={compare}
+      setCompare={(v) => { setCompare(v); setCmpTurn(0); announce(v ? (lang === 'en' ? 'Listening in turns: one sweep for A, one sweep for B. Time stays fixed.' : 'Sırayla dinleme açık: bir tur A, bir tur B. Zaman sabit kalır.') : (lang === 'en' ? 'Listening in turns off.' : 'Sırayla dinleme kapalı.')); }}
+      onPickB={() => { setPickFor('B'); setPickOpen(true); }} onClearB={() => { setPlaceB(null); setCompare(false); setCmpTurn(0); }} onDiff={sayDiff}
+      onStories={() => setStoriesOpen(true)} onEvents={openEvents} onSound={() => setSoundOpen(true)}
+      narrator={narrator} setNarrator={setNarrator} story={story} onStopStory={stopStory} showNarrator={false} />
+  ) : <p className="small">{lang === 'en' ? 'Choose a place first: search above or tap the globe.' : 'Önce bir yer seç: yukarıdan ara ya da Dünya\'ya dokun.'}</p>;
+  const weatherTab = <Weather inline open={false} music={soundMode !== 'nature'} nature={soundMode !== 'music'} onClose={() => {}} lang={lang} forecast={wx} error={wxErr} target={wxShown} announce={announce} />;
+  useEffect(() => { if (panelTab === 'weather') void loadWx().catch(() => {}); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [panelTab]);
+
   return (
-    <div className={`app${view3d ? ' is3d' : ' is2d'}`}>
+    <div className={`app${view3d ? ' is3d' : ' is2d'}${panelOpen ? ' panel-open' : ''}`}>
       {!started && (
         <div className="start-gate" lang={lang}>
           <h1 id="gate-h">{lang === 'en' ? 'Press any key or tap anywhere to start.' : 'Başlamak için herhangi bir tuşa basın ya da ekranın herhangi bir yerine dokunun.'}</h1>
@@ -974,101 +1037,46 @@ export default function App() {
           <p className="gate-note">{lang === 'en' ? 'It will listen to your voice. Headphones recommended.' : 'Sesinizi dinleyecek. Kulaklık önerilir.'}</p>
         </div>
       )}
-      {view3d && (
-        <Globe3D source={globeSource} landCanvas={landCanvas} baseUrl={`${BASE}media/bluemarble_${isTouchDevice ? 2048 : 4096}.jpg`} center={active} rangeKm={rangeKm} angle={radar.angle} level={() => engine.level()}
-          reducedMotion={reduced} onPick={(p) => pickPoint(p, 'harita')} onHover={onHover}
-          onSlow={() => { if (forced !== '3d') { setView3dS(false); setSlowNote(true); } }} />
-      )}
 
-      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => { setPickFor('A'); setPickOpen(true); }} onAbout={() => setAboutOpen(true)} hasPlace={!!place} guide={guide} setGuide={setGuide} listening={listening} onTalk={() => talk()} micSupported={listener.supported} onWeather={() => openWeather(place ? { ...place, name: placeLabel(place).split(',')[0] } : null)} />
+      <AppHeader lang={lang} listening={listening} micSupported={listener.supported} onTalk={() => talk()}
+        search={<PlacePicker compact cities={cities} place={place} onPick={(p) => setPlace(p)} announce={announce} lang={lang} />}
+        onWeather={() => openWeather(place ? { ...place, name: placeLabel(place).split(',')[0] } : null)} onSettings={() => setSettingsOpen(true)} onAbout={() => setAboutOpen(true)} onHelp={() => setHelpOpen(true)} />
 
-      <main className="stage">
+      <main className="stage" aria-label={lang === 'en' ? 'Earth' : 'Dünya'}>
+        {view3d && (
+          <Globe3D source={globeSource} landCanvas={landCanvas} baseUrl={`${BASE}media/bluemarble_${isTouchDevice ? 2048 : 4096}.jpg`} center={active} rangeKm={rangeKm} angle={radar.angle} level={() => engine.level()}
+            reducedMotion={reduced} onPick={(p) => pickPoint(p, 'harita')} onHover={onHover}
+            onSlow={() => { if (forced !== '3d') { setView3dS(false); setSlowNote(true); } }} />
+        )}
         {!audioOk && <p role="alert" className="glass alert">{lang === 'tr' ? 'Ses başlatılamadı. Sessiz modu kapat, sesi aç ve bir düğmeye tekrar dokun.' : 'Audio could not start. Turn off silent mode, raise the volume and tap a button again.'}</p>}
         {err && <p role="alert" className="glass alert">{err}</p>}
         {slowNote && <p role="status" className="glass note">{tr(lang, 'fallback')}</p>}
-
-        {!place && <div className="right-col">{guidePanel}</div>}
         {!place && <Intro lang={lang} onPick={() => { setPickFor('A'); setPickOpen(true); }} onTalk={listener.supported ? () => talk() : undefined} />}
         {place && dataRes && (
-          <div className="glass data-res" role="group" aria-label={lang === 'en' ? 'Data resolution' : 'Veri çözünürlüğü'}>
-            <span>{lang === 'en' ? 'Data resolution' : 'Veri çözünürlüğü'}: <b>~{dataRes.km} km</b> <small className="muted">({dataRes.cell}{showCells ? '' : lang === 'en' ? ', smoothed for display; sound uses the real cells' : ', görüntüde yumuşatıldı; ses gerçek hücreleri kullanır'})</small></span>
-            <label className="switch small"><input type="checkbox" checked={showCells} onChange={(e) => setShowCells(e.target.checked)} /> <span>{lang === 'en' ? 'Show data cells' : 'Veri hücrelerini göster'}</span></label>
+          <div className="data-res" role="group" aria-label={lang === 'en' ? 'Data resolution' : 'Veri çözünürlüğü'}>
+            <span title={showCells ? '' : lang === 'en' ? 'smoothed for display; sound uses the real cells' : 'görüntüde yumuşatıldı; ses gerçek hücreleri kullanır'}>{lang === 'en' ? 'Data' : 'Veri'} ~{dataRes.km} km ({dataRes.cell})</span>
+            <label className="switch small"><input type="checkbox" checked={showCells} onChange={(e) => setShowCells(e.target.checked)} /> <span>{lang === 'en' ? 'cells' : 'hücreler'}</span></label>
           </div>
         )}
         {(listening || heard) && <p role="status" className="glass note heard">{listening ? tr(lang, 'listening') : `“${heard}”`}</p>}
-
         {!view3d && (
           <section className={`flat${place ? '' : ' empty'}`} aria-label={lang === 'tr' ? '2D harita ve radar' : '2D map and radar'}>
             {active && <div className="flat-radar"><RadarView center={active} rangeKm={rangeKm} paint={paintVis} paintKey={paintKey} angle={radar.angle} land={land} /></div>}
             <div className="flat-map"><WorldMap paint={paintVis} paintKey={paintKey} land={land} center={active} rangeKm={rangeKm} onPick={(p) => pickPoint(p, 'harita')} onHover={onHover} /></div>
           </section>
         )}
-
-        {place && (
-          <>
-            <NowCard lang={lang} placeLabel={(compare && placeB ? (active === placeB ? 'B · ' : 'A · ') : '') + placeLabel(active ?? place)} playing={radar.playing} onToggle={radar.toggle} onLegend={radar.runLegend} 
-              onSummary={radar.summary} headline={headline} instruments={instruments} rangeKm={rangeKm} setRange={(km) => { setRange(km); announce(lang === 'en' ? `Range ${km} kilometers.` : `Menzil ${km} kilometre.`); }}
-              revSec={radar.revSec} setRevSec={radar.setRevSec} mode={mode} soundMode={soundMode} setSoundMode={setSoundMode} setMode={(m) => { setMode(m); announce(m === 'hikaye' ? (lang === 'en' ? 'Musical mode: pentatonic notes, with a soft chord and waves.' : 'Müzikal mod: pentatonik notalar, yumuşak zemin akoru ve dalga sesi.') : (lang === 'en' ? 'Science mode: whole-tone steps, so equal differences sound as equal steps. Data sounds only.' : 'Bilim modu: tam ton adımları; eşit fark eşit adım duyulur. Yalnız veri sesleri.')); }}
-              scale={scale} setScale={setScale} scaleInfo={radar.scaleInfo} legend={radar.legend} talking={radar.talking} nowLines={radar.nowLines} liveLine={radar.liveLine}>
-              <Explore lang={lang} placeA={placeLabel(place)} placeB={placeB ? placeLabel(placeB) : null} compare={compare}
-                setCompare={(v) => { setCompare(v); setCmpTurn(0); announce(v ? (lang === 'en' ? 'Listening in turns: one sweep for A, one sweep for B. Time stays fixed.' : 'Sırayla dinleme açık: bir tur A, bir tur B. Zaman sabit kalır.') : (lang === 'en' ? 'Listening in turns off.' : 'Sırayla dinleme kapalı.')); }}
-                onPickB={() => { setPickFor('B'); setPickOpen(true); }} onClearB={() => { setPlaceB(null); setCompare(false); setCmpTurn(0); }} onDiff={sayDiff}
-                onStories={() => setStoriesOpen(true)} onEvents={openEvents} onSound={() => setSoundOpen(true)}
-                narrator={narrator} setNarrator={setNarrator} story={story} onStopStory={stopStory} showNarrator={false} />
-            </NowCard>
-            <div className="right-col">
-            <LayerPills lang={lang} top={<WorldThemes lang={lang} active={worldTheme} onPick={applyWorldTheme} />} onScan={() => setScanOpen(true)} rawTop={false && <M24Panel part="themes" activeTheme={activeTheme} lang={lang} m24={m24} loading={m24Loading} onOpen={openM24} on={m24On} visualId={null} month={month} place={active} announce={announce} setOn={setM24Layer} onPreset={applyM24Preset} onShow={() => {}} />} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }}>
-              {on.temp && temp && (
-                <div className="sub-time">
-                  <label htmlFor="t-date" className="small">{lang === 'tr' ? 'Sıcaklık tarihi' : 'Temperature date'}</label>
-                  <select id="t-date" value={tFrame} onChange={(e) => { const f = +e.target.value; setTFrame(f); announce(temp.dateLabel(f, lang)); }}>
-                    {Array.from({ length: temp.frames }, (_, f) => <option key={f} value={f}>{temp.dateLabel(f, lang)}</option>)}
-                  </select>
-                  <input type="range" min={0} max={temp.frames - 1} value={tFrame} aria-label={lang === 'tr' ? 'Sıcaklık tarihi kaydırıcısı' : 'Temperature date slider'} aria-valuetext={temp.dateLabel(tFrame, lang)} onChange={(e) => setTFrame(+e.target.value)} />
-                </div>
-              )}
-              {on.sst && sst && (
-                <div className="sub-time">
-                  <label htmlFor="s-date" className="small">{lang === 'tr' ? 'Okyanus tarihi (ECCO2 modeli)' : 'Ocean date (ECCO2 model)'}</label>
-                  <select id="s-date" value={sstFrame} onChange={(e) => { const f = +e.target.value; setSstFrame(f); try { video.currentTime = f / sst.file.frames.fps; } catch { /* video hazır değil */ } announce(sst.dateLabel(f, lang)); }}>
-                    {Array.from({ length: sst.frames }, (_, f) => <option key={f} value={f}>{`${sst.dateLabel(f, lang)} · ${f + 1}/${sst.frames}`}</option>)}
-                  </select>
-                  <input type="range" min={0} max={sst.frames - 1} value={sstFrame} aria-label={lang === 'tr' ? 'Okyanus tarihi kaydırıcısı' : 'Ocean date slider'} aria-valuetext={sst.dateLabel(sstFrame, lang)} onChange={(e) => { const f = +e.target.value; setSstFrame(f); try { video.currentTime = f / sst.file.frames.fps; } catch { /* video hazır değil */ } }} />
-                </div>
-              )}
-              {on.ndvi && ndvi && (
-                <div className="sub-time">
-                  <label htmlFor="n-frame" className="small">{lang === 'tr' ? 'NDVI karesi' : 'NDVI frame'}: {ndvi.dateLabel(ndviFrame, lang)}</label>
-                  <input id="n-frame" type="range" min={0} max={ndvi.frames - 1} value={ndviFrame} aria-valuetext={ndvi.dateLabel(ndviFrame, lang)} onChange={(e) => setNdviFrame(+e.target.value)} />
-                </div>
-              )}
-              {on.lights && lights && (
-                <div className="sub-time">
-                  <label htmlFor="l-year" className="small">{lang === 'tr' ? 'Gece ışıkları yılı' : 'Night lights year'}: {lights.years[lightsYear]}</label>
-                  <input id="l-year" type="range" min={0} max={lights.years.length - 1} value={lightsYear} aria-valuetext={String(lights.years[lightsYear])} onChange={(e) => { setLightsYear(+e.target.value); announce(String(lights.years[+e.target.value])); }} />
-                </div>
-              )}
-              {on.lightning && <p className="small muted">{lang === 'tr' ? 'Yıldırım: ISS LIS 2017–2023 toplamı (videodaki kareler tarihsiz); radar yıldırımlı hücreden geçince çakma sesi.' : 'Lightning: ISS LIS 2017–2023 total (video frames are undated); a strike sounds when the radar passes a cell with lightning.'}</p>}
-              {on.aerosol && <p className="small muted">{lang === 'tr' ? 'Aerosoller: 19 Ağu 2025 20:00 UTC; yoğunluk göreli.' : 'Aerosols: 19 Aug 2025 20:00 UTC; relative density.'}</p>}
-            </LayerPills>
-            {guidePanel}
-            </div>
-            {((on.co2 && co2) || anyM24On) && (() => {
-              // etiket görünen/seçili katmanın yılını gösterir: 2024 katmanı görünüyorsa (ya da CO₂ 2021 kapalıysa) 2024, yoksa 2021 CO₂ paketi
-              const use24 = !!m24 && (m24Idx >= 0 || !(on.co2 && co2));
-              const idx24 = m24Idx >= 0 ? m24Idx : m24 ? m24.meta.layers.findIndex((l) => m24On[l.id]) : -1;
-              const yr = m24 && idx24 >= 0 ? m24.meta.layers[idx24].year : 2024;
-              const label24 = (m: number) => `${monthName(m, lang)} ${yr} · ${lang === 'en' ? 'monthly mean' : 'aylık ortalama'}`;
-              const lbl = use24 || !co2 ? label24(month) : co2.monthLabel(month, lang);
-              return <Timeline lang={lang} month={month} label={lbl} year={use24 || !co2 ? yr : 2021} title={use24 || !co2 ? (lang === 'en' ? `Date (monthly layers, ${yr})` : `Tarih (aylık katmanlar, ${yr})`) : undefined} advance={advance} setAdvance={setAdvance} setMonth={(m) => {
-                setMonth(m);
-                if ((use24 || !co2) && m24 && idx24 >= 0) { const L = m24.radarLayer(idx24, m, lang), v = L.sample(place); announce(`${label24(m)}: ${L.label}, ${Number.isNaN(v) ? (lang === 'en' ? 'no data at the center' : 'merkezde veri yok') : (lang === 'en' ? L.fmt(v) + ' at the center' : 'merkezde ' + L.fmt(v))}.`); }
-                else if (co2) announce(lang === 'en' ? `${co2.monthLabel(m, 'en')}: ${co2.grid.bilinear(place, m).toFixed(1)} ppm at the center.` : `${co2.monthLabel(m)}: merkezde ${co2.grid.bilinear(place, m).toFixed(1)} ppm.`);
-              }} />;
-            })()}
-          </>
-        )}
+        {radar.legend && <p className="legend-caption glass" aria-hidden="true">{radar.legend}</p>}
       </main>
+
+      <PlayerBar lang={lang} place={active ? (compare && placeB ? (active === placeB ? 'B · ' : 'A · ') : '') + placeLabel(active) : null}
+        value={headline ? `${headline.center}` : null} summary={playerSummary} nowLine={radar.nowLines[0] ?? ''} liveLine={radar.liveLine}
+        playing={radar.playing} canPlay={!!place} onToggle={radar.toggle} onPrev={timeCtl && timeCtl.i > 0 ? () => stepTime(-1) : null} onNext={timeCtl && timeCtl.i < timeCtl.n - 1 ? () => stepTime(1) : null}
+        timeLabel={timeCtl ? timeCtl.label(timeCtl.i) : null} timePos={timeCtl ? { i: timeCtl.i, n: timeCtl.n, set: (i) => timeCtl.set(i) } : null}
+        onLegend={radar.runLegend} onSummary={radar.summary} talking={radar.talking}
+        soundMode={soundMode} setSoundMode={setSoundMode} volume={mix.master} setVolume={(v) => setMix({ ...mix, master: v })} onPanel={() => setPanelOpen(!panelOpen)} />
+
+      <SidePanel lang={lang} tab={panelTab} setTab={setPanelTab} open={panelOpen} setOpen={setPanelOpen}
+        tabs={{ listen: listenTab, weather: weatherTab, explore: exploreTab, guide: guidePanel }} />
 
       <Dialog open={pickOpen} onClose={() => setPickOpen(false)} title={pickFor === 'B' ? (lang === 'en' ? 'Choose the second place' : 'İkinci yeri seç') : tr(lang, 'searchTitle')} lang={lang}>
         <PlacePicker cities={cities} place={pickFor === 'B' ? placeB : place} onPick={(p) => { if (pickFor === 'B') { setPlaceB(p); setCompare(true); setCmpTurn(0); announce(lang === 'en' ? `Second place: ${placeLabel(p)}. The radar now plays one sweep here and one sweep there. Press Space to listen.` : `İkinci yer: ${placeLabel(p)}. Radar artık bir tur birinci yeri, bir tur ikinci yeri çalar. Dinlemek için Boşluk.`); } else setPlace(p); setPickOpen(false); }} announce={announce} autoFocus lang={lang} />
@@ -1080,12 +1088,14 @@ export default function App() {
       <SoundDialog open={soundOpen} onClose={() => setSoundOpen(false)} lang={lang} mix={mix} setMix={setMix}
         layerNames={{ co2: LAYER_UI.co2.label[lang], temp: LAYER_UI.temp.label[lang], sst: LAYER_UI.sst.label[lang], aerosol: LAYER_UI.aerosol.label[lang] }}
         onTest={(id) => { engine.unlock(); const ids = id === 'aerosol' ? ['black_carbon', 'dust', 'sea_salt', 'sulfate'] : [id]; ids.forEach((t, i) => [0.2, 0.5, 0.8].forEach((v, j) => engine.voice(t, noteHz(v, PARTS[t as keyof typeof PARTS]), engine.now + 0.05 + i * 1.1 + j * 0.3, 0.5, 0.8, 0))); }} />
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d}
+        guide={guide} setGuide={setGuide} handsFree={hfWanted} setHandsFree={setHfWanted} micSupported={listener.supported} shortcuts={shortcutsOn} setShortcuts={setShortcuts}
+        music={mix.music} setMusic={(v) => setMix({ ...mix, music: v })} onSoundscape={() => { setSettingsOpen(false); setSoundOpen(true); }} />
+      <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} lang={lang} onSpeak={() => { if (guideRef.current) void speech.say(helpText()); else announce(helpText()); }} />
       <About open={aboutOpen} onClose={() => setAboutOpen(false)} lang={lang} credits={credits} extra={<DataInventory lang={lang} />} />
-      <Weather open={wxOpen} music={soundMode !== 'nature'} nature={soundMode !== 'music'} onClose={() => setWxOpen(false)} lang={lang} forecast={wx} error={wxErr} target={wxTarget} announce={announce} />
       <ImageScan open={scanOpen} onClose={() => setScanOpen(false)} lang={lang} announce={announce} />
 
       <div className="sr" aria-live="polite" aria-atomic="true">{live}</div>
-      <footer className="foot">{tr(lang, 'disclaimer')} <button type="button" className="linkish" onClick={() => setAboutOpen(true)}>{tr(lang, 'about')}</button></footer>
     </div>
   );
 }

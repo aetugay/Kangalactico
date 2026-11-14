@@ -16,7 +16,11 @@ export function inDialog(t: EventTarget | null): boolean {
 }
 
 /** Genel kısayol işlenmeli mi? Değiştirici tuşlar, yazı alanları ve açık diyaloglar hariç. */
+/** Ayarlar → "Tek tuş kısayollarını kapat" (ekran okuyucu tuşlarıyla çakışırsa). Alt+T her zaman çalışır. */
+let enabled = true;
+export const setShortcutsEnabled = (v: boolean) => { enabled = v; };
+export const shortcutsEnabled = () => enabled;
 export function shortcutAllowed(e: KeyboardEvent): boolean {
-  if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return false;
+  if (!enabled || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return false;
   return !isFormTarget(e.target) && !inDialog(e.target);
 }

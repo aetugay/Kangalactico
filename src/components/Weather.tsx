@@ -13,9 +13,11 @@ interface Props {
   target: (LatLon & { name: string }) | null;
   announce: (t: string) => void;
   music?: boolean; nature?: boolean;
+  /** Panel sekmesinde (pencere yerine) göster. */
+  inline?: boolean;
 }
 
-export function Weather({ open, onClose, lang, forecast: F, error, target, announce, music = true, nature = true }: Props) {
+export function Weather({ open, onClose, lang, forecast: F, error, target, announce, music = true, nature = true, inline = false }: Props) {
   const en = lang === 'en';
   const now = Date.now(), todayIso = localDate(now);
   const play = (sc: ReturnType<typeof weatherScene>, key: string, d?: Parameters<typeof weatherMusic>[0]) => {
@@ -64,6 +66,8 @@ export function Weather({ open, onClose, lang, forecast: F, error, target, annou
       </>
     );
   }
+  const src = F && <p className="small wx-src">{sourceLine(F.meta, lang)} <span className="muted">{en ? 'Grid 2° × 2.5°; daily precipitation estimated from 4 samples.' : 'Izgara 2° × 2.5°; günlük yağış 4 örnekten tahmini.'}</span></p>;
+  if (inline) return <section className="wx-inline" aria-label={en ? 'Weather' : 'Hava durumu'}><h3 className="sec-title">{en ? 'Meteorologist' : 'Meteorolog'}{target ? ` — ${target.name}` : ''}</h3>{body}{src}</section>;
   return (
     <Dialog open={open} onClose={onClose} title={en ? `Meteorologist${target ? ' — ' + target.name : ''}` : `Meteorolog${target ? ' — ' + target.name : ''}`} lang={lang}>
       {body}

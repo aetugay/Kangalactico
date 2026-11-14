@@ -8,6 +8,8 @@ interface Props {
   announce: (t: string) => void;
   autoFocus?: boolean;
   lang?: 'tr' | 'en';
+  /** Üst çubukta satır içi arama: etiket gizli, ipucu yok, konum düğmesi ikon. */
+  compact?: boolean;
 }
 
 function AutoFocus({ target }: { target: React.RefObject<HTMLInputElement | null> }) {
@@ -19,7 +21,7 @@ function AutoFocus({ target }: { target: React.RefObject<HTMLInputElement | null
  * Şehir arama: WAI-ARIA 1.2 combobox (liste kutusu açılır, ↑/↓ seçenek, Enter seç, Esc kapat).
  * + "Konumumu kullan" (geolocation). Haritaya dokunma WorldMap bileşeninde.
  */
-export function PlacePicker({ cities, place, onPick, announce, autoFocus, lang = 'tr' }: Props) {
+export function PlacePicker({ cities, place, onPick, announce, autoFocus, lang = 'tr', compact = false }: Props) {
   const en = lang === 'en';
   const T = (t: string, e: string) => (en ? e : t);
   const id = useId();
@@ -89,9 +91,9 @@ export function PlacePicker({ cities, place, onPick, announce, autoFocus, lang =
   };
 
   return (
-    <div className="picker">
+    <div className={compact ? 'picker compact' : 'picker'}>
       <div className="combo">
-        <label htmlFor={`${id}-in`} className="lbl">{T('Şehir ara', 'Search for a city')}</label>
+        <label htmlFor={`${id}-in`} className={compact ? 'sr' : 'lbl'}>{T('Şehir ara', 'Search for a city')}</label>
         <input
           id={`${id}-in`} ref={input} type="text" className="field" autoComplete="off" spellCheck={false}
           placeholder={cities ? T('Örn. şehir adı yaz…', 'e.g. type a city name…') : T('Şehir listesi yükleniyor…', 'Loading city list…')} disabled={!cities}
@@ -108,9 +110,9 @@ export function PlacePicker({ cities, place, onPick, announce, autoFocus, lang =
           ))}
         </ul>
       </div>
-      <button type="button" className="btn" onClick={useMyLocation} disabled={busy}>📍 {T('Konumumu kullan', 'Use my location')}</button>
+      <button type="button" className={compact ? 'btn icon-only' : 'btn'} onClick={useMyLocation} disabled={busy} aria-label={T('Konumumu kullan', 'Use my location')} title={T('Konumumu kullan', 'Use my location')}><span aria-hidden="true">📍</span>{compact ? '' : ' ' + T('Konumumu kullan', 'Use my location')}</button>
       {geoMsg && <p className="hint" role="status">{geoMsg}</p>}
-      {place && <p className="chosen">{T('Seçili yer:', 'Selected:')} <b>{placeLabel(place)}</b></p>}
+      {place && !compact && <p className="chosen">{T('Seçili yer:', 'Selected:')} <b>{placeLabel(place)}</b></p>}
       {autoFocus && <AutoFocus target={input} />}
     </div>
   );

@@ -125,3 +125,66 @@ Uygulamada "Hazır seçimler" düğmeleri; yalnız UYGUN katmanlar açılıyor, 
 4. **GRACE (TWLAND):** Anomali tabanı gerçekten hücrenin 2024 ortalaması mı? Meta'ya yazılması iyi olur.
 5. `nasa_koleksiyon` alanından "_2024" ekini kaldırıp gerçek kısa adı (`M2TMNXSLV` …) yazabilir misin?
 6. CO2'nin 2021 olduğunu doğrular mısın? Meta'da yıl alanı yok; yalnız granül adından ve `gunluk.baslangic`'ten anlaşılıyor.
+
+
+---
+
+# Düzeltmeler (v3 üzerinde, 15 Kasım 2026)
+
+Kural: düzeltme yalnız kaynağa dayanıyorsa yapılır; doğrulanamayan değer uydurulmaz, o katman kapalı kalır. Betikler: `scripts/ceyhun-export.mjs` (düzeltme + dışa aktarma), `scripts/audit-fire-co.mjs` (FIRE/CO hata araması), `scripts/verify-granule.mjs` (ham granülle karşılaştırma; Earthdata girişi gerekir).
+
+**Sonuç: 14 UYGUN (13 aylık katman + günlük CO₂), 2 KAPALI (CO, FIRE).**
+
+## 1. SMAP (GWETTOP) — DÜZELTİLDİ → UYGUN
+
+- **Hata:** deniz hücreleri 1,0 dolgu değeriyle gelmişti (Ocak'ta 8.489 hücre). Bu yüzden hücrelerin %65,8'i "tam doygun" görünüyordu.
+- **Neye dayanarak:** MERRA-2 kara (lnd) dosyası yalnız kara için tanımlı. Aynı dosyadan gelen PRECTOTLAND, TWLAND ve LAI pakette denizde doğru biçimde −1. GWETTOP'u da **aynı kaynağın kara tanımıyla** (o ayın PRECTOTLAND hücresi −1 ise −1) maskeledik. Bu hücre-ay sayısı 101.868.
+  - Bizim 0,5°'lik kara maskemizi (SVS 5544) kullanmadık. Kaynağın kendi tanımı daha doğru; bizim maskeyle farklar kıyıdaki karışık hücreler (%16) ve MERRA-2'nin kara saymadığı buz örtüleri (Antarktika, Grönland).
+- **Düzeltme sonrası denetim:** kara üstünde 0,034–1,0, medyan 0,76, p10 0,26. Tam 1,0 kalan oran %0,96; bunlar doygun bölgeler, fiziksel olarak mümkün.
+- **Ad ve birim:** "Üst toprak nemi (MERRA-2 GWETTOP)"; özgün birim `1` (boyutsuz oran, 0 = kuru, 1 = doygun). SMAP uydusu değil, model.
+- **Ses:** tamamen deniz olan ışın sessiz. Pasifik ortasında 500 km'de yalnız bir ada hücresinin yönü çaldı. Kıyıdaki bir yerden denize bakan ışın, ilk halkası karaya düştüğü için o kara değerini çalar.
+
+## 2. FIRE (BCCMASS) — KAPALI
+
+- **Ad düzeltmesi hazır** (katman açılırsa kullanılacak): "Siyah karbon sütun kütlesi (MERRA-2 BCCMASS) — yangın + fosil yakıt kaynaklı". Özgün birim: kg m⁻².
+- **Birim çevirisi doğru:** kg m⁻² → mg/m² = ×10⁶; paket değerleri bu çarpanla tutarlı aralıkta.
+- **Büyüklük karşılaştırması:**
+  - Alan ağırlıklı (cos enlem) 2024 ortalaması **0,74 mg/m²**. Tipik küresel BC yükü ~0,1–0,15 Tg, bu da ~0,2–0,3 mg/m² eder; yani yaklaşık 3 kat.
+  - Uzak Güney Pasifik medyanı 0,23 mg/m²; beklenen ~0,02–0,05.
+- **Bulunan olası neden (kesin değil):** paket dönüşümü yalnız "log" diyor.
+  - log1p tersiyle FIRE ortalaması 0,74; **saf log** tersiyle **0,16 mg/m²** (beklenen aralıkta).
+  - Ama aynı paketteki AOD (log1p: 0,158 ✓ / log: 0,018 ✗), SO₂ (uzak deniz log1p: 0,04 µg/m³ ✓ / log: 0,0003 ✗) ve yağış (vmin = 0 olduğu için saf log imkânsız) log1p ile tutarlı.
+  - Tek bir katmanı beklentiye uysun diye farklı bir dönüşümle okumak kaynağa dayanmaz. **Bu yüzden kapalı.**
+- **Açılması için:** Ceyhun'un dönüşümü katman başına netleştirmesi ya da ham granülle karşılaştırmada (aşağıda) oranın ≈ 1 çıkması.
+
+## 3. CO (COSC) — KAPALI
+
+- **Birim:** özgün birim `1e-9` = ppbv (NASA uzun adı "CO Surface Concentration in ppbv"); pakette ppbv. Çeviri yok, dolayısıyla çeviri hatası da yok.
+- **Dönüşüm:** log1p ile saf log farkı önemsiz (297 ve 294 ppbv); vmin 35 olduğu için ikisi pratikte aynı.
+- **Büyüklük:** alan ağırlıklı ortalama 297 ppbv, uzak Güney Pasifik medyanı 134 ppbv. Gözlenen yüzey CO arka planı ~50–60 ppbv (Güney Yarıküre), küresel ~90–100 ppbv; yani 2–3 kat yüksek.
+- **Temiz bir birim çarpanı yok:** 2–3 kat; 10, 1000 ya da mol kütlesi oranı (28/29) değil. Net bir birim ya da dönüşüm hatası bulunamadı. **Kapalı.**
+
+## 4. Hazır temalar (güncel)
+
+| Tema | Açılan | Eklenmeyen (sesli söylenir) |
+|---|---|---|
+| Gezegenin Nabzı | 2 m sıcaklık, CO₂ (2021), AOD | FIRE |
+| Yangın ve Karbon | Yaprak alanı, CO₂ (2021), AOD | CO |
+| Atmosfer ve Emisyon | Yüzey deri sıcaklığı, CO₂ (2021), SO₂, ozon | — |
+| Okyanuslar ve Su Döngüsü | Açık su sıcaklığı, kara su depolaması farkı, yağış, **toprak nemi (geri eklendi)** | — |
+| Kutup Erimesi ve Enerji | Deniz buzu, kara su depolaması farkı, albedo, ozon | — |
+
+Tema seçilince yalnız o katmanlar çalar; ana katmanlar kapanır.
+
+## 5. Ham veriyle doğrulama — HAZIR, Earthdata girişi bekliyor
+
+GES DISC'teki granüller ve OPeNDAP, Earthdata girişine yönlendiriyor (denendi: 302 → urs.earthdata.nasa.gov). `scripts/verify-granule.mjs` OPeNDAP'ın metin alt kümesiyle yalnız birkaç hücre indirir ve 5 noktada (Orta Afrika, Güney Pasifik, Doğu Çin, Sahra, Orta Avrupa) paketi ham değerle karşılaştırır. Denetim AOD ve SO₂ ile (yöntem doğru mu), sınama FIRE ve CO ile yapılır.
+
+Kullanıcının adımları (şifre sohbete yazılmaz):
+1. https://urs.earthdata.nasa.gov adresinde hesap aç ya da giriş yap.
+2. Profil → **Applications → Authorized Apps → "Approve More Applications"** → **"NASA GESDISC DATA ARCHIVE"** → Approve.
+3. `C:\Users\w11\_netrc` dosyasını oluştur (tek satır, uzantısız):
+   `machine urs.earthdata.nasa.gov login KULLANICI_ADIN password ŞİFREN`
+4. Bana "netrc hazır" de. Ben `node scripts/verify-granule.mjs` çalıştırıp sonucu `data/verify_granule.json`'a yazarım.
+   - Oran ≈ 1 ise beklentimiz yanlıştır ve katman açılır.
+   - Oran ≈ 3 (FIRE) ya da ≈ 2–3 (CO) ise paket hatalıdır; Ceyhun düzeltene kadar kapalı kalır.

@@ -28,9 +28,10 @@ const KEEP = {
   SEAICE: { id: 'seaice_24', tr: 'Deniz buzu oranı', en: 'Sea-ice fraction', unit: '%', nasa: 'SVS 5046, 5064, 5099, 5382 (deniz buzu)', note: 'Karadaki 0 değerleri "veri yok" yapıldı.' },
   IMERG: { id: 'precip_24', tr: 'Kara üstü toplam yağış', en: 'Total precipitation over land', unit: 'mm/gün', nasa: 'konu: SVS 4285, 4897 (IMERG), 5149', note: 'Paketteki anahtar "IMERG"; gerçek kaynak MERRA-2 model yağışı PRECTOTLAND (yalnız kara), IMERG uydu ürünü değil.' },
   GRACE: { id: 'twland_24', tr: 'Kara su depolaması: 2024 ortalamasından aylık fark', en: 'Land water storage: monthly departure from 2024 mean', unit: 'kg/m²', nasa: 'konu: GRACE (SVS 4637, 5003) — bu katman GRACE DEĞİL', note: 'Paketteki anahtar "GRACE"; gerçek kaynak MERRA-2 TWLAND (model). Değerler her hücrenin 2024 ortalamasına göre fark (denetimde doğrulandı: hücre 12-ay ortalaması ≈ 0). 1 kg/m² = 1 mm su.' },
+  SMAP: { id: 'gwettop_24', tr: 'Üst toprak nemi (MERRA-2 GWETTOP)', en: 'Topsoil wetness (MERRA-2 GWETTOP)', unit: '0–1', nasa: 'konu: SMAP toprak nemi (SVS 4950 vb.) — bu katman SMAP uydusu DEĞİL, model', note: 'Paketteki anahtar "SMAP"; gerçek kaynak MERRA-2 GWETTOP (model üst toprak nemliliği, 0 = kuru, 1 = doygun; özgün birim "1", boyutsuz). DÜZELTME: pakette deniz hücreleri 1.0 dolgu değeriyle gelmişti; aynı MERRA-2 lnd dosyasının kara tanımına (PRECTOTLAND/TWLAND/LAI boş olan hücreler) göre "veri yok" yapıldı → denizde sessiz.' },
   NDVI: { id: 'lai_24', tr: 'Yaprak alanı indeksi', en: 'Leaf area index', unit: 'm²/m²', nasa: 'konu: SVS 5544 (NDVI) — bu katman NDVI DEĞİL', note: 'Paketteki anahtar "NDVI"; gerçek kaynak MERRA-2 LAI (model yaprak alanı), uydu NDVI değil.' },
 };
-// ŞÜPHELİ (uygulamada yok): CO, FIRE (BCCMASS), SMAP (GWETTOP) — gerekçe data/audit_ceyhun.md
+// KAPALI (uygulamada yok): CO, FIRE (BCCMASS) — gerekçe data/audit_ceyhun.md "Düzeltmeler"
 const yearOf = (g) => { const m = g.match(/\.(\d{4})\d{2}\.nc4$/) ?? g.match(/_(\d{4})\d{4}_/); return m ? +m[1] : null; };
 const shortOf = (g, fallback) => { const m = g.match(/tavgM_2d_(slv|aer|chm|rad|ocn|lnd)_Nx/); return m ? `M2TMNX${m[1].toUpperCase()}` : fallback; };
 
@@ -40,11 +41,13 @@ const isLand = (lat, lon) => { const i = ((Math.floor(((lon + 180) / 360) * Lm.w
 
 const keepIds = ORDER.filter((k) => KEEP[k]);
 const out = new Int16Array(keepIds.length * 12 * NP);
-let masked = 0;
+let masked = 0, smapMasked = 0;
 keepIds.forEach((k, ni) => {
   const li = M.layers[k].cube_offset_index;
   for (let m = 0; m < 12; m++) for (let p = 0; p < NP; p++) {
     let v = cube[(li * 12 + m) * NP + p];
+    // SMAP (GWETTOP) düzeltmesi: aynı lnd dosyasında kara dışı (PRECTOTLAND = -1) hücreler deniz dolgusu 1.0 → -1
+    if (k === 'SMAP' && cube[(M.layers.IMERG.cube_offset_index * 12 + m) * NP + p] === -1) { if (v !== -1) smapMasked++; v = -1; }
     if (k === 'SEAICE' && v === 0) { const lat = G.lat0 + Math.floor(p / NLON) * G.dlat, lon = G.lon0 + (p % NLON) * G.dlon; if (isLand(lat, lon)) { v = -1; masked++; } }
     out[(ni * 12 + m) * NP + p] = v;
   }
@@ -81,4 +84,4 @@ fs.writeFileSync('public/data/m24/meta.json', JSON.stringify(meta, null, 1));
 const sz = (f) => (fs.statSync(f).size / 1048576).toFixed(2) + ' MB';
 console.log('katmanlar:', keepIds.map((k) => `${k}→${KEEP[k].id} (${meta.layers.find((l) => l.src === k).year})`).join(', '));
 console.log('presetler:', presets.map((p) => `${p.ad}: ${p.layers.join('+')}${p.removed.length ? ' (çıkarıldı: ' + p.removed.join(', ') + ')' : ''}`).join(' | '));
-console.log('monthly.bin', sz('public/data/m24/monthly.bin'), '| co2_daily.bin', sz('public/data/m24/co2_daily.bin'), '| deniz buzu: karada', masked, 'hücre "yok"');
+console.log('monthly.bin', sz('public/data/m24/monthly.bin'), '| co2_daily.bin', sz('public/data/m24/co2_daily.bin'), '| deniz buzu: karada', masked, 'hücre "yok" | toprak nemi: denizde', smapMasked, 'hücre-ay "yok"');

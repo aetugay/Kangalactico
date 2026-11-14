@@ -29,7 +29,7 @@
  "files": {
   "monthly": "monthly.bin",
   "monthlyShape": [
-   12,
+   13,
    12,
    12960
   ],
@@ -86,11 +86,10 @@
    "layers": [
     "sst_24",
     "twland_24",
-    "precip_24"
+    "precip_24",
+    "gwettop_24"
    ],
-   "removed": [
-    "SMAP"
-   ]
+   "removed": []
   },
   {
    "key": "kutup_erimesi",
@@ -336,6 +335,32 @@
   },
   {
    "index": 9,
+   "src": "SMAP",
+   "id": "gwettop_24",
+   "tr": "Üst toprak nemi (MERRA-2 GWETTOP)",
+   "en": "Topsoil wetness (MERRA-2 GWETTOP)",
+   "unit": "0–1",
+   "nasa": "konu: SMAP toprak nemi (SVS 4950 vb.) — bu katman SMAP uydusu DEĞİL, model",
+   "note": "Paketteki anahtar \"SMAP\"; gerçek kaynak MERRA-2 GWETTOP (model üst toprak nemliliği, 0 = kuru, 1 = doygun; özgün birim \"1\", boyutsuz). DÜZELTME: pakette deniz hücreleri 1.0 dolgu değeriyle gelmişti; aynı MERRA-2 lnd dosyasının kara tanımına (PRECTOTLAND/TWLAND/LAI boş olan hücreler) göre \"veri yok\" yapıldı → denizde sessiz.",
+   "product": "M2TMNXLND",
+   "variable": "GWETTOP",
+   "year": 2024,
+   "transform": "linear",
+   "vmin": 0.0337,
+   "vmax": 1,
+   "signed": false,
+   "sourceLabel": "Üst Toprak Nemi Doygunluğu (MERRA-2 GWETTOP)",
+   "kanit": {
+    "nasa_koleksiyon": "M2TMNXLND_2024",
+    "netcdf_degiskeni": "GWETTOP",
+    "nasa_long_name": "surface_soil_wetness",
+    "orijinal_birim": "1",
+    "ornek_granul_dosyasi": "MERRA2_400.tavgM_2d_lnd_Nx.202401.nc4",
+    "dosya_sayisi": 12
+   }
+  },
+  {
+   "index": 10,
    "src": "IMERG",
    "id": "precip_24",
    "tr": "Kara üstü toplam yağış",
@@ -361,7 +386,7 @@
    }
   },
   {
-   "index": 10,
+   "index": 11,
    "src": "GRACE",
    "id": "twland_24",
    "tr": "Kara su depolaması: 2024 ortalamasından aylık fark",
@@ -387,7 +412,7 @@
    }
   },
   {
-   "index": 11,
+   "index": 12,
    "src": "NDVI",
    "id": "lai_24",
    "tr": "Yaprak alanı indeksi",

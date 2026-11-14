@@ -179,10 +179,11 @@ export function NowCard(p: NowProps) {
 
 // ---------------- Katman hapları
 export interface Pill { id: string; label: string; instrument: string; icon: React.ReactNode; color: string; on: boolean; visual: boolean; loading?: boolean; note?: string }
-export function LayerPills({ lang, pills, onToggle, onShow, children }: { lang: Lang; pills: Pill[]; onToggle: (id: string) => void; onShow: (id: string) => void; children?: React.ReactNode }) {
+export function LayerPills({ lang, pills, onToggle, onShow, children, top }: { lang: Lang; pills: Pill[]; onToggle: (id: string) => void; onShow: (id: string) => void; children?: React.ReactNode; top?: React.ReactNode }) {
   return (
     <section className="glass panel layers" aria-labelledby="layers-h">
       <h2 id="layers-h" className="eyebrow">{tr(lang, 'layers')}</h2>
+      {top}
       <ul className="pills">
         {pills.map((p) => (
           <li key={p.id}>

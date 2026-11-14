@@ -20,6 +20,7 @@ interface Props {
   setNarrator: (v: boolean) => void;
   inputRef: React.RefObject<HTMLInputElement>;
   handsFree?: boolean; handsFreeWanted?: boolean; setHandsFreeWanted?: (v: boolean) => void;
+  open?: boolean; setOpen?: (v: boolean) => void;
 }
 
 const CHIPS: Record<Lang, string[]> = {
@@ -27,7 +28,7 @@ const CHIPS: Record<Lang, string[]> = {
   en: ['Go to Tokyo', 'Play', 'Precipitation on', 'Summary', 'Türkçeye geç'],
 };
 
-export function Guide({ lang, micSupported, listening, status, history, onTalk, onCommand, narrator, setNarrator, inputRef, handsFree, handsFreeWanted, setHandsFreeWanted }: Props) {
+export function Guide({ lang, micSupported, listening, status, history, onTalk, onCommand, narrator, setNarrator, inputRef, handsFree, handsFreeWanted, setHandsFreeWanted, open = true, setOpen }: Props) {
   const id = useId();
   const en = lang === 'en';
   const [q, setQ] = useState('');
@@ -36,7 +37,9 @@ export function Guide({ lang, micSupported, listening, status, history, onTalk, 
     : status.text ?? (handsFree ? (en ? 'Listening hands-free: just speak a command.' : 'Sizi dinliyorum: bir komut söyleyin.') : (en ? 'Ready. Type or speak a command.' : 'Hazır. Bir komut yaz ya da söyle.'));
   return (
     <section className="glass guide" aria-labelledby={`${id}-h`}>
-      <h2 id={`${id}-h`} className="eyebrow">EarthEar AI Guide</h2>
+      {/* katlanabilir: kapalıyken de başlık + durum görünür (eller serbest dinleme sürer) */}
+      <details open={open} onToggle={(e) => setOpen?.((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary className="guide-sum"><h2 id={`${id}-h`} className="eyebrow">EarthEar AI Guide</h2>{!open && <span className="small muted"> · {statusText}</span>}</summary>
       <form className="guide-row" onSubmit={(e) => { e.preventDefault(); send(q); }}>
         <label htmlFor={`${id}-in`} className="sr">{en ? 'Type a command' : 'Komut yaz'}</label>
         <input id={`${id}-in`} ref={inputRef} className="field guide-in" type="text" autoComplete="off" spellCheck={false} value={q} onChange={(e) => setQ(e.target.value)}
@@ -67,6 +70,7 @@ export function Guide({ lang, micSupported, listening, status, history, onTalk, 
           </ol>
         </details>
       )}
+      </details>
     </section>
   );
 }

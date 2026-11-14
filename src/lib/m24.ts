@@ -104,5 +104,5 @@ export const INSTRUMENT_LABEL: Record<string, { tr: string; en: string }> = {
   co2_24: { tr: 'keman', en: 'violin' }, so2_24: { tr: 'marimba', en: 'marimba' }, aod_24: { tr: 'çelesta', en: 'celesta' },
   t2m_24: { tr: 'gitar', en: 'guitar' }, ts_24: { tr: 'gitar (pes)', en: 'guitar (low)' }, albedo_24: { tr: 'flüt', en: 'flute' },
   sst_24: { tr: 'arp', en: 'harp' }, precip_24: { tr: 'çello', en: 'cello' }, seaice_24: { tr: 'flüt (tiz)', en: 'flute (high)' },
-  o3_24: { tr: 'çelesta (seyrek)', en: 'celesta (sparse)' }, twland_24: { tr: 'çello (pes)', en: 'cello (low)' }, lai_24: { tr: 'marimba (orta)', en: 'marimba (mid)' },
+  o3_24: { tr: 'çelesta (seyrek)', en: 'celesta (sparse)' }, twland_24: { tr: 'çello (pes)', en: 'cello (low)' }, lai_24: { tr: 'marimba (orta)', en: 'marimba (mid)' }, gwettop_24: { tr: 'arp (kara)', en: 'harp (land)' },
 };

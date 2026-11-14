@@ -97,7 +97,7 @@ export default function App() {
   const M24_NAMES: Record<string, { tr: string; en: string }> = {
     co2_24: { tr: 'Atmosferik CO₂ 2021 (aylık ortalama)', en: 'Atmospheric CO₂ 2021 (monthly mean)' },
     o3_24: { tr: 'Toplam sütun ozonu 2024', en: 'Total column ozone 2024' }, twland_24: { tr: 'Kara su depolaması farkı 2024', en: 'Land water storage departure 2024' },
-    lai_24: { tr: 'Yaprak alanı indeksi 2024', en: 'Leaf area index 2024' }, so2_24: { tr: 'Yüzey SO₂ 2024', en: 'Surface SO₂ 2024' },
+    lai_24: { tr: 'Yaprak alanı indeksi 2024', en: 'Leaf area index 2024' }, gwettop_24: { tr: 'Üst toprak nemi 2024', en: 'Topsoil wetness 2024' }, so2_24: { tr: 'Yüzey SO₂ 2024', en: 'Surface SO₂ 2024' },
     aod_24: { tr: 'Aerosol optik derinliği 2024', en: 'Aerosol optical depth 2024' }, t2m_24: { tr: '2 m hava sıcaklığı 2024', en: '2 m air temperature 2024' },
     ts_24: { tr: 'Yüzey deri sıcaklığı 2024', en: 'Surface skin temperature 2024' }, albedo_24: { tr: 'Yüzey albedosu 2024', en: 'Surface albedo 2024' },
     sst_24: { tr: 'Deniz yüzeyi sıcaklığı 2024', en: 'Sea surface temperature 2024' }, precip_24: { tr: 'Kara üstü yağış 2024', en: 'Precipitation over land 2024' },
@@ -114,10 +114,12 @@ export default function App() {
   /** Ceyhun'un presetleri: yalnız UYGUN katmanlar açılır, diğer aylık katmanlar kapanır; çıkarılanlar söylenir. */
   const applyM24Preset = (ids: string[], name: string, removed: string[]) => {
     setM24On(Object.fromEntries(ids.map((id) => [id, true]))); setM24Visual(ids[0] ?? null);
+    setOn({ co2: false, temp: false, sst: false, aerosol: false }); // tema = yalnız o katmanlar
     const en = langRef.current === 'en', names = ids.map((id) => M24_NAMES[id]?.[en ? 'en' : 'tr'] ?? id).join(', ');
     announce(en ? `${name}: ${names}.${removed.length ? ` Not included because it did not pass our data audit: ${removed.join(', ')}.` : ''}` : `${name}: ${names}.${removed.length ? ` Veri denetimimizden geçmediği için eklenmedi: ${removed.join(', ')}.` : ''}`);
   };
-  const openM24 = () => { if (m24 || m24Loading) return; setM24Loading(true); M24.load(import.meta.env.BASE_URL).then(setM24).catch((e) => setErr(String(e))).finally(() => setM24Loading(false)); };
+  const m24Started = useRef(false);
+  const openM24 = () => { if (m24 || m24Loading || m24Started.current) return; m24Started.current = true; setM24Loading(true); M24.load(import.meta.env.BASE_URL).then(setM24).catch((e) => setErr(String(e))).finally(() => setM24Loading(false)); };
   const [pickOpen, setPickOpen] = useState(false);
   // iki yeri karşılaştırma: B yeri, sırayla dinleme ve tur sayacı
   const [pickFor, setPickFor] = useState<'A' | 'B'>('A');
@@ -607,6 +609,7 @@ export default function App() {
                 : has('deri sicakl', 'skin temp') ? 'ts_24'
                   : has('hava sicakl', 'air temp', 'iki metre', '2 metre') || (has('2024') && has('sicakl', 'temperature')) ? 't2m_24'
                     : has('ozon', 'ozone') ? 'o3_24'
+                      : has('toprak nem', 'soil moist', 'soil wet', 'toprak islak') ? 'gwettop_24'
                       : has('yaprak', 'bitki ortusu', 'vejetasyon', 'leaf area', 'vegetation', ' lai ') ? 'lai_24'
                         : has('su depolama', 'yer alti suyu', 'water storage', 'groundwater', 'grace') ? 'twland_24'
                           : has('aylik karbon', 'monthly carbon') || (has('2021') && has('aylik', 'monthly') && has('karbon', 'co2', 'carbon')) ? 'co2_24' : null;
@@ -656,6 +659,8 @@ export default function App() {
   const [cmdHistory, setCmdHistory] = useState<CmdEntry[]>([]);
   const [guideStatus, setGuideStatus] = useState<GuideStatus>({ kind: 'idle' });
   const guideInput = useRef<HTMLInputElement>(null);
+  const [guideOpen, setGuideOpenS] = useState(() => store.get('guideOpen') !== '0');
+  const setGuideOpen = (v: boolean) => { setGuideOpenS(v); store.set('guideOpen', v ? '1' : '0'); };
   const EXAMPLES = { tr: 'Ankara\'ya git; çal; sıcaklığı aç', en: 'go to Tokyo; play; temperature on' };
   /** Sesli ya da yazılı komut: aynı çözümleyici. Anlaşılırsa onay sesi + "Anlaşıldı: …" + komutun kendi duyurusu; anlaşılmazsa 3 örnek. */
   const execCommand = (alts: string[], source: 'voice' | 'text') => {
@@ -683,7 +688,7 @@ export default function App() {
     const en = langRef.current === 'en';
     const msg = `${why ? why + ' ' : ''}${en ? 'Voice commands are not available right now. You can type commands.' : 'Sesli komut şu an kullanılamıyor. Yazarak komut verebilirsiniz.'}`;
     announce(msg); setGuideStatus({ kind: 'error', text: msg });
-    setTimeout(() => guideInput.current?.focus(), 50);
+    setGuideOpenS(true); setTimeout(() => guideInput.current?.focus(), 80);
   };
   const talk = (hold = false) => {
     const en = langRef.current === 'en';
@@ -837,7 +842,7 @@ export default function App() {
 
   const guidePanel = <Guide lang={lang} micSupported={listener.supported} listening={listening} status={guideStatus} history={cmdHistory} onTalk={() => talk()}
     onCommand={(t) => execCommand([t], 'text')} narrator={narrator} setNarrator={setNarrator} inputRef={guideInput}
-    handsFree={hfLive} handsFreeWanted={hfWanted} setHandsFreeWanted={setHfWanted} />;
+    handsFree={hfLive} handsFreeWanted={hfWanted} setHandsFreeWanted={setHfWanted} open={guideOpen} setOpen={setGuideOpen} />;
 
   return (
     <div className={`app${view3d ? ' is3d' : ' is2d'}`}>
@@ -886,7 +891,7 @@ export default function App() {
                 narrator={narrator} setNarrator={setNarrator} story={story} onStopStory={stopStory} showNarrator={false} />
             </NowCard>
             <div className="right-col">
-            <LayerPills lang={lang} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }}>
+            <LayerPills lang={lang} top={<M24Panel part="themes" lang={lang} m24={m24} loading={m24Loading} onOpen={openM24} on={m24On} visualId={null} month={month} place={active} announce={announce} setOn={setM24Layer} onPreset={applyM24Preset} onShow={() => {}} />} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }}>
               {on.temp && temp && (
                 <div className="sub-time">
                   <label htmlFor="t-date" className="small">{lang === 'tr' ? 'Sıcaklık tarihi' : 'Temperature date'}</label>

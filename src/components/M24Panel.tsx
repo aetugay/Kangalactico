@@ -1,6 +1,6 @@
 // Aylık NASA katmanları paneli (MERRA-2 2024 + OCO-2 GEOS L3 2021; Ceyhun'un paketi sürüm 3, yalnız denetimden geçenler).
 // Her katman: aç/kapa, küre üstünde göster, bilgi kartı (kaynak ürün + değişken + çözünürlük + yıl + NASA eşleşmesi).
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { engine } from '../audio/engine.ts';
 import type { LatLon } from '../lib/geo.ts';
 import { INSTRUMENT_LABEL, type M24 } from '../lib/m24.ts';
@@ -21,9 +21,14 @@ interface Props {
   announce: (t: string) => void;
   /** Hazır seçim (preset): yalnız UYGUN katmanlar; removed = denetimden geçmediği için çıkarılanlar. */
   onPreset?: (ids: string[], name: string, removed: string[]) => void;
+  /** themes: yalnız "Hazır temalar" çipleri (panelin en üstü); list: katman listesi (her zaman görünür, katlanmaz). */
+  part?: 'themes' | 'list';
 }
 
-export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onShow, month, place, announce, onPreset }: Props) {
+export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onShow, month, place, announce, onPreset, part = 'list' }: Props) {
+  // aylık katmanlar panel açılır açılmaz yüklenir (artık katlanmış bölümde gizli değil)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { onOpen(); }, []);
   const en = lang === 'en';
   const [busy, setBusy] = useState(false);
   const run = useRef(0);
@@ -59,21 +64,29 @@ export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onSh
     finally { if (my === run.current) setBusy(false); }
   };
 
-  return (
-    <details className="m24" onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) onOpen(); }}>
-      <summary>{en ? 'Monthly NASA layers (MERRA-2 2024, OCO-2 2021)' : 'Aylık NASA katmanları (MERRA-2 2024, OCO-2 2021)'}</summary>
-      <p className="small muted">{en ? 'Monthly means on a 2° × 2.5° grid (package version 3, no clipping). Only layers that passed our data audit; names follow the real NASA product in the evidence (kanit).' : 'Aylık ortalamalar, 2° × 2.5° ızgara (paket sürüm 3, uç değer kırpması yok). Yalnız veri denetimimizden geçen katmanlar; adlar kanıttaki gerçek NASA ürününe göre.'}</p>
-      {loading && <p className="small" role="status">{en ? 'Loading (3.6 MB)…' : 'Yükleniyor (3.6 MB)…'}</p>}
-      {m24 && !!m24.meta.presets?.length && onPreset && (
-        <div className="m24-presets" role="group" aria-label={en ? 'Presets' : 'Hazır seçimler'}>
+  if (part === 'themes') {
+    if (!m24?.meta.presets?.length || !onPreset) return loading ? <p className="small muted" role="status">{en ? 'Loading themes…' : 'Temalar yükleniyor…'}</p> : null;
+    return (
+      <div className="themes">
+        <h3 className="eyebrow" id="themes-h">{en ? 'Ready-made themes' : 'Hazır temalar'}</h3>
+        <div className="m24-presets" role="group" aria-labelledby="themes-h">
           {m24.meta.presets.map((p) => (
             <button key={p.key} type="button" className="chip small-chip" onClick={() => onPreset(p.layers, p.ad, p.removed)}
-              title={p.removed.length ? (en ? `Removed (did not pass the audit): ${p.removed.join(', ')}` : `Çıkarıldı (denetimden geçmedi): ${p.removed.join(', ')}`) : undefined}>
+              aria-label={p.removed.length ? `${p.ad}. ${en ? 'Not included (did not pass the data audit)' : 'Eklenmedi (veri denetiminden geçmedi)'}: ${p.removed.join(', ')}` : p.ad}
+              title={p.removed.length ? (en ? `Not included (did not pass the audit): ${p.removed.join(', ')}` : `Eklenmedi (denetimden geçmedi): ${p.removed.join(', ')}`) : undefined}>
               {p.ad}{p.removed.length ? ' *' : ''}
             </button>
           ))}
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <section className="m24" aria-labelledby="m24-h">
+      <h3 className="eyebrow" id="m24-h">{en ? 'Monthly NASA layers (MERRA-2 2024, OCO-2 2021)' : 'Aylık NASA katmanları (MERRA-2 2024, OCO-2 2021)'}</h3>
+      <p className="small muted">{en ? 'Monthly means on a 2° × 2.5° grid (package version 3, no clipping). Only layers that passed our data audit; names follow the real NASA product in the evidence (kanit).' : 'Aylık ortalamalar, 2° × 2.5° ızgara (paket sürüm 3, uç değer kırpması yok). Yalnız veri denetimimizden geçen katmanlar; adlar kanıttaki gerçek NASA ürününe göre.'}</p>
+      {loading && <p className="small" role="status">{en ? 'Loading (3.6 MB)…' : 'Yükleniyor (3.6 MB)…'}</p>}
       {m24 && (
         <ul className="m24-list">
           {m24.meta.layers.map((L) => {
@@ -117,6 +130,7 @@ export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onSh
         </ul>
       )}
       <p className="small muted">{en ? 'Data: NASA GES DISC (MERRA-2, OCO-2 GEOS L3), prepared by our team member Ceyhun.' : 'Veri: NASA GES DISC (MERRA-2, OCO-2 GEOS L3); ekibimizden Ceyhun hazırladı.'} {en ? 'Audit:' : 'Denetim:'} data/audit_ceyhun.md</p>
-    </details>
+      {m24 && <p className="small muted" data-testid="m24-version">{en ? 'Data package version' : 'Veri paketi sürüm'} {m24.meta.surum ?? '?'} · public/data/m24/meta.json · {m24.meta.layers.length} {en ? 'layers' : 'katman'}</p>}
+    </section>
   );
 }

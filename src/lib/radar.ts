@@ -8,7 +8,7 @@ import { destination, compass8, formatKm, type LatLon } from './geo.ts';
 
 export type Timbre = 'co2' | 'temp' | 'sst' | 'black_carbon' | 'dust' | 'sea_salt' | 'sulfate' | 'lightning'
   // 2024 aylık NASA katmanları (MERRA-2 / OCO-2; public/data/m24)
-  | 'co2_24' | 'so2_24' | 'aod_24' | 't2m_24' | 'ts_24' | 'albedo_24' | 'sst_24' | 'precip_24' | 'seaice_24';
+  | 'co2_24' | 'so2_24' | 'aod_24' | 't2m_24' | 'ts_24' | 'albedo_24' | 'sst_24' | 'precip_24' | 'seaice_24' | 'o3_24' | 'twland_24' | 'lai_24';
 export type Mode = 'bilim' | 'hikaye';
 
 export interface RadarLayer {
@@ -133,6 +133,9 @@ export const PARTS: Record<Timbre, Part> = {
   sst_24: { start: 13, every: 1, offset: 0, gate: -1 },      // arp
   precip_24: { start: 0, every: 2, offset: 1, gate: -1 },    // çello
   seaice_24: { start: 19, every: 4, offset: 0, gate: -1 },   // flüt (tiz)
+  o3_24: { start: 16, every: 4, offset: 1, gate: -1 },       // çelesta (uzun aralık)
+  twland_24: { start: 2, every: 2, offset: 0, gate: -1 },    // çello
+  lai_24: { start: 9, every: 2, offset: 1, gate: -1 },       // marimba
 };
 /** Kayıt sınırları (pentaHz indeksi): 5 = C3 (131 Hz; dizüstü hoparlörde de duyulur) … 15 = C5; üstüne 2 oktav → en tiz C7 (2093 Hz). */
 export const REG_MIN = 5, REG_MAX = 15;
@@ -156,7 +159,7 @@ export const hitsFor = (t: number) => (t < 1 / 3 ? 1 : t < 2 / 3 ? 2 : 3);
 
 /** Katman kimliği → ses motorundaki enstrüman (2024 katmanları var olan enstrümanları kullanır). */
 export const INSTRUMENT_OF: Partial<Record<Timbre, string>> = {
-  co2_24: 'co2', so2_24: 'sulfate', aod_24: 'dust', t2m_24: 'temp', ts_24: 'temp', albedo_24: 'sea_salt', sst_24: 'sst', precip_24: 'black_carbon', seaice_24: 'sea_salt',
+  co2_24: 'co2', so2_24: 'sulfate', aod_24: 'dust', t2m_24: 'temp', ts_24: 'temp', albedo_24: 'sea_salt', sst_24: 'sst', precip_24: 'black_carbon', seaice_24: 'sea_salt', o3_24: 'dust', twland_24: 'black_carbon', lai_24: 'sulfate',
 };
 
 /** [b, b+count) ışınlarında, [k0, k1) halkalarında ortalama değer ve veri kapsamı (0..1). Veri yoksa mean = NaN. */

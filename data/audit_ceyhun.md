@@ -63,3 +63,65 @@ NASA kaynakları: challenge SVS sayfaları ve EIC galerileri (`data/svs_api/`, `
 8. **NDVI/SIF:** İkisi de LAI. Ölçek (0–0.90) nereden geliyor? LAI'yi m²/m² olarak verebilir misin?
 9. **FIRE:** BCCMASS'in birimi ne (kg/m² × ?)? Günlük seri aylıktan ara değerle mi üretildi?
 10. **Günlük dosyalar:** 2024 artık yıl; hangi gün eksik (31 Aralık mı)?
+
+
+---
+
+# v3 denetimi (paket sürüm 3, 14 Kasım 2026 gece)
+
+Girdi: `referans/v3/` (meta.json sürüm 3, monthly_cube.bin [15,12,12960], daily_CO2.bin [365,12960]). Dosyalar `referans/` içine tarayıcı adlarıyla gelmişti (`meta (2).json`, `monthly_cube (1).bin`, `daily_CO2 (1).bin`); dokunmadan `referans/v3/` altına kopyalandı. Ölçümler: `node scripts/audit-ceyhun.mjs referans/v3` → `data/audit_ceyhun_v3.json` (katman sırası `cube_offset_index`'ten; `katman_sirasi` ile aynı).
+
+## Özet
+
+**13 UYGUN · 3 ŞÜPHELİ · 0 UYGUN DEĞİL** (15 aylık katman + günlük CO₂). v2: 11 UYGUN · 6 ŞÜPHELİ · 6 UYGUN DEĞİL (23 kalem).
+
+Ceyhun'un iddiaları:
+- **5 sorunlu katman silindi — doğru:** CH4, SIF, NO2, CHL, NIGHTLIGHTS yok; günlük FIRE yok.
+- **Kırpma kaldırıldı — doğru:** uçlarda yığılma yok (q = 0 / 1000 oranı ≈ 0; yalnız fiziksel sınırı olan katmanlarda: deniz buzu 0, toprak nemi 1). Sahra (18–30°K, 5°B–30°D) Temmuz 2 m sıcaklığı ort. **34,3 °C**, en çok 39,9 °C (v2'de üstten kırpılmıştı); deri sıcaklığı ort. 36,5 °C.
+- **Her katmana "kanit" eklendi — doğru, 15/15 dolu.** Örnek granül adlarının hepsi gerçek NASA adlandırmasına uyuyor (`MERRA2_400.tavgM_2d_<grup>_Nx.YYYYMM.nc4`, `oco2_GEOS_L3CO2_day_YYYYMMDD_B….nc4`). Her değişken gerçekten o dosya grubunda (TO3 → slv, COSC → chm, BCCMASS → aer, TWLAND/LAI/GWETTOP/PRECTOTLAND → lnd …). **Küçük hata:** `nasa_koleksiyon` alanlarına "_2024" eklenmiş (`M2TMNXSLV_2024`); gerçek NASA kısa adı `M2TMNXSLV`. Uygulamada kısa adı granül adından türetip ikisini birlikte gösteriyoruz.
+- **Önemli düzeltme (bizim v2 etiketimiz yanlıştı):** CO₂ katmanı ve günlük CO₂ **2021** yılına ait, 2024'e değil. Kanıt: granül `oco2_GEOS_L3CO2_day_20210101`, 365 dosya, `gunluk.baslangic` 2021-01-01. Günlük ilk gün, ekip OCO-2 2021 paketinin 1 Ocak'ıyla r = 0,997 (en büyük fark 2,6 ppm, nicemleme). v2'de "2024 artık yıl, 365 gün → 31 Aralık eksik" diye yorumladığımız durum da bu: dosya 2021'di. Aylık katman 2021'in aylık ortalaması.
+
+## Tablo (v3)
+
+| Katman (paket adı) | Kanıt: ürün · değişken | Bulgular | Sınıf | Uygulamadaki ad |
+|---|---|---|---|---|
+| CO2 | OCO2_GEOS_L3CO2_DAY · XCO2 | 407–421 ppm; 2021 (yukarıya bak); ekip 2021 verisiyle r 0,976 | **UYGUN** | Atmosferik CO₂ (aylık ort.) — **2021** |
+| Günlük CO2 | aynı | 365 gün, gerçek günlük (ikinci fark ≈ 0 yalnız %8,7); 2021 | **UYGUN** | "2021 yılının 365 günü" dinleme düğmesi |
+| TEMP | M2TMNXSLV · T2M | −68…40 °C, kırpma yok, SVS 5147 deseniyle r 0,966 | **UYGUN** | 2 m hava sıcaklığı |
+| LST | M2TMNXSLV · TS | T2M ile r 0,999 (fiziksel olarak beklenen); uydu LST değil | **UYGUN** | Yüzey deri sıcaklığı |
+| O3 | M2TMNXSLV · TO3 | **v2'de enleme bağlı formüldü (enlem R² 0,997); v3'te gerçek:** enlem R² 0,888; 134–544 DU (medyan 290); tropik Ocak ort. 245 DU, **Ekim Antarktika ort. 213 DU (ozon deliği)**, Mart Arktik ort. 501 DU. TO3 gerçekten slv dosyasında | **UYGUN** (yeni) | Toplam sütun ozonu |
+| AOD | M2TMNXAER · TOTEXTTAU | küresel ort. 0,135 (gerçekçi), kırpma yok | **UYGUN** | Aerosol optik derinliği (550 nm) |
+| SO2 | M2TMNXAER · SO2SMASS | 0,0003–85 µg/m³, medyan 0,08 | **UYGUN** | Yüzey SO₂ kütle derişimi |
+| FIRE | M2TMNXAER · **BCCMASS** | Kanıt: siyah karbon **sütun kütlesi**, yangına özgü değil (fosil yakıt dahil) → "Biyokütle yanma" adı yanlış. Desen makul (Orta Afrika Ağustos ort. 10,3 mg/m²) ama küresel ort. 0,61 mg/m² ve uzak Güney Pasifik 0,25 mg/m² beklenen BC yükünün (~0,2 mg/m² küresel) yaklaşık 3 katı | **ŞÜPHELİ** | — (uygulamada yok) |
+| CO | M2TMNXCHM · COSC | v2'de enlem formülüydü (R² 0,996); v3'te gerçek desen (R² 0,84; Orta Afrika Ağustos 737 ppbv, Doğu Çin Ocak 562 ppbv). Ama arka plan yüksek: küresel medyan 266 ppbv, Güney Pasifik Ocak 103 ppbv (gözlenen uzak arka plan ~50–60 ppbv; ~2 kat) | **ŞÜPHELİ** | — |
+| ALBEDO | M2TMNXRAD · ALBEDO | 0,06–0,84; kutup gecesinde boş (%11,6, beklenen) | **UYGUN** | Yüzey albedosu |
+| SST | M2TMNXOCN · TSKINWTR | −1,8…34,8 °C; SVS 3912 deseniyle r 0,978 | **UYGUN** | Açık su yüzeyi sıcaklığı |
+| SEAICE | M2TMNXOCN · FRSEAICE | 0–100 %; karadaki 0'lar bizde "veri yok" yapılıyor | **UYGUN** | Deniz buzu oranı |
+| SMAP | M2TMNXLND · **GWETTOP** | Uydu SMAP değil, model toprak nemi. **v2 hatası sürüyor:** denizde 8.489 hücre "1,0" (aynı lnd dosyasından gelen PRECTOTLAND/TWLAND/LAI'de deniz doğru biçimde "yok"); hücrelerin %65,8'i = 1 | **ŞÜPHELİ** | — |
+| IMERG | M2TMNXLND · PRECTOTLAND | Uydu IMERG değil, MERRA-2 model yağışı (yalnız kara); ort. 3,3 mm/gün | **UYGUN** (ad düzeltildi) | Kara üstü toplam yağış |
+| GRACE | M2TMNXLND · **TWLAND** | GRACE uydusu değil, model. Değerler işaretli: **her hücrenin 2024 ortalamasından aylık fark** (denetim: hücre 12-ay ortalaması ≈ 0, en çok 0,76 kg/m²; nicemleme adımı 2,3). p2–p98 ±150 kg/m² (mm su) | **UYGUN** (ad düzeltildi, taban belirtildi) | Kara su depolaması: 2024 ortalamasından aylık fark |
+| NDVI | M2TMNXLND · **LAI** | Uydu NDVI değil, model yaprak alanı indeksi; 0–7,1 m²/m² | **UYGUN** (ad düzeltildi) | Yaprak alanı indeksi |
+
+Kopya taraması: yalnız TEMP–LST (r 0,999, birebir eşitlik %3,4); fiziksel olarak beklenen, kopya değil.
+
+## Presetler (meta.presets)
+
+Uygulamada "Hazır seçimler" düğmeleri; yalnız UYGUN katmanlar açılıyor, çıkarılan katman düğmede `*` ile işaretli ve sesli söyleniyor:
+- Gezegenin Nabzı: TEMP, CO2, AOD — **FIRE çıkarıldı**
+- Yangın ve Karbon: NDVI (LAI), CO2, AOD — **CO çıkarıldı**
+- Atmosfer ve Emisyon: LST, CO2, SO2, O3 — tam
+- Okyanuslar ve Su Döngüsü: SST, GRACE (TWLAND), IMERG (PRECTOTLAND) — **SMAP çıkarıldı**
+- Kutup Erimesi ve Enerji: SEAICE, GRACE (TWLAND), ALBEDO, O3 — tam
+
+## Canlı API
+
+`jukebox-api-h5ve.onrender.com` hâlâ sürüm 2'yi veriyor (20 katman, kanıt yok). Uygulama yalnız statik v3 dosyalarını kullanıyor (`public/data/m24/`). Uygulama kodunda API çağrısı yok; API yedeği sürüm 3'e geçene kadar kapalı.
+
+## Ceyhun'a sorular (v3)
+
+1. **CO (COSC):** Ocak 2024'te 40°G 120°B civarında bir hücre için `.nc4` dosyasındaki ham COSC değeri ne? Bizde ~103 ppbv; gözlenen arka plan ~50–60 ppbv.
+2. **FIRE (BCCMASS):** Aynı hücrede ham BCCMASS (kg m⁻²) ne? mg/m²'ye çevirirken ×1e6 mı kullanıldı? Ayrıca ad "Siyah karbon sütun kütlesi" olmalı; yangına özgü değil.
+3. **SMAP (GWETTOP):** Deniz hücreleri neden −1 değil de 1,0? Aynı lnd dosyasındaki diğer üç değişkende deniz −1.
+4. **GRACE (TWLAND):** Anomali tabanı gerçekten hücrenin 2024 ortalaması mı? Meta'ya yazılması iyi olur.
+5. `nasa_koleksiyon` alanından "_2024" ekini kaldırıp gerçek kısa adı (`M2TMNXSLV` …) yazabilir misin?
+6. CO2'nin 2021 olduğunu doğrular mısın? Meta'da yıl alanı yok; yalnız granül adından ve `gunluk.baslangic`'ten anlaşılıyor.

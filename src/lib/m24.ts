@@ -1,4 +1,5 @@
-// 2024 aylık NASA katmanları (MERRA-2 + OCO-2 GEOS L3) — Ceyhun'un paketinden denetimden geçenler (public/data/m24).
+// Aylık NASA katmanları (MERRA-2 2024 + OCO-2 GEOS L3 2021) — Ceyhun'un paketinden (sürüm 3) denetimden geçenler (public/data/m24).
+// Yalnız statik dosyalar; canlı API (sürüm 2) kullanılmaz.
 // Statik ikili dosya okuyucu: int16 LE, q ∈ 0..1000, -1 = veri yok. API gerekmez.
 import type { LatLon } from './geo.ts';
 import type { RadarLayer, Timbre } from './radar.ts';
@@ -7,12 +8,15 @@ import { monthName } from './co2.ts';
 export interface M24LayerMeta {
   index: number; src: string; id: string; tr: string; en: string; product: string; variable: string; unit: string;
   nasa: string; note?: string; daily?: boolean; transform: 'linear' | 'log1p'; vmin: number; vmax: number; sourceLabel: string;
+  year: number; signed?: boolean;
+  kanit?: { nasa_koleksiyon?: string; netcdf_degiskeni?: string; nasa_long_name?: string; orijinal_birim?: string; ornek_granul_dosyasi?: string; dosya_sayisi?: number };
 }
+export interface M24Preset { key: string; ad: string; layers: string[]; removed: string[] }
 export interface M24Meta {
   year: number; months: string[];
   grid: { nLat: number; nLon: number; lat0: number; dLat: number; lon0: number; dLon: number; cell: string };
   files: { monthly: string; monthlyShape: [number, number, number]; co2Daily: string; co2DailyShape: [number, number]; co2DailyStart: string; co2DailyNote: string };
-  provenance: string; layers: M24LayerMeta[];
+  provenance: string; layers: M24LayerMeta[]; clipped?: boolean; clipping?: string; presets?: M24Preset[]; surum?: number;
 }
 
 /** Normalize q (0..1000) → gerçek birim. */
@@ -72,14 +76,14 @@ export class M24 {
     const dec = Math.abs(L.vmax - L.vmin) < 2 ? 3 : Math.abs(L.vmax - L.vmin) < 50 ? 1 : 0;
     return {
       id: L.id as Timbre, label: en ? L.en : L.tr, instrument: INSTRUMENT_LABEL[L.id]?.[lang] ?? '', unit,
-      min: L.vmin, max: L.vmax, baseHz: 0, when: `${monthName(month, lang)} ${this.meta.year} · ${L.product} ${L.variable}`,
+      min: L.vmin, max: L.vmax, baseHz: 0, when: `${monthName(month, lang)} ${L.year} · ${L.product} ${L.variable}`,
       sample: (p) => this.value(layerIdx, month, p),
-      // vmin/vmax ≈ %2 ve %98 yüzdelikleri: kaynak pakette uçlar bu sınırlara kırpılmış → sınırda "≥ / ≤" de, kesin değer söyleme
-      fmt: (v) => { const tol = (L.vmax - L.vmin) * 0.002; const pre = v >= L.vmax - tol ? '≥ ' : v <= L.vmin + tol ? '≤ ' : ''; return `${pre}${v.toFixed(dec)}${L.unit && L.unit !== '0–1' ? ' ' + L.unit : ''}`; },
+      // kırpılmış pakette (sürüm 2) sınırdaki değer "≥ / ≤" okunur; sürüm 3'te kırpma yok → kesin değer
+      fmt: (v) => { const tol = (L.vmax - L.vmin) * 0.002; const pre = !this.meta.clipped ? '' : v >= L.vmax - tol ? '≥ ' : v <= L.vmin + tol ? '≤ ' : ''; return `${pre}${v.toFixed(dec)}${L.unit && L.unit !== '0–1' ? ' ' + L.unit : ''}`; },
     };
   }
 
-  // --- günlük CO₂ 2024 (9 MB; istenince yüklenir)
+  // --- günlük CO₂ (yılı meta.files.co2DailyStart; 9 MB; istenince yüklenir)
   get dailyLoaded() { return !!this.daily; }
   async loadDaily(base: string) {
     if (this.daily) return;
@@ -100,4 +104,5 @@ export const INSTRUMENT_LABEL: Record<string, { tr: string; en: string }> = {
   co2_24: { tr: 'keman', en: 'violin' }, so2_24: { tr: 'marimba', en: 'marimba' }, aod_24: { tr: 'çelesta', en: 'celesta' },
   t2m_24: { tr: 'gitar', en: 'guitar' }, ts_24: { tr: 'gitar (pes)', en: 'guitar (low)' }, albedo_24: { tr: 'flüt', en: 'flute' },
   sst_24: { tr: 'arp', en: 'harp' }, precip_24: { tr: 'çello', en: 'cello' }, seaice_24: { tr: 'flüt (tiz)', en: 'flute (high)' },
+  o3_24: { tr: 'çelesta (seyrek)', en: 'celesta (sparse)' }, twland_24: { tr: 'çello (pes)', en: 'cello (low)' }, lai_24: { tr: 'marimba (orta)', en: 'marimba (mid)' },
 };

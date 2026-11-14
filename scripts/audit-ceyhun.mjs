@@ -1,13 +1,21 @@
-// Ceyhun'un veri paketi denetimi (referans/, git'e girmez). Kullanım: node scripts/audit-ceyhun.mjs
-// Çıktı: data/audit_ceyhun.json (tablo için ham ölçümler). Değer UYDURMAZ: dönüşümü belirsiz olan her şey ayrı işaretlenir.
+// Ceyhun'un veri paketi denetimi (referans/, git'e girmez).
+// Kullanım: node scripts/audit-ceyhun.mjs [klasör]   (varsayılan referans/v3; v2 için: referans)
+// Çıktı: data/audit_ceyhun_v<sürüm>.json (tablo için ham ölçümler). Değer UYDURMAZ: dönüşümü belirsiz olan her şey ayrı işaretlenir.
 import fs from 'node:fs';
 
-const M = JSON.parse(fs.readFileSync('referans/meta.json', 'utf8'));
+const DIR = process.argv[2] ?? 'referans/v3';
+const M = JSON.parse(fs.readFileSync(`${DIR}/meta.json`, 'utf8'));
+const VER = M.surum ?? 2;
 const G = M.grid; const NP = G.n_points, NLAT = G.n_lat, NLON = G.n_lon;
-const L = M.aylik_kup.katman_sirasi;
-const cube = new Int16Array(fs.readFileSync('referans/monthly_cube.bin').buffer.slice(0));
-const dailyCO2 = new Int16Array(fs.readFileSync('referans/daily_CO2.bin').buffer.slice(0));
-const dailyFIRE = new Int16Array(fs.readFileSync('referans/daily_FIRE.bin').buffer.slice(0));
+// katman sırası: v3'te her katmanın cube_offset_index'i; yoksa katman_sirasi
+const L = M.layers && Object.values(M.layers).every((x) => Number.isInteger(x.cube_offset_index))
+  ? Object.entries(M.layers).sort((a, b) => a[1].cube_offset_index - b[1].cube_offset_index).map(([k]) => k)
+  : M.aylik_kup.katman_sirasi;
+if (L.join() !== M.aylik_kup.katman_sirasi.join()) console.warn('UYARI: cube_offset_index sırası katman_sirasi ile farklı');
+const cube = new Int16Array(fs.readFileSync(`${DIR}/monthly_cube.bin`).buffer.slice(0));
+if (cube.length !== L.length * 12 * NP) throw new Error(`küp boyu ${cube.length} ≠ ${L.length}×12×${NP}`);
+const dailyCO2 = new Int16Array(fs.readFileSync(`${DIR}/daily_CO2.bin`).buffer.slice(0));
+const dailyFIRE = fs.existsSync(`${DIR}/daily_FIRE.bin`) ? new Int16Array(fs.readFileSync(`${DIR}/daily_FIRE.bin`).buffer.slice(0)) : null;
 const q = (layer, month, p) => cube[(layer * 12 + month) * NP + p];
 const latOf = (p) => G.lat0 + Math.floor(p / NLON) * G.dlat, lonOf = (p) => G.lon0 + (p % NLON) * G.dlon;
 
@@ -83,7 +91,7 @@ function dailyCheck(arr, name) {
   for (let p = 0; p < NP; p += 37) { let d0 = 0; for (let m = 0; m < 12; m++) { let s = 0, c = 0; for (let d = d0; d < d0 + days[m]; d++) { const v = arr[d * NP + p]; if (v !== -1) { s += v; c++; } } d0 += days[m]; const mv = q(li, m, p); if (c && mv !== -1) { mdiff += Math.abs(s / c - mv); mc++; } } }
   return { ikinciFarkSifiraYakinOran: +(linDays / total).toFixed(3), ikinciFarkTamSifirOran: +(exactZero / total).toFixed(3), gunlukAyOrt_vs_aylik_ortMutlakFarkQ: +(mdiff / mc).toFixed(2) };
 }
-out.gunluk = { CO2: dailyCheck(dailyCO2, 'CO2'), FIRE: dailyCheck(dailyFIRE, 'FIRE') };
+out.gunluk = { CO2: dailyCheck(dailyCO2, 'CO2'), ...(dailyFIRE && L.includes('FIRE') ? { FIRE: dailyCheck(dailyFIRE, 'FIRE') } : {}) };
 
 // --- bağımsız mekânsal karşılaştırma (bizim NASA kaynaklı ızgaralarımızla)
 function corr(xs, ys) { let n = 0, sa = 0, sb = 0, saa = 0, sbb = 0, sab = 0; for (let i = 0; i < xs.length; i++) { const x = xs[i], y = ys[i]; if (!Number.isFinite(x) || !Number.isFinite(y)) continue; n++; sa += x; sb += y; saa += x * x; sbb += y * y; sab += x * y; } return n > 10 ? { r: +((n * sab - sa * sb) / Math.sqrt((n * saa - sa * sa) * (n * sbb - sb * sb))).toFixed(3), n } : null; }
@@ -95,7 +103,7 @@ function oursAt(J, layerObj, frame, lat, lon) { // 1° ızgara hücresi
   if (qv === 255) return NaN; const Q = layerObj.quant; return Q.encoding === 'sqrt' ? Q.max * (qv / 254) ** 2 : Q.offset + qv * Q.scale;
 }
 const cmp = {};
-{ // NIGHTLIGHTS vs SVS 5313 Black Marble 2023 parlaklığı (bizim ızgara)
+if (L.includes('NIGHTLIGHTS')) { // NIGHTLIGHTS vs SVS 5313 Black Marble 2023 parlaklığı (bizim ızgara)
   const J = ours('5313.json'); const Y = J.layers.years; const fr = Y.list.indexOf(2023);
   const li = L.indexOf('NIGHTLIGHTS'); const xs = [], ys = [];
   for (let p = 0; p < NP; p++) { const v = q(li, 0, p); if (v === -1) continue; const o = oursAt(J, Y, fr, latOf(p), lonOf(p)); xs.push(v); ys.push(o); }
@@ -134,5 +142,62 @@ out.karsilastirma = cmp;
     out.layers[id].karaKapsam = +(lv / lt).toFixed(3); out.layers[id].denizKapsam = +(sv / st).toFixed(3);
   }
 }
-fs.writeFileSync('data/audit_ceyhun.json', JSON.stringify(out, null, 1));
-console.log('yazıldı: data/audit_ceyhun.json');
+// ================= v3 ek kontrolleri =================
+const physV = (meta, qq) => { if (qq < 0) return NaN; const t = qq / 1000, a = meta.vmin, b = meta.vmax;
+  return meta.transform === 'linear' ? a + t * (b - a) : Math.expm1(Math.log1p(a) + t * (Math.log1p(b) - Math.log1p(a))); }; // log → log1p (v2 denetimi)
+for (let li = 0; li < L.length; li++) {
+  const id = L[li], meta = M.layers[id], o = out.layers[id];
+  // kırpma: uçlarda yığılma (q = 0 ya da 1000) oranı
+  let z = 0, top = 0, valid = 0; for (let i = 0; i < 12 * NP; i++) { const v = cube[li * 12 * NP + i]; if (v < 0) continue; valid++; if (v === 0) z++; if (v === 1000) top++; }
+  o.ucYigilma = { q0: +(z / valid).toFixed(4), q1000: +(top / valid).toFixed(4) };
+  // enlem-yalnız mı: her ay için enlem ortalaması modelinin açıkladığı varyans (R²)
+  let ssTot = 0, ssRes = 0;
+  for (let m = 0; m < 12; m++) {
+    const rowMean = new Float64Array(NLAT), rowN = new Float64Array(NLAT); let gs = 0, gn = 0;
+    for (let p = 0; p < NP; p++) { const v = q(li, m, p); if (v < 0) continue; const k = Math.floor(p / NLON); rowMean[k] += v; rowN[k]++; gs += v; gn++; }
+    for (let k = 0; k < NLAT; k++) rowMean[k] = rowN[k] ? rowMean[k] / rowN[k] : 0;
+    const gm = gs / gn;
+    for (let p = 0; p < NP; p++) { const v = q(li, m, p); if (v < 0) continue; ssTot += (v - gm) ** 2; ssRes += (v - rowMean[Math.floor(p / NLON)]) ** 2; }
+  }
+  o.enlemR2 = +(1 - ssRes / ssTot).toFixed(4);
+  // fiziksel istatistik (gerçek birim; log → log1p)
+  const vals = []; for (let i = 0; i < 12 * NP; i++) { const v = cube[li * 12 * NP + i]; if (v >= 0) vals.push(physV(meta, v)); }
+  vals.sort((a, b) => a - b); const pc = (x) => +vals[Math.floor(x * (vals.length - 1))].toPrecision(5);
+  o.fiziksel = { min: pc(0), p02: pc(0.02), medyan: pc(0.5), p98: pc(0.98), max: pc(1), ort: +(vals.reduce((a, b) => a + b, 0) / vals.length).toPrecision(5) };
+  const k = meta.kanit ?? {};
+  o.kanitEksik = ['nasa_koleksiyon', 'netcdf_degiskeni', 'nasa_long_name', 'orijinal_birim', 'ornek_granul_dosyasi'].filter((x) => !k[x]);
+  o.kanit = k;
+}
+// granül adı ↔ koleksiyon ↔ değişken uyumu (MERRA-2 dosya adlandırması ve o dosyadaki bilinen değişkenler)
+const MERRA = { slv: ['M2TMNXSLV', ['T2M', 'TS', 'TO3', 'T10M', 'QV2M', 'PS', 'SLP', 'U10M', 'V10M']], aer: ['M2TMNXAER', ['TOTEXTTAU', 'SO2SMASS', 'BCCMASS', 'DUCMASS', 'SSSMASS', 'SO4SMASS', 'OCCMASS']],
+  chm: ['M2TMNXCHM', ['COSC', 'COCL']], rad: ['M2TMNXRAD', ['ALBEDO', 'SWGDN', 'LWGNT']], ocn: ['M2TMNXOCN', ['TSKINWTR', 'FRSEAICE']], lnd: ['M2TMNXLND', ['GWETTOP', 'GWETROOT', 'PRECTOTLAND', 'TWLAND', 'LAI', 'SNOMAS']] };
+for (const id of L) {
+  const k = M.layers[id].kanit ?? {}, g = k.ornek_granul_dosyasi ?? '', o = out.layers[id];
+  const mm = g.match(/^MERRA2_(\d)00\.tavgM_2d_(slv|aer|chm|rad|ocn|lnd)_Nx\.(\d{4})(\d{2})\.nc4$/);
+  const oco = g.match(/^oco2_GEOS_L3CO2_day_(\d{4})(\d{2})(\d{2})_B\w+\.nc4$/);
+  if (mm) { const [short, vars] = MERRA[mm[2]]; o.granul = { gecerliAd: true, yil: +mm[3], gercekKisaAd: short, koleksiyonAdiAyni: k.nasa_koleksiyon === short, koleksiyonOneki: (k.nasa_koleksiyon ?? '').startsWith(short), degiskenBuDosyada: vars.includes(k.netcdf_degiskeni) }; }
+  else if (oco) o.granul = { gecerliAd: true, yil: +oco[1], gercekKisaAd: 'OCO2_GEOS_L3CO2_DAY', koleksiyonAdiAyni: k.nasa_koleksiyon === 'OCO2_GEOS_L3CO2_DAY', degiskenBuDosyada: k.netcdf_degiskeni === 'XCO2' };
+  else o.granul = { gecerliAd: false };
+}
+// soruya özel ölçümler (bölge ortalaması ve en büyüğü, gerçek birim)
+const at = (id, m, lat0, lat1, lon0, lon1) => { const li = L.indexOf(id), meta = M.layers[id]; let s = 0, c = 0, mx = -Infinity;
+  for (let p = 0; p < NP; p++) { const la = latOf(p), lo = lonOf(p); if (la < lat0 || la > lat1 || lo < lon0 || lo > lon1) continue; const v = physV(meta, q(li, m, p)); if (Number.isNaN(v)) continue; s += v; c++; mx = Math.max(mx, v); }
+  return { ort: +(s / c).toFixed(2), max: +mx.toFixed(2), n: c }; };
+const v3 = {};
+if (L.includes('TEMP')) { v3.Sahra_Temmuz_T2M = at('TEMP', 6, 18, 30, -5, 30); v3.Sahra_Temmuz_TS = L.includes('LST') ? at('LST', 6, 18, 30, -5, 30) : null; }
+if (L.includes('O3')) { v3.O3_Ocak_tropik = at('O3', 0, -20, 20, -180, 180); v3.O3_Ekim_Antarktika = at('O3', 9, -89, -65, -180, 180); v3.O3_Mart_Arktik = at('O3', 2, 65, 89, -180, 180); }
+if (L.includes('CO')) { v3.CO_Agustos_OrtaAfrika = at('CO', 7, -15, 5, 10, 35); v3.CO_Ocak_GuneyPasifik = at('CO', 0, -50, -30, -150, -100); v3.CO_Ocak_DoguCin = at('CO', 0, 28, 40, 105, 122); }
+if (L.includes('FIRE')) { v3.BC_Agustos_OrtaAfrika = at('FIRE', 7, -15, 5, 10, 35); v3.BC_Ocak_GuneyPasifik = at('FIRE', 0, -50, -30, -150, -100); }
+if (L.includes('GRACE')) { const li = L.indexOf('GRACE'); let pos = 0, neg = 0; for (let i = 0; i < 12 * NP; i++) { const v = cube[li * 12 * NP + i]; if (v < 0) continue; const x = physV(M.layers.GRACE, v); if (x > 0) pos++; else if (x < 0) neg++; } v3.GRACE_isaret = { pozitif: pos, negatif: neg }; }
+// günlük CO2: hangi yıl? ekip OCO-2 2021 paketinin 1 Ocak'ı (co2_2021_grid ay 0 = ayın 1. günü) ile karşılaştır
+{ const J = ours('co2_2021_grid.json'), g = J.grid, meta = M.layers.CO2; const xs = [], ys = []; let maxd = 0;
+  for (let p = 0; p < NP; p++) { const v = dailyCO2[p]; if (v < 0) continue; const lat = latOf(p), lon = lonOf(p);
+    const kk = Math.round((lat - g.lat0) / g.dLat), ii = ((Math.round((lon - g.lon0) / g.dLon) % g.nLon) + g.nLon) % g.nLon; if (kk < 0 || kk >= g.nLat) continue;
+    const a = meta.vmin + v / 1000 * (meta.vmax - meta.vmin), b = 400 + J.values[0][kk * g.nLon + ii] / 100; xs.push(a); ys.push(b); maxd = Math.max(maxd, Math.abs(a - b)); }
+  v3.gunlukCO2_gun1_vs_ekip2021_1Ocak = { ...corr(xs, ys), maxFarkPpm: +maxd.toFixed(2) };
+  v3.gunlukCO2_baslangic = M.layers.CO2.gunluk?.baslangic ?? null; }
+out.v3 = v3; out.surum = VER; out.presets = M.presets ?? null;
+const outFile = `data/audit_ceyhun_v${VER}.json`;
+fs.writeFileSync(outFile, JSON.stringify(out, null, 1));
+console.log('yazıldı:', outFile);
+

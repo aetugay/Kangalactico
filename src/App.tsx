@@ -95,7 +95,9 @@ export default function App() {
   const [m24Visual, setM24Visual] = useState<string | null>(null);
   /** 2024 katmanını aç/kapat (panel ve sesli/yazılı komut ortak). Veri yüklü değilse yükler. */
   const M24_NAMES: Record<string, { tr: string; en: string }> = {
-    co2_24: { tr: 'Atmosferik CO₂ 2024', en: 'Atmospheric CO₂ 2024' }, so2_24: { tr: 'Yüzey SO₂ 2024', en: 'Surface SO₂ 2024' },
+    co2_24: { tr: 'Atmosferik CO₂ 2021 (aylık ortalama)', en: 'Atmospheric CO₂ 2021 (monthly mean)' },
+    o3_24: { tr: 'Toplam sütun ozonu 2024', en: 'Total column ozone 2024' }, twland_24: { tr: 'Kara su depolaması farkı 2024', en: 'Land water storage departure 2024' },
+    lai_24: { tr: 'Yaprak alanı indeksi 2024', en: 'Leaf area index 2024' }, so2_24: { tr: 'Yüzey SO₂ 2024', en: 'Surface SO₂ 2024' },
     aod_24: { tr: 'Aerosol optik derinliği 2024', en: 'Aerosol optical depth 2024' }, t2m_24: { tr: '2 m hava sıcaklığı 2024', en: '2 m air temperature 2024' },
     ts_24: { tr: 'Yüzey deri sıcaklığı 2024', en: 'Surface skin temperature 2024' }, albedo_24: { tr: 'Yüzey albedosu 2024', en: 'Surface albedo 2024' },
     sst_24: { tr: 'Deniz yüzeyi sıcaklığı 2024', en: 'Sea surface temperature 2024' }, precip_24: { tr: 'Kara üstü yağış 2024', en: 'Precipitation over land 2024' },
@@ -109,6 +111,12 @@ export default function App() {
     announce(v ? (en ? `${n} on: ${inst}.` : `${n} açıldı: ${inst}.`) : (en ? `${n} off.` : `${n} kapandı.`));
   };
   const anyM24On = Object.values(m24On).some(Boolean);
+  /** Ceyhun'un presetleri: yalnız UYGUN katmanlar açılır, diğer aylık katmanlar kapanır; çıkarılanlar söylenir. */
+  const applyM24Preset = (ids: string[], name: string, removed: string[]) => {
+    setM24On(Object.fromEntries(ids.map((id) => [id, true]))); setM24Visual(ids[0] ?? null);
+    const en = langRef.current === 'en', names = ids.map((id) => M24_NAMES[id]?.[en ? 'en' : 'tr'] ?? id).join(', ');
+    announce(en ? `${name}: ${names}.${removed.length ? ` Not included because it did not pass our data audit: ${removed.join(', ')}.` : ''}` : `${name}: ${names}.${removed.length ? ` Veri denetimimizden geçmediği için eklenmedi: ${removed.join(', ')}.` : ''}`);
+  };
   const openM24 = () => { if (m24 || m24Loading) return; setM24Loading(true); M24.load(import.meta.env.BASE_URL).then(setM24).catch((e) => setErr(String(e))).finally(() => setM24Loading(false)); };
   const [pickOpen, setPickOpen] = useState(false);
   // iki yeri karşılaştırma: B yeri, sırayla dinleme ve tur sayacı
@@ -598,7 +606,10 @@ export default function App() {
               : has('albedo', 'yansitma', 'reflectiv') ? 'albedo_24'
                 : has('deri sicakl', 'skin temp') ? 'ts_24'
                   : has('hava sicakl', 'air temp', 'iki metre', '2 metre') || (has('2024') && has('sicakl', 'temperature')) ? 't2m_24'
-                    : has('2024') && has('karbon', 'co2', 'carbon') ? 'co2_24' : null;
+                    : has('ozon', 'ozone') ? 'o3_24'
+                      : has('yaprak', 'bitki ortusu', 'vejetasyon', 'leaf area', 'vegetation', ' lai ') ? 'lai_24'
+                        : has('su depolama', 'yer alti suyu', 'water storage', 'groundwater', 'grace') ? 'twland_24'
+                          : has('aylik karbon', 'monthly carbon') || (has('2021') && has('aylik', 'monthly') && has('karbon', 'co2', 'carbon')) ? 'co2_24' : null;
     if (m24id) {
       const want = has('kapat', 'kapa ', 'kaldir', ' off ', 'remove') ? false : has(' ac ', 'ekle', 'goster', ' on ', ' add ', 'dinle', 'listen') ? true : !m24On[m24id];
       setM24Layer(m24id, want);
@@ -819,7 +830,7 @@ export default function App() {
     { title: lang === 'tr' ? 'Aerosoller' : 'Aerosols', text: 'Visualization: NASA Scientific Visualization Studio, Joseph V. Ardizzone (NASA/GSFC), Helen-Nicole Kostis (STC); scientific consulting Lesley Ott (NASA/GSFC)', href: 'https://svs.gsfc.nasa.gov/5669/' },
     { title: lang === 'tr' ? 'Kıyı çizgileri' : 'Coastlines', text: lang === 'tr' ? 'NASA Scientific Visualization Studio NDVI görselinden (SVS 5544) türetilmiş kara maskesi' : 'Land mask derived from a NASA Scientific Visualization Studio NDVI visualization (SVS 5544)', href: 'https://svs.gsfc.nasa.gov/5544/' },
     { title: lang === 'tr' ? 'Dünya olayları' : 'Earth events', text: lang === 'tr' ? 'NASA EONET (Earth Observatory Natural Event Tracker), canlı; son 30 günün açık olayları' : 'NASA EONET (Earth Observatory Natural Event Tracker), live; open events of the last 30 days', href: 'https://eonet.gsfc.nasa.gov/' },
-    { title: lang === 'tr' ? '2024 aylık katmanlar' : '2024 monthly layers', text: lang === 'tr' ? 'NASA GES DISC: MERRA-2 (M2TMNXAER SO2SMASS, TOTEXTTAU; M2TMNXSLV T2M, TS; M2TMNXRAD ALBEDO; M2TMNXOCN TSKINWTR, FRSEAICE; M2TMNXLND PRECTOTLAND) ve OCO-2 GEOS L3 CO₂ (OCO2_GEOS_L3CO2_DAY), 2024, 2° × 2.5°. Ekibimizden Ceyhun hazırladı; yalnız veri denetiminden geçen katmanlar.' : 'NASA GES DISC: MERRA-2 (M2TMNXAER SO2SMASS, TOTEXTTAU; M2TMNXSLV T2M, TS; M2TMNXRAD ALBEDO; M2TMNXOCN TSKINWTR, FRSEAICE; M2TMNXLND PRECTOTLAND) and OCO-2 GEOS L3 CO₂ (OCO2_GEOS_L3CO2_DAY), 2024, 2° × 2.5°. Prepared by our team member Ceyhun; only layers that passed our data audit.', href: 'https://disc.gsfc.nasa.gov/' },
+    { title: lang === 'tr' ? 'Aylık katmanlar (paket sürüm 3)' : 'Monthly layers (package v3)', text: lang === 'tr' ? 'NASA GES DISC: MERRA-2 (M2TMNXAER SO2SMASS, TOTEXTTAU; M2TMNXSLV T2M, TS, TO3; M2TMNXRAD ALBEDO; M2TMNXOCN TSKINWTR, FRSEAICE; M2TMNXLND PRECTOTLAND, TWLAND, LAI) ve OCO-2 GEOS L3 CO₂ (OCO2_GEOS_L3CO2_DAY) 2021; MERRA-2 2024; 2° × 2.5°. Ekibimizden Ceyhun hazırladı; yalnız veri denetiminden geçen katmanlar.' : 'NASA GES DISC: MERRA-2 (M2TMNXAER SO2SMASS, TOTEXTTAU; M2TMNXSLV T2M, TS, TO3; M2TMNXRAD ALBEDO; M2TMNXOCN TSKINWTR, FRSEAICE; M2TMNXLND PRECTOTLAND, TWLAND, LAI) and OCO-2 GEOS L3 CO₂ (OCO2_GEOS_L3CO2_DAY) 2021; MERRA-2 2024; 2° × 2.5°. Prepared by our team member Ceyhun; only layers that passed our data audit.', href: 'https://disc.gsfc.nasa.gov/' },
     { title: lang === 'tr' ? 'Şehirler' : 'Cities', text: 'GeoNames (geonames.org), CC BY 4.0' },
     { title: lang === 'tr' ? 'Kıyı çizgileri (3B küre)' : 'Coastlines (3D globe)', text: lang === 'tr' ? 'Natural Earth 1:50m Coastline, kamu malı (naturalearthdata.com). Yalnız altlık; veri katmanlarının çözünürlüğü değişmez.' : 'Natural Earth 1:50m Coastline, public domain (naturalearthdata.com). Base map only; data layer resolution is unchanged.', href: 'https://www.naturalearthdata.com/' },
   ];
@@ -896,7 +907,7 @@ export default function App() {
               )}
               {on.aerosol && <p className="small muted">{lang === 'tr' ? 'Aerosoller: 19 Ağu 2025 20:00 UTC; yoğunluk göreli.' : 'Aerosols: 19 Aug 2025 20:00 UTC; relative density.'}</p>}
               <M24Panel lang={lang} m24={m24} loading={m24Loading} onOpen={openM24} on={m24On} visualId={m24Idx >= 0 ? m24Visual : null} month={month} place={active} announce={announce}
-                setOn={setM24Layer}
+                setOn={setM24Layer} onPreset={applyM24Preset}
                 onShow={(id) => setM24Visual(id)} />
             </LayerPills>
             {guidePanel}
@@ -905,9 +916,10 @@ export default function App() {
               // etiket görünen/seçili katmanın yılını gösterir: 2024 katmanı görünüyorsa (ya da CO₂ 2021 kapalıysa) 2024, yoksa 2021 CO₂ paketi
               const use24 = !!m24 && (m24Idx >= 0 || !(on.co2 && co2));
               const idx24 = m24Idx >= 0 ? m24Idx : m24 ? m24.meta.layers.findIndex((l) => m24On[l.id]) : -1;
-              const label24 = (m: number) => `${monthName(m, lang)} 2024 · ${lang === 'en' ? 'monthly mean' : 'aylık ortalama'}`;
+              const yr = m24 && idx24 >= 0 ? m24.meta.layers[idx24].year : 2024;
+              const label24 = (m: number) => `${monthName(m, lang)} ${yr} · ${lang === 'en' ? 'monthly mean' : 'aylık ortalama'}`;
               const lbl = use24 || !co2 ? label24(month) : co2.monthLabel(month, lang);
-              return <Timeline lang={lang} month={month} label={lbl} year={use24 || !co2 ? 2024 : 2021} title={use24 || !co2 ? (lang === 'en' ? 'Date (2024 layers)' : 'Tarih (2024 katmanları)') : undefined} advance={advance} setAdvance={setAdvance} setMonth={(m) => {
+              return <Timeline lang={lang} month={month} label={lbl} year={use24 || !co2 ? yr : 2021} title={use24 || !co2 ? (lang === 'en' ? `Date (monthly layers, ${yr})` : `Tarih (aylık katmanlar, ${yr})`) : undefined} advance={advance} setAdvance={setAdvance} setMonth={(m) => {
                 setMonth(m);
                 if ((use24 || !co2) && m24 && idx24 >= 0) { const L = m24.radarLayer(idx24, m, lang), v = L.sample(place); announce(`${label24(m)}: ${L.label}, ${Number.isNaN(v) ? (lang === 'en' ? 'no data at the center' : 'merkezde veri yok') : (lang === 'en' ? L.fmt(v) + ' at the center' : 'merkezde ' + L.fmt(v))}.`); }
                 else if (co2) announce(lang === 'en' ? `${co2.monthLabel(m, 'en')}: ${co2.grid.bilinear(place, m).toFixed(1)} ppm at the center.` : `${co2.monthLabel(m)}: merkezde ${co2.grid.bilinear(place, m).toFixed(1)} ppm.`);

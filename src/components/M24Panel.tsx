@@ -1,4 +1,4 @@
-// 2024 aylık NASA katmanları paneli (MERRA-2 + OCO-2 GEOS L3; Ceyhun'un paketinden denetimden geçenler).
+// Aylık NASA katmanları paneli (MERRA-2 2024 + OCO-2 GEOS L3 2021; Ceyhun'un paketi sürüm 3, yalnız denetimden geçenler).
 // Her katman: aç/kapa, küre üstünde göster, bilgi kartı (kaynak ürün + değişken + çözünürlük + yıl + NASA eşleşmesi).
 import { useRef, useState } from 'react';
 import { engine } from '../audio/engine.ts';
@@ -19,14 +19,16 @@ interface Props {
   month: number;
   place: (LatLon & { name: string }) | null;
   announce: (t: string) => void;
+  /** Hazır seçim (preset): yalnız UYGUN katmanlar; removed = denetimden geçmediği için çıkarılanlar. */
+  onPreset?: (ids: string[], name: string, removed: string[]) => void;
 }
 
-export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onShow, month, place, announce }: Props) {
+export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onShow, month, place, announce, onPreset }: Props) {
   const en = lang === 'en';
   const [busy, setBusy] = useState(false);
   const run = useRef(0);
 
-  /** Seçili yerin 2024'teki 365 günlük CO₂'si: her gün bir nota (keman); veri olmayan gün sessiz. */
+  /** Seçili yerin 365 günlük CO₂'si (yıl: meta.files.co2DailyStart): her gün bir nota (keman); veri olmayan gün sessiz. */
   const listenDaily = async () => {
     if (!m24 || !place) return;
     if (busy) { run.current++; setBusy(false); announce(en ? 'Stopped.' : 'Durduruldu.'); return; }
@@ -38,9 +40,10 @@ export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onSh
       const valid = s.map((v, d) => ({ v, d })).filter((x) => !Number.isNaN(x.v));
       if (!valid.length) { announce(en ? 'No daily data here.' : 'Burada günlük veri yok.'); return; }
       const hi = valid.reduce((a, b) => (b.v > a.v ? b : a)), lo = valid.reduce((a, b) => (b.v < a.v ? b : a));
-      const day = (d: number) => new Date(Date.UTC(2024, 0, 1 + d)).toLocaleDateString(en ? 'en-GB' : 'tr-TR', { day: 'numeric', month: 'long', timeZone: 'UTC' });
-      announce(en ? `${place.name}, 2024: 365 days of carbon dioxide, one note per day; the lowest day is the lowest note, the highest day two octaves higher. Highest ${hi.v.toFixed(1)} ppm on ${day(hi.d)}, lowest ${lo.v.toFixed(1)} ppm on ${day(lo.d)}.`
-        : `${place.name}, 2024: karbondioksitin 365 günü, her gün bir nota; en düşük gün en pes, en yüksek gün iki oktav ince. En yüksek ${hi.v.toFixed(1)} ppm, ${day(hi.d)}; en düşük ${lo.v.toFixed(1)} ppm, ${day(lo.d)}.`);
+      const dYear = +(m24.meta.files.co2DailyStart ?? '2021').slice(0, 4);
+      const day = (d: number) => new Date(Date.UTC(dYear, 0, 1 + d)).toLocaleDateString(en ? 'en-GB' : 'tr-TR', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+      announce(en ? `${place.name}, ${dYear}: 365 days of carbon dioxide, one note per day; the lowest day is the lowest note, the highest day two octaves higher. Highest ${hi.v.toFixed(1)} ppm on ${day(hi.d)}, lowest ${lo.v.toFixed(1)} ppm on ${day(lo.d)}.`
+        : `${place.name}, ${dYear}: karbondioksitin 365 günü, her gün bir nota; en düşük gün en pes, en yüksek gün iki oktav ince. En yüksek ${hi.v.toFixed(1)} ppm, ${day(hi.d)}; en düşük ${lo.v.toFixed(1)} ppm, ${day(lo.d)}.`);
       const step = 0.055; // 365 gün ≈ 20 sn
       for (let c = 0; c < s.length; c += 30) {
         if (my !== run.current) return;
@@ -58,9 +61,19 @@ export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onSh
 
   return (
     <details className="m24" onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) onOpen(); }}>
-      <summary>{en ? '2024 monthly NASA layers (MERRA-2, OCO-2)' : '2024 aylık NASA katmanları (MERRA-2, OCO-2)'}</summary>
-      <p className="small muted">{en ? 'Monthly means of 2024 on a 2° × 2.5° grid. Only layers that passed our data audit; names corrected to the real NASA product.' : '2024 aylık ortalamaları, 2° × 2.5° ızgara. Yalnız veri denetimimizden geçen katmanlar; adlar gerçek NASA ürününe göre düzeltildi.'}</p>
-      {loading && <p className="small" role="status">{en ? 'Loading (2.7 MB)…' : 'Yükleniyor (2.7 MB)…'}</p>}
+      <summary>{en ? 'Monthly NASA layers (MERRA-2 2024, OCO-2 2021)' : 'Aylık NASA katmanları (MERRA-2 2024, OCO-2 2021)'}</summary>
+      <p className="small muted">{en ? 'Monthly means on a 2° × 2.5° grid (package version 3, no clipping). Only layers that passed our data audit; names follow the real NASA product in the evidence (kanit).' : 'Aylık ortalamalar, 2° × 2.5° ızgara (paket sürüm 3, uç değer kırpması yok). Yalnız veri denetimimizden geçen katmanlar; adlar kanıttaki gerçek NASA ürününe göre.'}</p>
+      {loading && <p className="small" role="status">{en ? 'Loading (3.6 MB)…' : 'Yükleniyor (3.6 MB)…'}</p>}
+      {m24 && !!m24.meta.presets?.length && onPreset && (
+        <div className="m24-presets" role="group" aria-label={en ? 'Presets' : 'Hazır seçimler'}>
+          {m24.meta.presets.map((p) => (
+            <button key={p.key} type="button" className="chip small-chip" onClick={() => onPreset(p.layers, p.ad, p.removed)}
+              title={p.removed.length ? (en ? `Removed (did not pass the audit): ${p.removed.join(', ')}` : `Çıkarıldı (denetimden geçmedi): ${p.removed.join(', ')}`) : undefined}>
+              {p.ad}{p.removed.length ? ' *' : ''}
+            </button>
+          ))}
+        </div>
+      )}
       {m24 && (
         <ul className="m24-list">
           {m24.meta.layers.map((L) => {
@@ -78,16 +91,24 @@ export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onSh
                     <dt>{en ? 'Source product' : 'Kaynak ürün'}</dt><dd>{L.product}</dd>
                     <dt>{en ? 'Variable' : 'Değişken'}</dt><dd>{L.variable}{L.unit ? ` (${L.unit})` : ''}</dd>
                     <dt>{en ? 'Resolution' : 'Çözünürlük'}</dt><dd>{m24.meta.grid.cell} {en ? '(about 220 × 280 km at the equator)' : '(ekvatorda yaklaşık 220 × 280 km)'}</dd>
-                    <dt>{en ? 'Year' : 'Yıl'}</dt><dd>{m24.meta.year} · {en ? 'month' : 'ay'}: {monthName(month, lang)}{L.daily ? (en ? ' · daily series available' : ' · günlük seri var') : ''}</dd>
+                    <dt>{en ? 'Year' : 'Yıl'}</dt><dd>{L.year} · {en ? 'month' : 'ay'}: {monthName(month, lang)}{L.daily ? (en ? ' · daily series available' : ' · günlük seri var') : ''}</dd>
                     <dt>{en ? 'NASA match' : 'NASA eşleşmesi'}</dt><dd>{L.nasa}</dd>
                     {L.sourceLabel !== L.tr && <><dt>{en ? 'Original label' : 'Paketteki ad'}</dt><dd>{L.sourceLabel} {en ? '(corrected)' : '(düzeltildi)'}</dd></>}
                     {L.note && <><dt>{en ? 'Note' : 'Not'}</dt><dd>{L.note}</dd></>}
-                    <dt>{en ? 'Limits' : 'Sınırlar'}</dt><dd>{en ? `Values are clipped to ${L.vmin}…${L.vmax} (about the 2nd–98th percentile); values at the limits are read as ≥ / ≤.` : `Değerler ${L.vmin}…${L.vmax} aralığına kırpılmış (yaklaşık %2–%98 yüzdelik); sınırdaki değerler ≥ / ≤ diye okunur.`}</dd>
+                    {L.kanit && <>
+                      <dt>{en ? 'Evidence: collection' : 'Kanıt: koleksiyon'}</dt><dd>{L.kanit.nasa_koleksiyon}{L.kanit.nasa_koleksiyon !== L.product ? (en ? ` (NASA short name: ${L.product})` : ` (NASA kısa adı: ${L.product})`) : ''}</dd>
+                      <dt>{en ? 'Evidence: NetCDF variable' : 'Kanıt: NetCDF değişkeni'}</dt><dd>{L.kanit.netcdf_degiskeni} — “{L.kanit.nasa_long_name}”</dd>
+                      <dt>{en ? 'Evidence: original unit' : 'Kanıt: özgün birim'}</dt><dd>{L.kanit.orijinal_birim}{L.unit ? (en ? ` → shown as ${L.unit}` : ` → gösterilen: ${L.unit}`) : ''}</dd>
+                      <dt>{en ? 'Evidence: sample granule' : 'Kanıt: örnek dosya'}</dt><dd className="mono">{L.kanit.ornek_granul_dosyasi}{L.kanit.dosya_sayisi ? ` · ${L.kanit.dosya_sayisi} ${en ? 'files' : 'dosya'}` : ''}</dd>
+                    </>}
+                    <dt>{en ? 'Range' : 'Aralık'}</dt><dd>{m24.meta.clipped
+                      ? (en ? `Clipped to ${L.vmin}…${L.vmax}; values at the limits are read as ≥ / ≤.` : `${L.vmin}…${L.vmax} aralığına kırpılmış; sınırdaki değerler ≥ / ≤ diye okunur.`)
+                      : (en ? `${L.vmin} … ${L.vmax} (full range, not clipped)` : `${L.vmin} … ${L.vmax} (tam aralık, kırpılmamış)`)}</dd>
                   </dl>
                 </details>
                 {L.daily && place && (
                   <button type="button" className="mini" onClick={listenDaily}>
-                    {busy ? (en ? 'Stop' : 'Durdur') : (en ? `Listen to 365 days of 2024 at ${place.name} (9 MB)` : `${place.name}: 2024'ün 365 gününü dinle (9 MB)`)}
+                    {busy ? (en ? 'Stop' : 'Durdur') : (en ? `Listen to 365 days of ${(m24.meta.files.co2DailyStart ?? '2021').slice(0, 4)} at ${place.name} (9 MB)` : `${place.name}: ${(m24.meta.files.co2DailyStart ?? '2021').slice(0, 4)} yılının 365 gününü dinle (9 MB)`)}
                   </button>
                 )}
               </li>

@@ -102,13 +102,19 @@ export class SstSource {
   readonly cs: ColorScale;
   constructor(file: SstFile, cs: ColorScale) { this.file = file; this.cs = cs; this.layer = new Layer(file.grid, file.data, file.quant); }
   get frames() { return this.file.frames.count; }
+  /** Karenin yaklaşık tarihi (model yılı aralığına eşit yayılmış; kare başına kesin tarih yok). */
+  dateLabel(frame: number, lang: Lang = 'tr') {
+    const [a, b] = this.file.frames.dateRange.map((d) => new Date(d).getTime());
+    const d = new Date(a + ((b - a) * frame) / Math.max(1, this.frames - 1));
+    return `≈ ${(lang === 'en' ? MONTHS_EN : MONTHS)[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  }
   /** Video zamanı (sn) → ızgara karesi. */
   frameAt(videoSec: number) { return Math.max(0, Math.min(this.frames - 1, Math.floor(videoSec * this.file.frames.fps))); }
   radarLayer(frame: number, lang: Lang = 'tr'): RadarLayer {
     const en = lang === 'en';
     return {
       id: 'sst', label: en ? 'Ocean temperature' : 'Okyanus sıcaklığı', instrument: en ? 'harp and wave sound' : 'arp ve dalga sesi', unit: '°C',
-      min: this.cs.min, max: this.cs.max, baseHz: 220, when: en ? 'model, March 2007 – March 2008' : 'model, Mart 2007 – Mart 2008',
+      min: this.cs.min, max: this.cs.max, baseHz: 220, when: `model, ${this.dateLabel(frame, lang)}`,
       sample: (p) => this.layer.sample(frame, p),
       fmt: (v) => `${Math.round(v)} ${en ? 'degrees sea' : 'derece deniz'}`,
     };

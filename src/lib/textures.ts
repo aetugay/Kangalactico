@@ -3,7 +3,7 @@ import type { LatLon } from './geo.ts';
 import type { LandMask } from './land.ts';
 
 /** Bir boyama fonksiyonundan 2:1 canvas (veri yoksa saydam). */
-export function paintEquirect(paint: (p: LatLon) => [number, number, number] | null, w = 1024, h = 512): HTMLCanvasElement {
+export function paintEquirect(paint: (p: LatLon) => [number, number, number] | null, w = 720, h = 360): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   const ctx = c.getContext('2d')!;
@@ -25,7 +25,7 @@ export function paintEquirect(paint: (p: LatLon) => [number, number, number] | n
  * Kara/kıyı dokusu: R = kıyı çizgisi (0/255), G = kara (0/255). Shader'da taban renk ve kıyı katmanı için.
  * Kaynak: SVS 5544 görselinden türetilmiş 0.5° kara maskesi.
  */
-export function landTexture(land: LandMask, w = 2048, h = 1024): HTMLCanvasElement {
+export function landTexture(land: LandMask, w = 1440, h = 720): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   const ctx = c.getContext('2d')!;

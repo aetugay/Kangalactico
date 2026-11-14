@@ -141,7 +141,7 @@ export function Globe3D(props: Props) {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enablePan = false; controls.enableDamping = true; controls.dampingFactor = 0.08;
     controls.minDistance = 1.35; controls.maxDistance = 6; controls.rotateSpeed = 0.5;
-    controls.autoRotate = !P.current.reducedMotion; controls.autoRotateSpeed = 0.35;
+    controls.autoRotate = !P.current.reducedMotion; controls.autoRotateSpeed = 0.55;
 
     // --- doku geçişi
     const texOf = (s: GlobeSource) => {
@@ -202,11 +202,14 @@ export function Globe3D(props: Props) {
 
     // --- döngü
     let raf = 0, last = performance.now(), lvl = 0;
-    const fps = { t0: performance.now(), n: 0, done: false };
+    // performans denetimi: veri yüklenirken oluşan kısa takılmalar 3D'yi kapatmasın diye
+    // 4 sn ısınmadan sonra 5 sn boyunca kare sürelerinin ORTANCASINA bakılır (tek tük uzun kareler sayılmaz).
+    const fps = { t0: performance.now(), frames: [] as number[], done: false };
     const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
     const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
       if (document.hidden) return;
+      if (now - last > 1000 && !fps.done) { fps.t0 = now; fps.frames.length = 0; } // sekme gizliydi: ölçümü baştan al
       const dt = Math.min(0.1, (now - last) / 1000); last = now;
       if (fade) { const k = Math.min(1, (now - fade.t0) / fade.dur); uniforms.uMix.value = k; if (k >= 1) finishFade(); }
       if (flight) {
@@ -224,11 +227,14 @@ export function Globe3D(props: Props) {
       const s = 1 + lvl * 0.6; glow.scale.setScalar(s);
       if (!P.current.reducedMotion) stars.rotation.y += dt * 0.004;
       renderer.render(scene, camera);
-      // performans denetimi: ilk ~3 sn (ilk 0.7 sn ısınma hariç)
       if (!fps.done) {
         const el2 = now - fps.t0;
-        if (el2 > 700) fps.n++;
-        if (el2 > 3700) { fps.done = true; const f = fps.n / 3; if (f < 24) P.current.onSlow(); }
+        if (el2 > 4000) fps.frames.push(dt);
+        if (el2 > 9000) {
+          fps.done = true;
+          const sorted = fps.frames.slice().sort((x, y) => x - y), med = sorted[Math.floor(sorted.length / 2)] ?? 0;
+          if (sorted.length < 40 || med > 1 / 14) P.current.onSlow(); // ortanca 14 fps'in altındaysa 2D'ye düş
+        }
       }
     };
     raf = requestAnimationFrame(loop);

@@ -178,3 +178,24 @@ html.hc .foot { background: #fff; color: #000; border-top: 2px solid #000; }
   .intro { position: static; min-height: 70vh; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+/* ===== Keşfet / karşılaştırma / hikâyeler / olaylar / ses sahnesi ===== */
+.explore { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.explore .eyebrow { margin: 0; }
+.explore .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.story-now { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(94,228,242,.12); border: 1px solid var(--accent); }
+html.hc .story-now { background: #fff; border: 3px solid #000; }
+.story-list, .event-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; }
+.story-btn { width: 100%; text-align: left; display: grid; gap: 4px; padding: 14px 16px; min-height: 60px; border-radius: 14px; border: 1px solid var(--line); background: var(--glass); color: var(--ink); font: inherit; cursor: pointer; }
+.story-btn b { font-size: 17px; } .story-btn span { color: var(--muted); font-size: 14px; }
+.story-btn:hover:not(:disabled), .story-btn:focus-visible { border-color: var(--accent); }
+.story-btn:disabled { opacity: .5; cursor: not-allowed; }
+html.hc .story-btn { background: #fff; border: 3px solid #000; } html.hc .story-btn span { color: #000; }
+.event-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+html.hc .event-list li { border: 2px solid #000; }
+.mix-row { display: grid; gap: 4px; margin: 8px 0; }
+.mix-row input[type="range"], .sub-time input[type="range"] { width: 100%; }
+.mix-row select, .sub-time select, .tl-head select { min-height: 40px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: #0d1626; color: var(--ink); font: inherit; max-width: 100%; }
+html.hc .mix-row select, html.hc .sub-time select, html.hc .tl-head select { background: #fff; color: #000; border: 2px solid #000; }
+.sub-time { display: grid; gap: 6px; }
+.mix-layer { margin-top: 10px; }

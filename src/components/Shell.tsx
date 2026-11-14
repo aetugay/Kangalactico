@@ -77,6 +77,7 @@ export interface NowProps {
   instruments: { id: string; label: string; instrument: string; color: string }[];
   rangeKm: number; setRange: (km: number) => void; revSec: number; setRevSec: (s: number) => void; mode: Mode; setMode: (m: Mode) => void;
   legend: string | null;
+  children?: React.ReactNode;
 }
 const RANGES = [500, 2000, 5000];
 export function NowCard(p: NowProps) {
@@ -123,6 +124,7 @@ export function NowCard(p: NowProps) {
         </label>
         <label className="switch"><input type="checkbox" checked={p.mode === 'hikaye'} onChange={(e) => p.setMode(e.target.checked ? 'hikaye' : 'bilim')} /> <span>{tr(lang, 'story')}</span></label>
       </div>
+      {p.children}
       <p className="keys">{tr(lang, 'keys')}</p>
     </section>
   );
@@ -154,11 +156,15 @@ export function LayerPills({ lang, pills, onToggle, onShow, children }: { lang: 
 
 // ---------------- Zaman çizelgesi (CO₂ ayları)
 const MONTHS = { tr: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'], en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] };
+const MONTHS_LONG = { tr: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'], en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] };
 export function Timeline({ lang, month, setMonth, label, advance, setAdvance }: { lang: Lang; month: number; setMonth: (m: number) => void; label: string; advance: boolean; setAdvance: (v: boolean) => void }) {
   return (
     <section className="glass timeline" aria-labelledby="tl-h">
       <div className="tl-head">
         <h2 id="tl-h" className="eyebrow">{tr(lang, 'timeline')}: <b>{label}</b></h2>
+        <label className="lbl-inline">{lang === 'tr' ? 'Ay seç' : 'Pick month'}
+          <select value={month} onChange={(e) => setMonth(+e.target.value)}>{MONTHS_LONG[lang].map((m, i) => <option key={m} value={i}>{m} 2021</option>)}</select>
+        </label>
         <label className="switch small"><input type="checkbox" checked={advance} onChange={(e) => setAdvance(e.target.checked)} /> <span>{tr(lang, 'advance')}</span></label>
       </div>
       <input type="range" min={0} max={11} step={1} value={month} aria-labelledby="tl-h" aria-valuetext={label} onChange={(e) => setMonth(+e.target.value)} className="tl-range" />

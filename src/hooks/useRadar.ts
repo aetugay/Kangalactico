@@ -173,8 +173,9 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, scale = 'lo
   keys.current = (e) => {
     if (e.shiftKey || !P || !shortcutAllowed(e)) return; // yazı alanı / form denetimi / açık diyalog → kısayol yok
     const tag = e.target instanceof HTMLElement ? e.target.tagName.toLowerCase() : '';
-    if (e.key === ' ' && tag !== 'button' && tag !== 'summary') { e.preventDefault(); toggle(); }
-    else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); stepBeam(e.key === 'ArrowRight' ? 1 : -1); }
+    // Boşluk App.tsx'te: kısa basış çal/durdur, basılı tutma bas-konuş
+    void tag;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); stepBeam(e.key === 'ArrowRight' ? 1 : -1); }
     else if (e.key === 's' || e.key === 'S') { e.preventDefault(); summary(); }
     else if (e.key === 'l' || e.key === 'L') { e.preventDefault(); void runLegend(); }
   };

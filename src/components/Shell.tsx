@@ -231,6 +231,8 @@ export function About({ open, onClose, lang, credits }: { open: boolean; onClose
       <ul className="credits">
         {credits.map((c) => <li key={c.title}><b>{c.title}:</b> {c.text}{c.href && <> — <a href={c.href} target="_blank" rel="noreferrer">{c.href.replace('https://', '')}</a></>}</li>)}
       </ul>
+      <h3>{lang === 'tr' ? 'Sesli komut ve gizlilik' : 'Voice commands and privacy'}</h3>
+      <p className="small">{lang === 'tr' ? 'Sesli komut Chrome/Edge\'in konuşma tanıma servisini kullanır; ses kaydı tarayıcı sağlayıcısına gönderilir. İstemiyorsanız "dinlemeyi durdur" deyin ya da EarthEar AI Guide panelinden eller serbest dinlemeyi kapatıp komutları yazın.' : 'Voice commands use the speech recognition service of Chrome/Edge; your voice is sent to the browser provider. If you prefer not, say "stop listening" or turn hands-free listening off in the EarthEar AI Guide panel and type commands.'}</p>
       <p className="disclaimer"><b>{tr(lang, 'disclaimer')}</b></p>
     </Dialog>
   );

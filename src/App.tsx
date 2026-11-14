@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { engine } from './audio/engine.ts';
 import { speech } from './audio/speech.ts';
-import { listener } from './audio/listen.ts';
+import { handsFree, listener } from './audio/listen.ts';
 import { IconBars, IconBreath, IconStrings, IconWave } from './components/icons.tsx';
 import { DEFAULT_MIX, EventsDialog, Explore, instrumentName, SoundDialog, StoriesDialog, type EarthEvent, type Mix, type StoryInfo } from './components/Extras.tsx';
 import { PlacePicker } from './components/PlacePicker.tsx';
-import { shortcutAllowed } from './lib/keys.ts';
+import { isFormTarget, shortcutAllowed } from './lib/keys.ts';
 import { Guide, type CmdEntry, type GuideStatus } from './components/Guide.tsx';
 import { monthName } from './lib/co2.ts';
 import { RadarView } from './components/RadarView.tsx';
@@ -50,7 +50,7 @@ export default function App() {
   const guideRef = useRef(guide); guideRef.current = guide;
   const langRef = useRef(lang); langRef.current = lang;
   speech.setLang(lang);
-  const setLang = (l: Lang) => { langRef.current = l; setLangS(l); store.set('lang', l); speech.setLang(l); announceRef.current(l === 'en' ? 'Language: English. Voice commands, the voice guide and the screen are now in English.' : 'Dil: Türkçe. Sesli komut, sesli rehber ve ekran artık Türkçe.'); };
+  const setLang = (l: Lang) => { langRef.current = l; setLangS(l); store.set('lang', l); speech.setLang(l); handsFree.setLang(l); announceRef.current(l === 'en' ? 'Language: English. Voice commands, the voice guide and the screen are now in English.' : 'Dil: Türkçe. Sesli komut, sesli rehber ve ekran artık Türkçe.'); };
   const announceRef = useRef<(t: string) => void>(() => {});
   const setGuide = (v: boolean) => {
     setGuideS(v); store.set('guide', v ? '1' : '0');
@@ -265,13 +265,29 @@ export default function App() {
     ? 'EarthEar help. Press T and speak a command, for example: go to Ankara, play, stop, temperature on, summary. Moving the mouse over the globe says the name of the place under it. Press C to choose a place: type a city name, pick with the down arrow, confirm with Enter. Space plays or stops the radar. Each data layer is an instrument: keys 1 to 4 turn layers on and off. 1 carbon dioxide, violin. 2 surface temperature, guitar. 3 ocean temperature, harp and waves. 4 aerosols. While the music plays, travel across the Earth with I for north, K for south, J for west and M for east. Left and right arrows turn the beam by hand. B compares with a second place, Y opens Earth stories, E lists natural events near you, V opens your soundscape settings, N turns the narrator on. Dates are chosen in the layers panel and the date bar. S reads a summary, L plays the audio legend, Escape silences speech, G turns this voice guide off if you use a screen reader. H repeats this help.'
     : 'EarthEar yardım. T tuşuna basıp komut söyleyebilirsin, örneğin: Ankara\'ya git, çal, dur, sıcaklığı aç, özet. Fareyi Dünya üzerinde gezdirince altındaki yerin adı söylenir. Yer seçmek için C tuşuna bas: şehir adını yaz, aşağı okla seç, Enter ile onayla. Boşluk radarı çalar ya da durdurur. Her veri katmanı bir enstrümandır: 1 ile 4 arası tuşlar katmanları açıp kapatır. 1 karbondioksit, keman. 2 yüzey sıcaklığı, gitar. 3 okyanus sıcaklığı, arp ve dalga sesi. 4 aerosoller. Müzik çalarken Dünya üzerinde gezmek için I kuzey, K güney, J batı, M doğu tuşlarını kullan. Sol ve sağ ok ışını elle çevirir. B ikinci bir yerle karşılaştırır, Y Dünya hikâyelerini açar, E yakındaki doğa olaylarını listeler, V ses sahneni açar, N anlatıcıyı açar. Tarihler katmanlar panelinden ve tarih çubuğundan seçilir. S özeti okur, L sesli lejantı çalar, Escape konuşmayı susturur. Ekran okuyucu kullanıyorsan G tuşu bu sesli rehberi kapatır. H bu yardımı tekrarlar.'), []);
   const welcomed = useRef(false);
+  // ---------- tek dokunuşla başlama + eller serbest dinleme (kör kullanıcı için tuş bilmek gerekmez)
+  const [started, setStarted] = useState(false);
+  const [hfWanted, setHfWantedS] = useState(() => store.get('hf') !== '0'); // eller serbest dinleme tercihi (varsayılan açık)
+  const hfWantedRef = useRef(hfWanted); hfWantedRef.current = hfWanted;
+  const [hfLive, setHfLive] = useState(false);       // şu an sürekli dinliyor mu
+  const hfStoppedByVoice = useRef(false);             // "sus" / "dinlemeyi durdur" ile kapandı → herhangi bir tuş tekrar açar
+  const hfApi = useRef({ start: (_say: boolean) => {}, stop: (_byVoice: boolean) => {}, unavailable: () => {} });
   const welcome = useCallback(() => {
     if (welcomed.current) return; welcomed.current = true;
-    const msg = langRef.current === 'en'
-      ? 'Welcome to EarthEar. For voice commands press Alt+T or use the first button. For help, press the question mark.'
-      : 'EarthEar\'e hoş geldiniz. Sesli komut için Alt+T\'ye basın ya da ilk butonu kullanın. Yardım için soru işareti.';
+    setStarted(true);
+    setTimeout(() => document.querySelector<HTMLElement>('.speak-btn')?.focus(), 60); // başlatma katmanı kalkınca odak Konuş düğmesine
+    engine.unlock(); // AudioContext kullanıcı hareketiyle açılır
+    const en = langRef.current === 'en';
+    const canListen = listener.supported && hfWantedRef.current;
+    const msg = canListen
+      ? (en ? 'Hello, I am EarthEar. I am listening to you. We recommend wearing headphones. Say a city name, for example Sivas. Say "help" for help.'
+        : 'Merhaba, ben EarthEar. Sizi dinliyorum. Kulaklık takmanızı öneririz. Bir şehir adı söyleyin, örneğin Sivas. Yardım için "yardım" deyin.')
+      : (en ? 'Hello, I am EarthEar. We recommend wearing headphones. Voice commands are not available right now. You can type commands: type a city name in the command box, for example Sivas.'
+        : 'Merhaba, ben EarthEar. Kulaklık takmanızı öneririz. Sesli komut şu an kullanılamıyor. Yazarak komut verebilirsiniz: komut kutusuna bir şehir adı yazın, örneğin Sivas.');
     setLive(''); requestAnimationFrame(() => setLive(msg)); // ekran okuyucu her zaman duyar
-    if (guideRef.current) void speech.say(msg);
+    if (canListen) hfApi.current.start(false);          // mikrofon izni hemen istenir (kullanıcı hareketiyle); kendi sesimiz yankı süzgecinde
+    const after = () => { if (canListen && handsFree.enabled) engine.beep(); else if (!listener.supported) hfApi.current.unavailable(); };
+    if (guideRef.current && speech.supported) void speech.say(msg).then(after); else after();
   }, []);
 
   // düğmenin, bağlantının, kaydırıcının adını oku (fare üstüne gelince ya da klavyeyle odaklanınca)
@@ -526,8 +542,8 @@ export default function App() {
   };
   const MONTH_WORDS = [['ocak', 'january'], ['subat', 'february'], ['mart', 'march'], ['nisan', 'april'], ['mayis', 'may'], ['haziran', 'june'], ['temmuz', 'july'], ['agustos', 'august'], ['eylul', 'september'], ['ekim', 'october'], ['kasim', 'november'], ['aralik', 'december']];
   const commandHelp = () => (lang === 'en'
-    ? 'You can say or type: go to Ankara. Play. Stop. Temperature on. Ocean off. Sea temperature on. Precipitation on. Sea ice on. Summary. Legend. Go north. Range two thousand. July. Compare with Tokyo. Local scale. Tell the breath story. Events. Switch to Turkish. Help.'
-    : 'Şunları söyleyebilir ya da yazabilirsin: Ankara\'ya git. Çal. Dur. Sıcaklığı aç. Okyanusu kapat. Deniz sıcaklığını aç. Yağışı aç. Deniz buzunu aç. Özet. Lejant. Kuzeye git. Menzil iki bin. Temmuz. Tokyo ile karşılaştır. Yerel ölçek. Nefes hikâyesini anlat. Olaylar. İngilizceye geç. Yardım.');
+    ? 'You can say or type: go to Ankara. Play. Stop. Temperature on. Ocean off. Sea temperature on. Precipitation on. Sea ice on. Summary. Legend. Go north. Range two thousand. July. Compare with Tokyo. Local scale. Tell the breath story. Events. Switch to Turkish. Stop listening. Help.'
+    : 'Şunları söyleyebilir ya da yazabilirsin: Ankara\'ya git. Çal. Dur. Sıcaklığı aç. Okyanusu kapat. Deniz sıcaklığını aç. Yağışı aç. Deniz buzunu aç. Özet. Lejant. Kuzeye git. Menzil iki bin. Temmuz. Tokyo ile karşılaştır. Yerel ölçek. Nefes hikâyesini anlat. Olaylar. İngilizceye geç. Dinlemeyi durdur. Yardım.');
   /** Söylenen cümleyi komuta çevir ve uygula. Anlaşıldıysa true. */
   const runCommand = (text: string): boolean => {
     const en = lang === 'en', R = radarRef.current;
@@ -540,7 +556,13 @@ export default function App() {
     if (has('ingilizce', 'english', 'ingilizceye')) { setLang('en'); return true; }
     if (has('turkce', 'turkish', 'turkceye')) { setLang('tr'); return true; }
     if (word('yardim', 'help', 'komutlar', 'commands') || has('ne soyleyebilirim', 'what can i say')) { announce(commandHelp()); return true; }
-    if (word('sus', 'sessiz', 'sessizlik', 'quiet', 'silence')) { R.hush(); stopStory(); return true; }
+    if (has('dinlemeyi durdur', 'dinlemeyi kapat', 'dinlemeyi birak', 'stop listening') || word('sus')) {
+      R.hush(); stopStory(); hfApi.current.stop(true);
+      announce(en ? 'Listening is off. Press any key or tap the screen to turn it back on.' : 'Dinleme kapandı. Tekrar açmak için herhangi bir tuşa basın ya da ekrana dokunun.');
+      return true;
+    }
+    if (has('dinlemeye basla', 'dinlemeyi ac', 'dinlemeyi baslat', 'start listening')) { hfApi.current.start(true); return true; }
+    if (word('sessiz', 'sessizlik', 'quiet', 'silence')) { R.hush(); stopStory(); return true; }
 
     if (has('hikaye', 'story', 'stories', 'oyku', 'gezegenin nefesi', 'planet breathes')) {
       if (!needPlace()) return true;
@@ -648,14 +670,14 @@ export default function App() {
   /** Sesli komut kullanılamıyorsa yazılı kutuya yönlendir. */
   const toTextBox = (why: string) => {
     const en = langRef.current === 'en';
-    const msg = `${why} ${en ? 'You can type the command in the command box instead.' : 'Komutu bunun yerine komut kutusuna yazabilirsin.'}`;
+    const msg = `${why ? why + ' ' : ''}${en ? 'Voice commands are not available right now. You can type commands.' : 'Sesli komut şu an kullanılamıyor. Yazarak komut verebilirsiniz.'}`;
     announce(msg); setGuideStatus({ kind: 'error', text: msg });
     setTimeout(() => guideInput.current?.focus(), 50);
   };
-  const talk = () => {
+  const talk = (hold = false) => {
     const en = langRef.current === 'en';
-    if (listener.active) { listener.cancel(); setListening(false); engine.setMaster(mix.master); return; }
-    if (!listener.supported) { toTextBox(en ? 'Voice commands are not supported in this browser.' : 'Bu tarayıcı sesli komutu desteklemiyor.'); return; }
+    if (listener.active) { if (hold) return; listener.cancel(); setListening(false); engine.setMaster(mix.master); return; }
+    if (!listener.supported) { toTextBox(''); return; }
     welcomed.current = true;
     radarRef.current.hush();                      // rehber sussun ki mikrofon kendi sesimizi duymasın
     engine.unlock(); engine.northTick(engine.now + 0.02);
@@ -669,10 +691,31 @@ export default function App() {
       toTextBox(err === 'denied' ? (en ? 'Microphone permission was not given.' : 'Mikrofon izni verilmedi.')
         : err === 'network' ? (en ? 'Voice commands need an internet connection.' : 'Sesli komut için internet bağlantısı gerekli.')
           : (en ? 'Voice command failed.' : 'Sesli komut çalışmadı.'));
-    }, () => { setListening(false); engine.setMaster(mix.master); setGuideStatus((s) => (s.kind === 'listening' ? { kind: 'idle' } : s)); });
+    }, () => { setListening(false); engine.setMaster(mix.master); setGuideStatus((s) => (s.kind === 'listening' ? { kind: 'idle' } : s)); }, hold);
   };
   // geliştirme: mikrofon olmadan komutları sınamak için
   if (import.meta.env.DEV) (window as unknown as { __cmd?: (t: string) => boolean }).__cmd = (t) => execCommand([t], 'text');
+  const execRef = useRef(execCommand); execRef.current = execCommand;
+  const mixRef = useRef(mix); mixRef.current = mix;
+  hfApi.current = {
+    start: (say: boolean) => {
+      hfStoppedByVoice.current = false;
+      if (!listener.supported) { hfApi.current.unavailable(); return; }
+      handsFree.start(langRef.current, {
+        onText: (alts) => execRef.current(alts, 'voice'),
+        onSpeech: (talking) => { if (!listener.active) engine.setMaster(talking ? mixRef.current.master * 0.25 : mixRef.current.master); }, // konuşurken müziği kıs
+        onError: (err) => { setHfLive(false); engine.setMaster(mixRef.current.master); toTextBox(err === 'denied' ? (langRef.current === 'en' ? 'Microphone permission was not given.' : 'Mikrofon izni verilmedi.') : ''); },
+      });
+      setHfLive(true); setGuideStatus({ kind: 'idle' }); // durum satırı: "Sizi dinliyorum"
+      if (say) { engine.unlock(); engine.beep(); announce(langRef.current === 'en' ? 'I am listening. Say a command.' : 'Sizi dinliyorum. Bir komut söyleyin.'); }
+    },
+    stop: (byVoice: boolean) => { handsFree.stop(); setHfLive(false); if (!byVoice) setGuideStatus({ kind: 'idle' }); hfStoppedByVoice.current = byVoice; engine.setMaster(mixRef.current.master); },
+    unavailable: () => toTextBox(''),
+  };
+  const setHfWanted = (v: boolean) => { setHfWantedS(v); store.set('hf', v ? '1' : '0'); if (v) hfApi.current.start(true); else { hfApi.current.stop(false); announce(langRef.current === 'en' ? 'Hands-free listening off.' : 'Eller serbest dinleme kapalı.'); } };
+  useEffect(() => () => handsFree.stop(), []);
+  // Boşluk: kısa basış = çal/durdur; 400 ms'den uzun basılı tutma = bas-konuş (bırakınca komut işlenir). Yazı alanında yok.
+  const spaceTimer = useRef(0), spaceHold = useRef(false);
 
   // genel kısayollar: C yer seç · H yardım · G sesli rehber · Esc sustur · 1-4 katman · I/J/K/M gez
   const globalKeys = useRef<(e: KeyboardEvent) => void>(() => {});
@@ -681,6 +724,14 @@ export default function App() {
     // yazı alanında ya da açık diyalogda hiçbir kısayol çalışmaz (Esc'yi diyalog işler: yalnız pencereyi kapatır)
     if (!shortcutAllowed(e)) return;
     if (e.key === 'Escape') { radar.hush(); stopStory(); return; }
+    if (e.key === ' ' || e.code === 'Space') {
+      const tag = e.target instanceof HTMLElement ? e.target.tagName.toLowerCase() : '';
+      if (tag === 'button' || tag === 'summary' || tag === 'a') return; // odaktaki düğme kendi işini yapar
+      e.preventDefault();
+      if (e.repeat || spaceTimer.current || spaceHold.current) return;
+      spaceTimer.current = window.setTimeout(() => { spaceTimer.current = 0; spaceHold.current = true; talk(true); }, 400);
+      return;
+    }
     const k = e.key.toLowerCase();
     if (k === 'c') { e.preventDefault(); setPickFor('A'); setPickOpen(true); }
     else if (k === 'h' || e.key === '?') { e.preventDefault(); welcomed.current = true; radar.hush(); if (guideRef.current) void speech.say(helpText()); else announce(helpText()); }
@@ -700,10 +751,20 @@ export default function App() {
   };
   useEffect(() => {
     const key = (e: KeyboardEvent) => globalKeys.current(e);
-    const first = (e: Event) => { if (!(e.target instanceof Element && e.target.closest('button, a, input, select, canvas, [role="dialog"]'))) welcome(); };
-    const tab = (e: KeyboardEvent) => { if (e.key === 'Tab') welcome(); };
-    document.addEventListener('keydown', key); document.addEventListener('pointerdown', first); document.addEventListener('keyup', tab);
-    return () => { document.removeEventListener('keydown', key); document.removeEventListener('pointerdown', first); document.removeEventListener('keyup', tab); };
+    const SKIP = new Set(['Tab', 'Shift', 'Control', 'Alt', 'AltGraph', 'Meta', 'OS', 'CapsLock', 'Insert', 'NumLock', 'ScrollLock', 'ContextMenu', 'Fn', 'Unidentified']);
+    const any = (e: KeyboardEvent) => { // yakalama evresi: diğer işleyicilerden önce
+      if (SKIP.has(e.key) || e.isComposing) return;
+      if (!welcomed.current) { e.preventDefault(); e.stopImmediatePropagation(); welcome(); return; } // başlatan tuş başka iş yapmasın
+      if (hfStoppedByVoice.current && hfWantedRef.current && !isFormTarget(e.target) && !e.altKey) hfApi.current.start(true); // "sus" sonrası herhangi bir tuş
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.key !== ' ' && e.code !== 'Space') return;
+      if (spaceTimer.current) { clearTimeout(spaceTimer.current); spaceTimer.current = 0; radarRef.current.toggle(); }
+      else if (spaceHold.current) { spaceHold.current = false; listener.finish(); }
+    };
+    const tap = () => { if (!welcomed.current) welcome(); else if (hfStoppedByVoice.current && hfWantedRef.current) hfApi.current.start(true); };
+    document.addEventListener('keydown', any, true); document.addEventListener('keydown', key); document.addEventListener('keyup', up); document.addEventListener('pointerdown', tap, true);
+    return () => { document.removeEventListener('keydown', any, true); document.removeEventListener('keydown', key); document.removeEventListener('keyup', up); document.removeEventListener('pointerdown', tap, true); };
   }, [welcome]);
 
   // ---------- görsel: küre dokusu ve 2D boyama (görünen katman)
@@ -763,18 +824,27 @@ export default function App() {
     { title: lang === 'tr' ? 'Kıyı çizgileri (3B küre)' : 'Coastlines (3D globe)', text: lang === 'tr' ? 'Natural Earth 1:50m Coastline, kamu malı (naturalearthdata.com). Yalnız altlık; veri katmanlarının çözünürlüğü değişmez.' : 'Natural Earth 1:50m Coastline, public domain (naturalearthdata.com). Base map only; data layer resolution is unchanged.', href: 'https://www.naturalearthdata.com/' },
   ];
 
-  const guidePanel = <Guide lang={lang} micSupported={listener.supported} listening={listening} status={guideStatus} history={cmdHistory} onTalk={talk}
-    onCommand={(t) => execCommand([t], 'text')} narrator={narrator} setNarrator={setNarrator} inputRef={guideInput} />;
+  const guidePanel = <Guide lang={lang} micSupported={listener.supported} listening={listening} status={guideStatus} history={cmdHistory} onTalk={() => talk()}
+    onCommand={(t) => execCommand([t], 'text')} narrator={narrator} setNarrator={setNarrator} inputRef={guideInput}
+    handsFree={hfLive} handsFreeWanted={hfWanted} setHandsFreeWanted={setHfWanted} />;
 
   return (
     <div className={`app${view3d ? ' is3d' : ' is2d'}`}>
+      {!started && (
+        <div className="start-gate" lang={lang}>
+          <h1 id="gate-h">{lang === 'en' ? 'Press any key or tap anywhere to start.' : 'Başlamak için herhangi bir tuşa basın ya da ekranın herhangi bir yerine dokunun.'}</h1>
+          <p className="gate-brand" aria-hidden="true">Earth<span>Ear</span></p>
+          <button type="button" className="gate-btn" autoFocus onClick={welcome} aria-describedby="gate-h">{lang === 'en' ? 'Start EarthEar' : 'EarthEar\'i başlat'}</button>
+          <p className="gate-note">{lang === 'en' ? 'It will listen to your voice. Headphones recommended.' : 'Sesinizi dinleyecek. Kulaklık önerilir.'}</p>
+        </div>
+      )}
       {view3d && (
         <Globe3D source={globeSource} landCanvas={landCanvas} center={active} rangeKm={rangeKm} angle={radar.angle} level={() => engine.level()}
           reducedMotion={reduced} onPick={(p) => pickPoint(p, 'harita')} onHover={onHover}
           onSlow={() => { if (forced !== '3d') { setView3dS(false); setSlowNote(true); } }} />
       )}
 
-      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => { setPickFor('A'); setPickOpen(true); }} onAbout={() => setAboutOpen(true)} hasPlace={!!place} guide={guide} setGuide={setGuide} listening={listening} onTalk={talk} micSupported={listener.supported} />
+      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => { setPickFor('A'); setPickOpen(true); }} onAbout={() => setAboutOpen(true)} hasPlace={!!place} guide={guide} setGuide={setGuide} listening={listening} onTalk={() => talk()} micSupported={listener.supported} />
 
       <main className="stage">
         {!audioOk && <p role="alert" className="glass alert">{lang === 'tr' ? 'Ses başlatılamadı. Sessiz modu kapat, sesi aç ve bir düğmeye tekrar dokun.' : 'Audio could not start. Turn off silent mode, raise the volume and tap a button again.'}</p>}
@@ -782,7 +852,7 @@ export default function App() {
         {slowNote && <p role="status" className="glass note">{tr(lang, 'fallback')}</p>}
 
         {!place && <div className="right-col">{guidePanel}</div>}
-        {!place && <Intro lang={lang} onPick={() => { setPickFor('A'); setPickOpen(true); }} onTalk={listener.supported ? talk : undefined} />}
+        {!place && <Intro lang={lang} onPick={() => { setPickFor('A'); setPickOpen(true); }} onTalk={listener.supported ? () => talk() : undefined} />}
         {(listening || heard) && <p role="status" className="glass note heard">{listening ? tr(lang, 'listening') : `“${heard}”`}</p>}
 
         {!view3d && (

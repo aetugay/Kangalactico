@@ -19,6 +19,7 @@ interface Props {
   narrator: boolean;
   setNarrator: (v: boolean) => void;
   inputRef: React.RefObject<HTMLInputElement>;
+  handsFree?: boolean; handsFreeWanted?: boolean; setHandsFreeWanted?: (v: boolean) => void;
 }
 
 const CHIPS: Record<Lang, string[]> = {
@@ -26,13 +27,13 @@ const CHIPS: Record<Lang, string[]> = {
   en: ['Go to Tokyo', 'Play', 'Precipitation on', 'Summary', 'Türkçeye geç'],
 };
 
-export function Guide({ lang, micSupported, listening, status, history, onTalk, onCommand, narrator, setNarrator, inputRef }: Props) {
+export function Guide({ lang, micSupported, listening, status, history, onTalk, onCommand, narrator, setNarrator, inputRef, handsFree, handsFreeWanted, setHandsFreeWanted }: Props) {
   const id = useId();
   const en = lang === 'en';
   const [q, setQ] = useState('');
   const send = (t: string) => { const s = t.trim(); if (!s) return; onCommand(s); setQ(''); };
   const statusText = status.kind === 'listening' || listening ? (en ? 'Listening… speak now.' : 'Dinliyorum… şimdi konuş.')
-    : status.text ?? (en ? 'Ready. Type or speak a command.' : 'Hazır. Bir komut yaz ya da söyle.');
+    : status.text ?? (handsFree ? (en ? 'Listening hands-free: just speak a command.' : 'Sizi dinliyorum: bir komut söyleyin.') : (en ? 'Ready. Type or speak a command.' : 'Hazır. Bir komut yaz ya da söyle.'));
   return (
     <section className="glass guide" aria-labelledby={`${id}-h`}>
       <h2 id={`${id}-h`} className="eyebrow">EarthEar AI Guide</h2>
@@ -51,6 +52,7 @@ export function Guide({ lang, micSupported, listening, status, history, onTalk, 
       <div className="guide-chips" role="group" aria-label={en ? 'Suggested commands' : 'Önerilen komutlar'}>
         {CHIPS[lang].map((c) => <button key={c} type="button" className="chip small-chip" onClick={() => send(c)}>{c}</button>)}
       </div>
+      {micSupported && setHandsFreeWanted && <label className="switch small"><input type="checkbox" checked={!!handsFreeWanted} onChange={(e) => setHandsFreeWanted(e.target.checked)} /> <span>{en ? `Hands-free listening${handsFree ? ' (on)' : ''}` : `Eller serbest dinleme${handsFree ? ' (açık)' : ''}`}</span></label>}
       <label className="switch small"><input type="checkbox" checked={narrator} onChange={(e) => setNarrator(e.target.checked)} /> <span>{en ? 'Narrator: a short fact every sweep (N)' : 'Anlatıcı: her turda kısa bir bilgi (N)'}</span></label>
       {history.length > 0 && (
         <details className="guide-hist">

@@ -18,10 +18,6 @@ const hashStr = (k: string) => { let h = 2166136261; for (let i = 0; i < k.lengt
 class AudioEngine {
   private ac: AudioContext | null = null;
   private master!: GainNode;
-  private droneOsc: OscillatorNode | null = null;
-  private droneGain!: GainNode;
-  private scanOsc!: OscillatorNode;
-  private scanGain!: GainNode;
   private noiseBuf: AudioBuffer | null = null;
   private unlocked = false;
   private listeners = new Set<Listener>();
@@ -48,19 +44,6 @@ class AudioEngine {
 
     this.ac = ac;
     return ac;
-  }
-
-  /** Eski CO₂ demosunun (src/legacy) sürekli osilatörleri — radar KULLANMAZ; yalnız istenirse oluşturulur. */
-  private legacyOsc() {
-    const ac = this.ctx();
-    if (this.droneOsc) return;
-    this.droneOsc = ac.createOscillator(); this.droneOsc.type = 'sine';
-    this.droneGain = ac.createGain(); this.droneGain.gain.value = 0;
-    this.droneOsc.connect(this.droneGain).connect(this.master); this.droneOsc.start();
-    this.scanOsc = ac.createOscillator(); this.scanOsc.type = 'triangle';
-    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
-    this.scanGain = ac.createGain(); this.scanGain.gain.value = 0;
-    this.scanOsc.connect(lp).connect(this.scanGain).connect(this.master); this.scanOsc.start();
   }
 
   /** Her kullanıcı dokunuşunda çağır. Tablet (özellikle iPad) kilidini açar. */
@@ -91,77 +74,6 @@ class AudioEngine {
   private emit() {
     const running = !this.ac || this.ac.state === 'running';
     this.listeners.forEach((fn) => fn(running));
-  }
-
-  /** Telli çalgı benzeri nota. */
-  pluck(freq: number, dur: number) {
-    const ac = this.ctx();
-    const when = ac.currentTime + 0.01;
-    const o = ac.createOscillator();
-    const o2 = ac.createOscillator();
-    const g = ac.createGain();
-    const f = ac.createBiquadFilter();
-    const g2 = ac.createGain();
-    o.type = 'triangle';
-    o2.type = 'sine';
-    o.frequency.value = freq;
-    o2.frequency.value = freq * 2;
-    f.type = 'lowpass';
-    f.frequency.value = 900 + freq * 4;
-    g2.gain.value = 0.25;
-    o.connect(f);
-    o2.connect(g2).connect(f);
-    f.connect(g).connect(this.master);
-    g.gain.setValueAtTime(0.0001, when);
-    g.gain.exponentialRampToValueAtTime(0.35, when + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
-    o.start(when);
-    o2.start(when);
-    o.stop(when + dur + 0.05);
-    o2.stop(when + dur + 0.05);
-  }
-
-  /** Değişim gücüne (0..1) göre parlaklaşan tıkırtı. */
-  tick(strength: number) {
-    const ac = this.ctx();
-    const when = ac.currentTime + 0.01;
-    if (!this.noiseBuf) {
-      this.noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.2, ac.sampleRate);
-      const d = this.noiseBuf.getChannelData(0); const r = seeded(11);
-      for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1;
-    }
-    const s = ac.createBufferSource();
-    s.buffer = this.noiseBuf;
-    const hp = ac.createBiquadFilter();
-    hp.type = 'highpass';
-    hp.frequency.value = 3000 + strength * 6000;
-    const g = ac.createGain();
-    g.gain.setValueAtTime(0.02 + strength * 0.28, when);
-    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.04 + strength * 0.08);
-    s.connect(hp).connect(g).connect(this.master);
-    s.start(when);
-    s.stop(when + 0.2);
-  }
-
-  droneTo(freq: number) {
-    const ac = this.ctx(); this.legacyOsc();
-    this.droneOsc!.frequency.setTargetAtTime(freq, ac.currentTime, 0.3);
-  }
-
-  droneLevel(level: number) {
-    if (!this.ac || !this.droneOsc) return;
-    this.droneGain.gain.setTargetAtTime(level, this.ac.currentTime, level > 0 ? 0.4 : 0.3);
-  }
-
-  scanTo(freq: number) {
-    const ac = this.ctx(); this.legacyOsc();
-    this.scanOsc.frequency.setTargetAtTime(freq, ac.currentTime, 0.02);
-    this.scanGain.gain.setTargetAtTime(0.18, ac.currentTime, 0.03);
-  }
-
-  scanOff() {
-    if (!this.ac || !this.droneOsc) return;
-    this.scanGain.gain.setTargetAtTime(0, this.ac.currentTime, 0.05);
   }
 
   /** Anlık ses seviyesi 0..1 (RMS) — görsel için. Ses bağlamı yoksa 0. */
@@ -350,6 +262,16 @@ class AudioEngine {
         g.gain.exponentialRampToValueAtTime(0.0001, when + 0.45);
         break;
       }
+      case 'lightning': { // vurmalı çakma: süzülmüş gürültü patlaması (çatırtı) + alçak gümbürtü; perde ve parlaklık veriden
+        const n = ac.createBufferSource(); n.buffer = this.noise();
+        const hp = ac.createBiquadFilter(); hp.type = 'bandpass'; hp.frequency.value = 1800 + 2500 * Math.min(1, gain); hp.Q.value = 0.7;
+        const ng = ac.createGain(); n.connect(hp).connect(ng).connect(g);
+        ng.gain.setValueAtTime(0.0001, when); ng.gain.exponentialRampToValueAtTime(0.9, when + 0.004); ng.gain.exponentialRampToValueAtTime(0.0001, when + 0.12);
+        n.start(when, (hashStr(String(freq)) % 1000) / 1000); n.stop(when + 0.15);
+        osc('sine', freq, 0.9, g, 0.35);
+        g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.22 * lvl, when + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, when + 0.4);
+        break;
+      }
       case 'ref': { // referans: sinüs + hafif 2. ve 3. harmonik (parlaklık süzgeci bunları açar), yumuşak atak, vibratosuz
         const len = Math.max(0.3, dur);
         osc('sine', freq, 1, g, len + 0.2); osc('triangle', freq * 2, 0.35, g, len + 0.2); osc('sine', freq * 3, 0.15, g, len + 0.2);
@@ -438,14 +360,3 @@ class AudioEngine {
 export const engine = new AudioEngine();
 // geliştirme sırasında tarayıcı konsolundan ses seviyesini sınamak için
 if (import.meta.env?.DEV && typeof window !== 'undefined') (window as unknown as { __engine?: AudioEngine }).__engine = engine;
-
-/** Sadece Android'de çalışır; iOS web'de navigator.vibrate yok. */
-export function vibrate(ms: number) {
-  try {
-    navigator.vibrate?.(ms);
-  } catch { /* yok say */ }
-}
-
-// Konuşma artık speech.ts'te; eski demo (legacy/) için ince sarmalayıcı.
-import { speech } from './speech.ts';
-export function speak(text: string) { void speech.say(text, 1.1); }

@@ -64,7 +64,6 @@ Hedef ödüller: Local Impact, Best Use of Science, Most Inspirational, Art & Te
 - Vite + React 18 + TypeScript + Tailwind, Web Audio. Statik site, Vercel/GitHub Pages.
 - Veri hattı (Node + ffmpeg, tekrar çalıştırılabilir): scripts/download.mjs → calibrate.mjs → colorscales.mjs → process.mjs; sınama: scripts/query.mjs <şehir>. raw/ ve referans/ git'e girmez.
 - Ortak ızgara: 360x180 (1°), 8-bit nicemli base64; çözme formülü JSON içinde.
-- `demo/index.html` eski CO₂ demosu (yedek).
 
 ## Plan
 Pazar: 09–12 kullanıcı testi (Ceyhun) + video (Tugay) · 12–13 analiz · 13:00 kod dondurma · 13–18 video/slayt/proje sayfası · 18–20 teslim.

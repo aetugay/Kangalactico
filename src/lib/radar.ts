@@ -6,7 +6,7 @@
 //   uzaklık             → ışını elle çevirirken (←/→) yakın-orta-uzak üç nota
 import { destination, compass8, formatKm, type LatLon } from './geo.ts';
 
-export type Timbre = 'co2' | 'temp' | 'sst' | 'black_carbon' | 'dust' | 'sea_salt' | 'sulfate' | 'lightning'
+export type Timbre = 'co2' | 'temp' | 'sst' | 'black_carbon' | 'dust' | 'sea_salt' | 'sulfate' | 'lightning' | 'ndvi' | 'lights'
   // 2024 aylık NASA katmanları (MERRA-2 / OCO-2; public/data/m24)
   | 'co2_24' | 'so2_24' | 'aod_24' | 't2m_24' | 'ts_24' | 'albedo_24' | 'sst_24' | 'precip_24' | 'seaice_24' | 'o3_24' | 'twland_24' | 'lai_24' | 'gwettop_24';
 export type Mode = 'bilim' | 'hikaye';
@@ -123,7 +123,9 @@ export const PARTS: Record<Timbre, Part> = {
   dust: { start: 20, every: 1, offset: 0, gate: 0.07 },       // çelesta
   sea_salt: { start: 15, every: 4, offset: 2, gate: 0.07 },   // flüt
   sulfate: { start: 10, every: 2, offset: 0, gate: 0.07 },    // marimba
-  lightning: { start: 20, every: 1, offset: 0, gate: 0.07 },
+  lightning: { start: 5, every: 1, offset: 0, gate: 0.01 },   // vurmalı: yıldırımlı hücre = çakma (olay yoksa sessiz)
+  ndvi: { start: 9, every: 2, offset: 1, gate: -1 },          // marimba
+  lights: { start: 15, every: 2, offset: 0, gate: 0.03 },     // çelesta (karanlık = sessiz)
   co2_24: { start: 12, every: 4, offset: 2, gate: -1 },      // keman
   so2_24: { start: 10, every: 2, offset: 1, gate: -1 },      // marimba
   aod_24: { start: 18, every: 2, offset: 0, gate: -1 },      // çelesta
@@ -160,7 +162,7 @@ export const hitsFor = (t: number) => (t < 1 / 3 ? 1 : t < 2 / 3 ? 2 : 3);
 
 /** Katman kimliği → ses motorundaki enstrüman (2024 katmanları var olan enstrümanları kullanır). */
 export const INSTRUMENT_OF: Partial<Record<Timbre, string>> = {
-  co2_24: 'co2', so2_24: 'sulfate', aod_24: 'dust', t2m_24: 'temp', ts_24: 'temp', albedo_24: 'sea_salt', sst_24: 'sst', precip_24: 'black_carbon', seaice_24: 'sea_salt', o3_24: 'dust', twland_24: 'black_carbon', lai_24: 'sulfate', gwettop_24: 'sst',
+  co2_24: 'co2', so2_24: 'sulfate', aod_24: 'dust', t2m_24: 'temp', ts_24: 'temp', albedo_24: 'sea_salt', sst_24: 'sst', precip_24: 'black_carbon', ndvi: 'sulfate', lights: 'dust', seaice_24: 'sea_salt', o3_24: 'dust', twland_24: 'black_carbon', lai_24: 'sulfate', gwettop_24: 'sst',
 };
 
 /** [b, b+count) ışınlarında, [k0, k1) halkalarında ortalama değer ve veri kapsamı (0..1). Veri yoksa mean = NaN. */

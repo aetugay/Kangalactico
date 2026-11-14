@@ -179,13 +179,16 @@ export function NowCard(p: NowProps) {
 
 // ---------------- Katman hapları
 export interface Pill { id: string; label: string; instrument: string; icon: React.ReactNode; color: string; on: boolean; visual: boolean; loading?: boolean; note?: string }
-export function LayerPills({ lang, pills, onToggle, onShow, children, top }: { lang: Lang; pills: Pill[]; onToggle: (id: string) => void; onShow: (id: string) => void; children?: React.ReactNode; top?: React.ReactNode }) {
-  return (
-    <section className="glass panel layers" aria-labelledby="layers-h">
-      <h2 id="layers-h" className="eyebrow">{tr(lang, 'layers')}</h2>
-      {top}
+/**
+ * Katmanlar paneli, iki bölüm:
+ *  1) "NASA EIC görsellerinden" (birincil, üstte): challenge listesindeki / EIC galerisindeki SVS görsellerinden üretilen katmanlar + "Görüntüyü dinle"
+ *  2) "NASA ham verisi (OCO-2, MERRA-2)": her yerde sayısal değer ve doğrulama (rawPills + rawTop + children)
+ */
+export function LayerPills({ lang, pills, rawPills = [], onToggle, onShow, children, rawTop, onScan }: { lang: Lang; pills: Pill[]; rawPills?: Pill[]; onToggle: (id: string) => void; onShow: (id: string) => void; children?: React.ReactNode; rawTop?: React.ReactNode; onScan?: () => void }) {
+  const raw = new Set(rawPills.map((p) => p.id));
+  const pillList = (list: Pill[]) => (
       <ul className="pills">
-        {pills.map((p) => (
+        {list.map((p) => (
           <li key={p.id}>
             <button type="button" className={`pill${p.on ? ' on' : ''}${p.visual ? ' visual' : ''}`} style={{ '--c': p.color } as React.CSSProperties}
               aria-pressed={p.on} onClick={() => onToggle(p.id)}
@@ -197,7 +200,21 @@ export function LayerPills({ lang, pills, onToggle, onShow, children, top }: { l
           </li>
         ))}
       </ul>
-      {children}
+  );
+  return (
+    <section className="glass panel layers" aria-labelledby="layers-h">
+      <h2 id="layers-h" className="sr">{tr(lang, 'layers')}</h2>
+      <section className="layer-sec" aria-labelledby="eic-h">
+        <h3 id="eic-h" className="eyebrow sec-h">{lang === 'tr' ? 'NASA EIC görsellerinden' : 'From NASA EIC visualizations'}</h3>
+        {pillList(pills.filter((p) => !raw.has(p.id)))}
+        {onScan && <button type="button" className="btn scan-btn" onClick={onScan}>{lang === 'tr' ? 'Görüntüyü dinle (küre görselleri: GEDI, DYAMOND)' : 'Listen to an image (globe visuals: GEDI, DYAMOND)'}</button>}
+      </section>
+      <section className="layer-sec raw" aria-labelledby="raw-h">
+        <h3 id="raw-h" className="eyebrow sec-h">{lang === 'tr' ? 'NASA ham verisi (OCO-2, MERRA-2) — her yerde sayısal değer ve doğrulama' : 'NASA raw data (OCO-2, MERRA-2) — numeric values everywhere and validation'}</h3>
+        {pillList(rawPills)}
+        {rawTop}
+        {children}
+      </section>
     </section>
   );
 }
@@ -222,7 +239,7 @@ export function Timeline({ lang, month, setMonth, label, advance, setAdvance, ye
 }
 
 // ---------------- Hakkında / Kaynaklar
-export function About({ open, onClose, lang, credits }: { open: boolean; onClose: () => void; lang: Lang; credits: { title: string; text: string; href?: string }[] }) {
+export function About({ open, onClose, lang, credits, extra }: { open: boolean; onClose: () => void; lang: Lang; credits: { title: string; text: string; href?: string }[]; extra?: React.ReactNode }) {
   return (
     <Dialog open={open} onClose={onClose} title={tr(lang, 'about')} className="drawer" lang={lang}>
       <p>{lang === 'tr'
@@ -234,6 +251,7 @@ export function About({ open, onClose, lang, credits }: { open: boolean; onClose
       </ul>
       <h3>{lang === 'tr' ? 'Sesli komut ve gizlilik' : 'Voice commands and privacy'}</h3>
       <p className="small">{lang === 'tr' ? 'Sesli komut Chrome/Edge\'in konuşma tanıma servisini kullanır; ses kaydı tarayıcı sağlayıcısına gönderilir. İstemiyorsanız "dinlemeyi durdur" deyin ya da EarthEar AI Guide panelinden eller serbest dinlemeyi kapatıp komutları yazın.' : 'Voice commands use the speech recognition service of Chrome/Edge; your voice is sent to the browser provider. If you prefer not, say "stop listening" or turn hands-free listening off in the EarthEar AI Guide panel and type commands.'}</p>
+      {extra}
       <p className="disclaimer"><b>{tr(lang, 'disclaimer')}</b></p>
     </Dialog>
   );

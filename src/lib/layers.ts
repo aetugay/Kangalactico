@@ -1,4 +1,5 @@
 // public/data dosyalarından radar katmanları. Tarih/kredi/birim bilgisi dosyanın kendisinden gelir.
+import type { LatLon } from './geo.ts';
 import { Layer, type ColorScale, type GridMeta, type Quant } from './grid.ts';
 import type { RadarLayer } from './radar.ts';
 
@@ -158,3 +159,74 @@ export class AerosolSource {
   }
 }
 export async function loadAerosols(base: string) { return new AerosolSource(await json<AerosolFile>(base, '5669.json')); }
+
+// ---------- Bitki örtüsü NDVI (SVS 5544, EIC galerisi; yakın gerçek zamanlı) — değer GÖRELİ (renk skalasında sayı yok)
+interface GridFramesFile { title: string; titleTr: string; credit: string; grid: GridMeta; data: string; quant: Quant; frames: { count: number; dateRange?: string[]; datesNote?: string } }
+export class NdviSource {
+  readonly layer: Layer; readonly file: GridFramesFile; readonly cs: ColorScale;
+  constructor(file: GridFramesFile, cs: ColorScale) { this.file = file; this.cs = cs; this.layer = new Layer(file.grid, file.data, file.quant); }
+  get frames() { return this.file.frames.count; }
+  dateLabel(f: number, lang: Lang = 'tr') { return lang === 'en' ? `frame ${f + 1}/${this.frames} (last ~2.5 years; exact date unknown)` : `kare ${f + 1}/${this.frames} (son ~2,5 yıl; kesin tarih bilinmiyor)`; }
+  radarLayer(frame: number, lang: Lang = 'tr'): RadarLayer {
+    const en = lang === 'en';
+    return { id: 'ndvi', label: en ? 'Vegetation (NDVI)' : 'Bitki örtüsü (NDVI)', instrument: en ? 'marimba' : 'marimba', unit: null, min: 0, max: 1, baseHz: 196,
+      when: this.dateLabel(frame, lang), sample: (p) => this.layer.sample(frame, p),
+      fmt: (v) => `${en ? 'relative vegetation' : 'göreli bitki örtüsü'} ${Math.round(v * 100)}` };
+  }
+}
+export async function loadNdvi(base: string) {
+  const [f, cs] = await Promise.all([json<GridFramesFile>(base, '5544.json'), json<ColorScale>(base, '5544_colorscale.json')]);
+  return new NdviSource(f, cs);
+}
+
+// ---------- Gece ışıkları (SVS 5313, Black Marble 2012–2023) — yıllık ortalama parlaklık, GÖRELİ (renk skalası yok)
+interface LightsFile { title: string; titleTr: string; credit: string; grid: GridMeta; layers: { years: { list: number[]; data: string; quant: Quant } } }
+export class LightsSource {
+  readonly layer: Layer; readonly file: LightsFile; readonly max: number;
+  constructor(file: LightsFile) { this.file = file; this.layer = new Layer(file.grid, file.layers.years.data, file.layers.years.quant); this.max = file.layers.years.quant.max ?? 152; }
+  get years() { return this.file.layers.years.list; }
+  radarLayer(yi: number, lang: Lang = 'tr'): RadarLayer {
+    const en = lang === 'en', mx = this.max;
+    return { id: 'lights', label: en ? 'Night lights' : 'Gece ışıkları', instrument: en ? 'celesta' : 'çelesta', unit: null, min: 0, max: mx, baseHz: 523,
+      when: `${this.years[yi]} · Black Marble`, sample: (p) => this.layer.sample(yi, p),
+      fmt: (v) => (v < mx * 0.02 ? (en ? 'dark' : 'karanlık') : `${en ? 'relative brightness' : 'göreli parlaklık'} ${Math.round((v / mx) * 100)}`) };
+  }
+}
+export async function loadLights(base: string) { return new LightsSource(await json<LightsFile>(base, '5313.json')); }
+
+// ---------- Yıldırım (SVS 5011, ISS LIS 2017–2023) — olaylar 1° hücrelere toplanır; radar ışını yıldırımlı hücreden geçince VURMALI ses
+interface LightningFile { title: string; titleTr: string; credit: string; grid: GridMeta; events: { count: number; list: [number, number, number, number][] }; time: { dateRange: string[] } }
+export class LightningSource {
+  readonly file: LightningFile; readonly grid: Float32Array; readonly max: number;
+  constructor(file: LightningFile) {
+    this.file = file; const { w, h } = file.grid; this.grid = new Float32Array(w * h);
+    for (const [, lat, lon, s] of file.events.list) { const i = Math.min(w - 1, Math.floor(lon + 180)), j = Math.min(h - 1, Math.floor(90 - lat)); this.grid[j * w + i] += s; }
+    let mx = 0; for (const v of this.grid) if (v > mx) mx = v; this.max = mx;
+  }
+  /** Hücredeki toplam etkinlik (göreli, log ölçek 0..1). Olay yoksa 0 → ses yok (gate). */
+  value(p: LatLon): number { const { w, h } = this.file.grid; const i = Math.min(w - 1, Math.max(0, Math.floor(p.lon + 180))), j = Math.min(h - 1, Math.max(0, Math.floor(90 - p.lat))); const v = this.grid[j * w + i]; return v > 0 ? Math.log1p(v) / Math.log1p(this.max) : 0; }
+  radarLayer(lang: Lang = 'tr'): RadarLayer {
+    const en = lang === 'en';
+    return { id: 'lightning', label: en ? 'Lightning' : 'Yıldırım', instrument: en ? 'percussion (strikes)' : 'vurmalı (çakma)', unit: null, min: 0, max: 1, baseHz: 80,
+      when: `${this.file.time.dateRange.join(' – ')} · ISS LIS`, sample: (p) => this.value(p),
+      fmt: (v) => (v <= 0 ? (en ? 'no lightning' : 'yıldırım yok') : `${en ? 'relative lightning activity' : 'göreli yıldırım etkinliği'} ${Math.round(v * 100)}`) };
+  }
+}
+export async function loadLightning(base: string) { return new LightningSource(await json<LightningFile>(base, '5011.json')); }
+
+// ---------- Küre görüntüleri (SVS 4950 GEDI, 5196 DYAMOND): EKRAN ızgarası, coğrafi konum YOK → radar değil, "görüntüyü dinle" taraması
+export interface ScreenGridFile { id: string; title: string; titleTr: string; credit: string; unit: string | null; screen: { w: number; h: number }; frames: { count: number }; data: string; quant: Quant; limits: string[] }
+export class ScreenGrid {
+  readonly file: ScreenGridFile; readonly bytes: Uint8Array; readonly cs: ColorScale;
+  constructor(file: ScreenGridFile, cs: ColorScale) { this.file = file; this.cs = cs; const b = atob(file.data); this.bytes = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) this.bytes[i] = b.charCodeAt(i); }
+  get w() { return this.file.screen.w; } get h() { return this.file.screen.h; } get frames() { return this.file.frames.count; }
+  /** Ekran pikseli (x, y) değeri; veri yoksa NaN. */
+  at(f: number, x: number, y: number): number { const q = this.bytes[f * this.w * this.h + y * this.w + x]; return q === 255 ? NaN : (this.file.quant.offset ?? 0) + q * (this.file.quant.scale ?? 1); }
+}
+export async function loadScreenGrid(base: string, id: '4950' | '5196') {
+  const [f, cs0] = await Promise.all([json<ScreenGridFile>(base, `${id}.json`), json<ColorScale & { variants?: Record<string, { min: number; max: number }>; default?: string }>(base, `${id}_colorscale.json`)]);
+  // 4950: aralık varsayılan varyantta (0–50 m); üst düzeyde min/max yok
+  const v = cs0.variants && cs0.default ? cs0.variants[cs0.default] : null;
+  const cs: ColorScale = { ...cs0, min: cs0.min ?? v?.min ?? 0, max: cs0.max ?? v?.max ?? 1 };
+  return new ScreenGrid(f, cs);
+}

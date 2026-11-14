@@ -365,3 +365,11 @@ html.hc .btn, html.hc .chip, html.hc .small-chip, html.hc .mini, html.hc .m24-in
 html.hc .suggest-chip { background: #fff; }
 html.hc .chip[aria-pressed="true"], html.hc .theme-chip[aria-pressed="true"], html.hc .m24-list .switch:has(input:checked), html.hc .seg label.on { background: #000; color: #fff; box-shadow: none; }
 html.hc .btn.primary, html.hc .speak-btn { background: #0033cc; color: #fff; border: 2px solid #000; }
+/* katman paneli bölümleri + görüntü tarama + envanter tablosu */
+.layer-sec + .layer-sec { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sec-h { margin: 0 0 8px; color: var(--ink); letter-spacing: .08em; line-height: 1.35; }
+.layer-sec.raw .sec-h { color: var(--muted); }
+.scan-btn { width: 100%; margin-top: 8px; justify-content: center; }
+.scan-canvas { width: 100%; aspect-ratio: 16 / 9; image-rendering: pixelated; border-radius: 10px; border: 1px solid var(--line); margin: 8px 0; display: block; }
+.inv-wrap { overflow-x: auto; } .inv { width: 100%; border-collapse: collapse; font-size: 13px; }
+.inv th, .inv td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }

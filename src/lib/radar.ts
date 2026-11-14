@@ -6,7 +6,7 @@
 //   değer               → ses şiddeti
 import { destination, compass8, formatKm, type LatLon } from './geo.ts';
 
-export type Timbre = 'co2' | 'temp' | 'black_carbon' | 'dust' | 'sea_salt' | 'sulfate' | 'lightning';
+export type Timbre = 'co2' | 'temp' | 'sst' | 'black_carbon' | 'dust' | 'sea_salt' | 'sulfate' | 'lightning';
 export type Mode = 'bilim' | 'hikaye';
 
 export interface RadarLayer {

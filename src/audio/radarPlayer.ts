@@ -16,6 +16,8 @@ export class RadarPlayer {
   private t0 = 0;     // 0. ışının (kuzey) ses zamanı — görsel açı hesabı için
   private get: () => RadarFrame;
   playing = false;
+  /** Her tur tamamlandığında (kuzeye dönüşte) çağrılır — örn. zaman çizelgesini ilerletmek için. */
+  onRevolution: (() => void) | null = null;
 
   constructor(get: () => RadarFrame) { this.get = get; }
 
@@ -49,7 +51,10 @@ export class RadarPlayer {
       this.playBeam(F, this.beam, this.next, step);
       this.beam = (this.beam + 1) % F.P.beams;
       this.next += step;
-      if (this.beam === 0) this.t0 = this.next; // tur başı yeniden hizala (hız değişirse kaymasın)
+      if (this.beam === 0) {
+        this.t0 = this.next; // tur başı yeniden hizala (hız değişirse kaymasın)
+        const cb = this.onRevolution; if (cb) setTimeout(cb, Math.max(0, (this.next - engine.now) * 1000));
+      }
     }
   }
 

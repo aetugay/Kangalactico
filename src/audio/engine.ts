@@ -17,6 +17,8 @@ class AudioEngine {
   private noiseBuf: AudioBuffer | null = null;
   private unlocked = false;
   private listeners = new Set<Listener>();
+  private analyser: AnalyserNode | null = null;
+  private levelBuf: Float32Array | null = null;
 
   onStatus(fn: Listener) {
     this.listeners.add(fn);
@@ -31,6 +33,10 @@ class AudioEngine {
     this.master = ac.createGain();
     this.master.gain.value = 0.8;
     this.master.connect(comp).connect(ac.destination);
+    // seviye ölçer (görsel nabız halkası için; sese etkisi yok)
+    this.analyser = ac.createAnalyser(); this.analyser.fftSize = 512;
+    comp.connect(this.analyser);
+    this.levelBuf = new Float32Array(this.analyser.fftSize);
 
     // Genel seviyeyi izleyen yumuşak drone
     this.droneOsc = ac.createOscillator();
@@ -156,6 +162,14 @@ class AudioEngine {
     this.scanGain.gain.setTargetAtTime(0, this.ac.currentTime, 0.05);
   }
 
+  /** Anlık ses seviyesi 0..1 (RMS) — görsel için. Ses bağlamı yoksa 0. */
+  level(): number {
+    if (!this.analyser || !this.levelBuf) return 0;
+    this.analyser.getFloatTimeDomainData(this.levelBuf);
+    let s = 0; for (const v of this.levelBuf) s += v * v;
+    return Math.min(1, Math.sqrt(s / this.levelBuf.length) * 4);
+  }
+
   // ---------------- Radar sesleri ----------------
   /** Ses saati (saniye). */
   get now(): number { return this.ctx().currentTime; }
@@ -207,6 +221,13 @@ class AudioEngine {
         const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq * 2; bp.Q.value = 4;
         const ng = ac.createGain(); ng.gain.value = 0.35; s.connect(bp).connect(ng).connect(g); s.start(when); s.stop(when + dur + 0.2);
         env(0.08, dur + 0.1, amp * 0.9); break;
+      }
+      case 'sst': { // su: sinüs + yavaş titreşim (vibrato), yumuşak
+        const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+        const lfo = ac.createOscillator(); lfo.frequency.value = 5.5; const lg = ac.createGain(); lg.gain.value = freq * 0.012;
+        lfo.connect(lg).connect(o.frequency); o.connect(g); o.start(when); lfo.start(when); o.stop(when + dur + 0.1); lfo.stop(when + dur + 0.1);
+        osc('sine', freq * 3, 0.08, g, dur);
+        env(0.03, dur + 0.05); break;
       }
       case 'temp': { // yumuşak telli: üçgen + oktav sinüs, alçak geçiren
         const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900 + freq * 3; f.connect(g);

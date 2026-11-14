@@ -420,11 +420,11 @@ JOBS.cities = async () => {
 
 
 // Kara maskesi (kıyı çizgisi çizimi için) — SVS 5544 NDVI karesinden (okyanus tek renk mavi; kalibrasyon referansı).
-// 720x360 (0.5°), her bit: 1 = kara (Antarktika/Grönland buzu dahil). Çıktı: public/data/land_mask.json
+// 2048x1024 (0.18°), her bit: 1 = kara (Antarktika/Grönland buzu dahil). Çıktı: public/data/land_mask.json
 JOBS.land = async () => {
   const file = 'raw/5544/nrt_ndvi_equi_2048p30.mp4';
   const img = readFrame(file, { frame: 929 });
-  const W = 720, H = 360, sx = img.w / W, sy = img.h / H;
+  const W = 2048, H = 1024, sx = img.w / W, sy = img.h / H; // 0.18° — küre üstünde pürüzsüz kıyı
   const bits = new Uint8Array((W * H) / 8);
   let land = 0;
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {

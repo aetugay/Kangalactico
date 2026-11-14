@@ -6,13 +6,19 @@ interface Props {
   place: Place | null;
   onPick: (p: Place) => void;
   announce: (t: string) => void;
+  autoFocus?: boolean;
+}
+
+function AutoFocus({ target }: { target: React.RefObject<HTMLInputElement | null> }) {
+  useEffect(() => { const t = setTimeout(() => target.current?.focus(), 30); return () => clearTimeout(t); }, [target]);
+  return null;
 }
 
 /**
  * Şehir arama: WAI-ARIA 1.2 combobox (liste kutusu açılır, ↑/↓ seçenek, Enter seç, Esc kapat).
  * + "Konumumu kullan" (geolocation). Haritaya dokunma WorldMap bileşeninde.
  */
-export function PlacePicker({ cities, place, onPick, announce }: Props) {
+export function PlacePicker({ cities, place, onPick, announce, autoFocus }: Props) {
   const id = useId();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -44,24 +50,37 @@ export function PlacePicker({ cities, place, onPick, announce }: Props) {
     else if (e.key === 'Escape') { setOpen(false); }
   };
 
+  /**
+   * Konum: tarayıcı yalnızca GÜVENLİ bağlamda verir (https ya da localhost). LAN IP'si üzerinden http ile açılırsa
+   * (ör. tablette http://192.168…) hemen reddedilir → `npm run dev:https` kullan.
+   * Masaüstünde Wi-Fi/GPS yoksa işletim sistemi konum bulamayabilir → zaman aşımı (kod 3) ya da "bulunamadı" (kod 2).
+   */
   const useMyLocation = () => {
+    if (!window.isSecureContext) {
+      setGeoMsg('Konum yalnızca güvenli bağlantıda (https ya da localhost) çalışır. Bu sayfa http ile açıldı. Şehir aramayı ya da küreye dokunmayı kullan.');
+      return;
+    }
     if (!('geolocation' in navigator)) { setGeoMsg('Bu tarayıcı konum vermiyor. Şehir aramayı kullan.'); return; }
-    setBusy(true); setGeoMsg('Konum isteniyor…');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setBusy(false);
-        const p = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        const near = cities?.nearest(p, 60);
-        const name = near ? `${near.row[0]} yakını` : 'Konumum';
-        setGeoMsg('');
-        onPick({ ...p, name, country: near ? countryName(near.row[1]) : undefined, source: 'konum' });
-      },
-      (err) => {
-        setBusy(false);
-        setGeoMsg(err.code === err.PERMISSION_DENIED ? 'Konum izni verilmedi. Şehir aramayı ya da haritayı kullan.' : 'Konum alınamadı. Şehir aramayı kullan.');
-      },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 },
-    );
+    setBusy(true); setGeoMsg('Konum isteniyor… (en fazla 20 saniye)');
+    const ok = (pos: GeolocationPosition) => {
+      setBusy(false);
+      const p = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      const near = cities?.nearest(p, 60);
+      setGeoMsg('');
+      onPick({ ...p, name: near ? `${near.row[0]} yakını` : 'Konumum', country: near ? countryName(near.row[1]) : undefined, source: 'konum' });
+    };
+    const fail = (err: GeolocationPositionError) => {
+      setBusy(false);
+      const why = err.code === err.PERMISSION_DENIED
+        ? 'Konum izni verilmedi (tarayıcı adres çubuğundaki konum simgesinden izin verebilirsin).'
+        : err.code === err.TIMEOUT
+          ? 'Cihaz 20 saniyede konumunu bulamadı (masaüstünde Wi-Fi ya da GPS yoksa sık olur).'
+          : 'Cihaz konumunu belirleyemedi (işletim sisteminde konum hizmetleri kapalı olabilir).';
+      setGeoMsg(`${why} Şehir aramayı ya da küreye dokunmayı kullan.`);
+    };
+    // önce önbellekteki konum (hızlı), olmazsa taze konum
+    navigator.geolocation.getCurrentPosition(ok, () => navigator.geolocation.getCurrentPosition(ok, fail, { enableHighAccuracy: false, timeout: 20000, maximumAge: 0 }),
+      { enableHighAccuracy: false, timeout: 1500, maximumAge: Infinity });
   };
 
   return (
@@ -87,6 +106,7 @@ export function PlacePicker({ cities, place, onPick, announce }: Props) {
       <button type="button" className="btn" onClick={useMyLocation} disabled={busy}>📍 Konumumu kullan</button>
       {geoMsg && <p className="hint" role="status">{geoMsg}</p>}
       {place && <p className="chosen">Seçili yer: <b>{placeLabel(place)}</b></p>}
+      {autoFocus && <AutoFocus target={input} />}
     </div>
   );
 }

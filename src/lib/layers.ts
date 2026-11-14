@@ -85,3 +85,64 @@ export async function loadTemperature(base: string) {
   return new TemperatureSource(f, cs);
 }
 export { json as loadJson };
+
+// ---------- Deniz yüzeyi sıcaklığı + akıntılar (SVS 3912, ECCO2 model 2007–2008)
+// Görsel: public/media/sst_3912_1024.mp4 (küreye video dokusu). Ses: 3912.json ızgarası, video zamanına göre (1 kare/sn).
+interface SstFile {
+  title: string; titleTr: string; credit: string; grid: GridMeta; data: string; quant: Quant;
+  frames: { count: number; fps: number; t: number[]; dateRange: string[] }; notes: string[];
+}
+export class SstSource {
+  readonly layer: Layer;
+  readonly file: SstFile;
+  readonly cs: ColorScale;
+  constructor(file: SstFile, cs: ColorScale) { this.file = file; this.cs = cs; this.layer = new Layer(file.grid, file.data, file.quant); }
+  get frames() { return this.file.frames.count; }
+  /** Video zamanı (sn) → ızgara karesi. */
+  frameAt(videoSec: number) { return Math.max(0, Math.min(this.frames - 1, Math.floor(videoSec * this.file.frames.fps))); }
+  radarLayer(frame: number): RadarLayer {
+    return {
+      id: 'sst', label: 'Deniz yüzeyi sıcaklığı', instrument: 'su gibi titreyen ses', unit: '°C',
+      min: this.cs.min, max: this.cs.max, baseHz: 220, when: 'model, Mart 2007 – Mart 2008',
+      sample: (p) => this.layer.sample(frame, p),
+      fmt: (v) => `${Math.round(v)} derece deniz`,
+    };
+  }
+}
+export async function loadSst(base: string) {
+  const [f, cs] = await Promise.all([json<SstFile>(base, '3912.json'), json<ColorScale>(base, '3912_colorscale.json')]);
+  return new SstSource(f, cs);
+}
+
+// ---------- Aerosoller (SVS 5669, GEOS, 19 Ağu 2025 20:00 UTC) — 4 tür = 4 enstrüman
+interface AerosolFile {
+  title: string; credit: string; grid: GridMeta; date: string;
+  categories: { index: number; id: string; label: string; rgb: [number, number, number] }[];
+  layers: Record<string, { data: string; quant: Quant }>;
+}
+const AEROSOL_META: Record<string, { label: string; instrument: string; baseHz: number }> = {
+  black_carbon: { label: 'Kara karbon (is, duman)', instrument: 'marimba', baseHz: 98 },
+  dust: { label: 'Toz', instrument: 'çan (glockenspiel)', baseHz: 523 },
+  sea_salt: { label: 'Deniz tuzu', instrument: 'koro', baseHz: 175 },
+  sulfate: { label: 'Sülfat', instrument: 'kısa çekme', baseHz: 330 },
+};
+export class AerosolSource {
+  readonly file: AerosolFile;
+  readonly layers: Record<string, Layer>;
+  constructor(file: AerosolFile) {
+    this.file = file;
+    this.layers = Object.fromEntries(Object.entries(file.layers).map(([k, L]) => [k, new Layer(file.grid, L.data, L.quant)]));
+  }
+  /** Dört tür ayrı radar katmanı. Değer GÖRELİ yoğunluk (0..1, renk skalasında miktar yok); şiddet ölçeği 0..0.6. */
+  radarLayers(): RadarLayer[] {
+    return Object.keys(this.layers).map((id) => {
+      const m = AEROSOL_META[id];
+      return {
+        id: id as RadarLayer['id'], label: m.label, instrument: m.instrument, unit: null, min: 0, max: 0.6, baseHz: m.baseHz,
+        when: '19 Ağu 2025 20:00 UTC', sample: (p) => this.layers[id].sample(0, p),
+        fmt: (v) => (v < 0.05 ? 'yok denecek kadar az' : `göreli yoğunluk ${Math.round(v * 100)}`),
+      };
+    });
+  }
+}
+export async function loadAerosols(base: string) { return new AerosolSource(await json<AerosolFile>(base, '5669.json')); }

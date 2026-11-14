@@ -52,6 +52,7 @@ Hedef ödüller: Local Impact, Best Use of Science, Most Inspirational, Art & Te
 - Özel jest sistemi icat etme; VoiceOver/TalkBack ile kusursuz çalış.
 - Zaman/konum seçiciler gerçek `<input type="range">`; her değişimde ses + aria-live okuma.
 - Her kontrol açıklayıcı etiketli; tam klavye desteği (Boşluk çal/durdur, ←/→ ışın yönü, I/K/J/M gez, 1–4 katman, S özet, L lejant, C yer seç, H yardım, G sesli rehber, Esc sustur).
+- Genel kısayollar yazı alanında (input/textarea/select/combobox/contenteditable) ve açık diyalogda ÇALIŞMAZ (src/lib/keys.ts `shortcutAllowed`); diyalogda Esc yalnız pencereyi kapatır. Dialog (Shell.tsx) efekti yalnız `open`'a bağlı (onClose ref) — yoksa her yeniden çizimde odak ✕'e kayar. Diyalog içeriği `.dialog-body` içinde kayar (85vh), arka plan kilitli. Kök `color-scheme: dark` (yüksek kontrastta light); <option> renkleri index.css'te.
 - Ses yalnızca kullanıcı dokunuşuyla başlar; iOS için sessiz <audio> kilit açma + navigator.audioSession.type='playback'.
 
 ## Teknik

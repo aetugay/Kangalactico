@@ -6,16 +6,27 @@ import type { Mode, Scale } from '../lib/radar.ts';
 import { IconContrast, IconGlobe, IconHeadphones, IconInfo, IconMic, IconPause, IconPin, IconPlay, IconSpeak } from './icons.tsx';
 
 // ---------------- Diyalog (modal): Esc kapatır, odak içeride döner, kapanınca açana döner
+// Not: efekt YALNIZ open'a bağlı. onClose her render'da yeni bir fonksiyon olabilir; efekte bağlansaydı her tuşta (ör. arama
+// sonucu duyurusu App'i yeniden çizince) odak açana dönüp ✕ düğmesine kayardı ve yazılan harf genel kısayola düşerdi.
 export function Dialog({ open, onClose, title, children, className = '', lang }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode; className?: string; lang: Lang }) {
   const id = useId();
   const box = useRef<HTMLDivElement>(null);
   const opener = useRef<Element | null>(null);
+  const closeRef = useRef(onClose); closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
     opener.current = document.activeElement;
-    const t = setTimeout(() => { if (!box.current?.contains(document.activeElement)) box.current?.querySelector<HTMLElement>('input,button,[href],select')?.focus(); }, 40);
+    // açılınca odak: önce yazı alanı (arama kutusu), yoksa ilk denetim — kapat (✕) düğmesi en son seçenek
+    const t = setTimeout(() => {
+      const b = box.current; if (!b || b.contains(document.activeElement)) return;
+      const first = b.querySelector<HTMLElement>('[data-autofocus], input:not([type=hidden]):not([disabled]), textarea, select')
+        ?? b.querySelector<HTMLElement>('.dialog-body button:not([disabled]), .dialog-body [href]') ?? b.querySelector<HTMLElement>('button');
+      first?.focus();
+    }, 40);
+    // arka plan sayfası diyalog açıkken kaymasın
+    const root = document.documentElement; root.classList.add('modal-open');
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeRef.current(); return; }
       if (e.key !== 'Tab' || !box.current) return;
       const f = [...box.current.querySelectorAll<HTMLElement>('input:not([disabled]),button:not([disabled]),[href],select,[tabindex]:not([tabindex="-1"])')].filter((x) => x.offsetParent !== null);
       if (!f.length) return;
@@ -23,8 +34,14 @@ export function Dialog({ open, onClose, title, children, className = '', lang }:
       else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
     };
     document.addEventListener('keydown', key);
-    return () => { clearTimeout(t); document.removeEventListener('keydown', key); (opener.current as HTMLElement | null)?.focus?.(); };
-  }, [open, onClose]);
+    return () => {
+      clearTimeout(t); document.removeEventListener('keydown', key);
+      root.classList.remove('modal-open');
+      // odak açana döner; açan artık yoksa (ör. açılış ekranı kalktı) Çal düğmesine, o da yoksa sayfa başlığına
+      const back = opener.current as HTMLElement | null;
+      setTimeout(() => { if (back?.isConnected) back.focus(); else { const t = document.querySelector<HTMLElement>('.now .btn.primary') ?? document.querySelector<HTMLElement>('.cta'); if (t) t.focus(); else { const h = document.querySelector<HTMLElement>('h1, h2'); if (h) { h.tabIndex = -1; h.focus(); } } } }, 0);
+    };
+  }, [open]);
   if (!open) return null;
   return (
     <div className="scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -33,7 +50,7 @@ export function Dialog({ open, onClose, title, children, className = '', lang }:
           <h2 id={`${id}-t`}>{title}</h2>
           <button type="button" className="icon-btn" onClick={onClose} aria-label={tr(lang, 'close')}>✕</button>
         </div>
-        {children}
+        <div className="dialog-body">{children}</div>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { engine } from '../audio/engine.ts';
 import { RadarPlayer, type RadarFrame } from '../audio/radarPlayer.ts';
 import { speech } from '../audio/speech.ts';
+import { shortcutAllowed } from '../lib/keys.ts';
 import type { Lang } from '../i18n.ts';
 import { compass8, type LatLon } from '../lib/geo.ts';
 import { beamSilences, DEFAULTS, describeBeam, describeScale, extremes, formatEvent, formatSilent, noteHz, playedRange, PARTS, sampleLayer, summarize, type Mode, type RadarLayer, type Scale } from '../lib/radar.ts';
@@ -170,14 +171,10 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, scale = 'lo
   // klavye: Boşluk, ←/→, S, L (metin alanlarında ve diyaloglarda devre dışı)
   const keys = useRef<(e: KeyboardEvent) => void>(() => {});
   keys.current = (e) => {
-    if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || !P) return;
-    const el = e.target instanceof HTMLElement ? e.target : null;
-    const tag = (el?.tagName ?? '').toLowerCase();
-    const type = (el as HTMLInputElement | null)?.type ?? '';
-    const textInput = tag === 'textarea' || (tag === 'input' && !['range', 'checkbox', 'radio', 'button'].includes(type)) || el?.getAttribute('role') === 'combobox' || !!el?.isContentEditable;
-    if (textInput || tag === 'select' || el?.closest('[role="dialog"]')) return;
-    if (e.key === ' ' && tag !== 'button' && !(tag === 'input' && (type === 'checkbox' || type === 'radio'))) { e.preventDefault(); toggle(); }
-    else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && tag !== 'input') { e.preventDefault(); stepBeam(e.key === 'ArrowRight' ? 1 : -1); }
+    if (e.shiftKey || !P || !shortcutAllowed(e)) return; // yazı alanı / form denetimi / açık diyalog → kısayol yok
+    const tag = e.target instanceof HTMLElement ? e.target.tagName.toLowerCase() : '';
+    if (e.key === ' ' && tag !== 'button' && tag !== 'summary') { e.preventDefault(); toggle(); }
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); stepBeam(e.key === 'ArrowRight' ? 1 : -1); }
     else if (e.key === 's' || e.key === 'S') { e.preventDefault(); summary(); }
     else if (e.key === 'l' || e.key === 'L') { e.preventDefault(); void runLegend(); }
   };

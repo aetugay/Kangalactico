@@ -5,6 +5,7 @@ import { listener } from './audio/listen.ts';
 import { IconBars, IconBreath, IconStrings, IconWave } from './components/icons.tsx';
 import { DEFAULT_MIX, EventsDialog, Explore, instrumentName, SoundDialog, StoriesDialog, type EarthEvent, type Mix, type StoryInfo } from './components/Extras.tsx';
 import { PlacePicker } from './components/PlacePicker.tsx';
+import { shortcutAllowed } from './lib/keys.ts';
 import { RadarView } from './components/RadarView.tsx';
 import { About, Dialog, Intro, LayerPills, NowCard, Timeline, TopBar, type Pill } from './components/Shell.tsx';
 import { WorldMap } from './components/WorldMap.tsx';
@@ -605,13 +606,9 @@ export default function App() {
   // genel kısayollar: C yer seç · H yardım · G sesli rehber · Esc sustur · 1-4 katman · I/J/K/M gez
   const globalKeys = useRef<(e: KeyboardEvent) => void>(() => {});
   globalKeys.current = (e) => {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    // yazı alanında ya da açık diyalogda hiçbir kısayol çalışmaz (Esc'yi diyalog işler: yalnız pencereyi kapatır)
+    if (!shortcutAllowed(e)) return;
     if (e.key === 'Escape') { radar.hush(); stopStory(); return; }
-    const el = e.target instanceof HTMLElement ? e.target : null;
-    const tag = (el?.tagName ?? '').toLowerCase();
-    const type = (el as HTMLInputElement | null)?.type ?? '';
-    const typing = tag === 'textarea' || tag === 'select' || (tag === 'input' && !['range', 'checkbox', 'radio', 'button'].includes(type)) || !!el?.isContentEditable;
-    if (typing || el?.closest('[role="dialog"]')) return;
     const k = e.key.toLowerCase();
     if (k === 'c') { e.preventDefault(); setPickFor('A'); setPickOpen(true); }
     else if (k === 'h') { e.preventDefault(); welcomed.current = true; radar.hush(); if (guideRef.current) void speech.say(helpText()); else announce(helpText()); }

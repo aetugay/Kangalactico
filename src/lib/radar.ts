@@ -225,9 +225,12 @@ export function describeBeam(layer: RadarLayer, vals: Float32Array, P: RadarPara
 
 // ---------------- Ses olayları: YALNIZCA veriden (saf fonksiyon; Node testinde de çalışır) ----------------
 /** Radarın bir anlık durumu (ses için gereken her şey). */
+export type SoundMode = 'nature' | 'both' | 'music';
 export interface FrameData {
   P: RadarParams;
   mode: Mode;
+  /** Ses modu: doğa (bilim) · doğa + müzik (varsayılan) · sadece müzik. */
+  sound?: SoundMode;
   /** Ölçek (varsayılan yerel). Karşılaştırmada yerel ölçek iki yerin birleşik aralığıdır (A ve B aynı ölçekte). */
   scale?: Scale;
   layers: { layer: RadarLayer; vals: Float32Array; local: { min: number; max: number } }[];

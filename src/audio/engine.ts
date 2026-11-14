@@ -549,6 +549,65 @@ class AudioEngine {
     if (sc.thunder > 0.01) this.world(worldParams('thunder', 0, 0.3 + 0.7 * sc.thunder, 0.5), when + 0.5, dur - 1, (rnd() * 2 - 1) * 0.6, seed + 3, 1);
   }
 
+  // ---------------- VERİDEN DOĞAN MÜZİK (doğa seslerinin ~10 dB altında; orta bölgede, 2.8 kHz üstü kesik → hışırtıları maskelemez) ----------------
+  private musicBus: GainNode | null = null;
+  private music(): GainNode {
+    if (this.musicBus) return this.musicBus;
+    const ac = this.ctx(), g = ac.createGain(); g.gain.value = 0.25; // ölçüldü: nota 0.25 → ~0.06 seviye; doğa sesleri 0.12–0.48 → müzik ~6–18 dB altta
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2800; lp.Q.value = 0.5;
+    g.connect(lp).connect(this.out()); this.musicBus = g; return g;
+  }
+  /** Rehber konuşurken doğa + müzik kısılır (ducking). */
+  duck(on: boolean) { if (this.ac) this.master.gain.setTargetAtTime(this.mix.master * (on ? 0.35 : 1), this.ac.currentTime, on ? 0.08 : 0.4); }
+  /** Bir müzik olayı (lib/music.ts musicEvents / weatherMusic): çalgı + akor notaları, yumuşak zarf. */
+  musicNote(instr: string, freqs: number[], when: number, dur: number, gain: number, pan: number) {
+    if (gain <= 0.001 || !freqs.length) return;
+    const ac = this.ctx(), bus = this.music();
+    const p = ac.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan)); p.connect(bus);
+    const env = (g: GainNode, t0: number, a: number, peak: number, len: number, r: number) => {
+      g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0 + a); g.gain.setValueAtTime(peak, t0 + Math.max(a, len - r)); g.gain.linearRampToValueAtTime(0.0001, t0 + len);
+    };
+    const osc = (type: OscillatorType, f: number, t0: number, len: number, peak: number, a: number, r: number, dest: AudioNode = p) => {
+      const o = ac.createOscillator(); o.type = type; o.frequency.value = f; const g = ac.createGain(); o.connect(g).connect(dest); env(g, t0, a, peak, len, r); o.start(t0); o.stop(t0 + len + 0.05); return o;
+    };
+    const G = gain;
+    switch (instr) {
+      case 'harp': // arpej: akor notaları sırayla, çekilen tel (yumuşak)
+        freqs.forEach((f, i) => { const t0 = when + (i * dur) / (freqs.length + 1); osc('triangle', f, t0, Math.min(1.6, dur * 1.2), 0.22 * G, 0.01, 0.9); osc('sine', f * 2, t0, 0.6, 0.05 * G, 0.01, 0.5); });
+        break;
+      case 'tremolo': { // alçak yaylı tremolo: iki testere + gövde süzgeci + titreme (yoğunlukla hızlanır)
+        const body = ac.createBiquadFilter(); body.type = 'lowpass'; body.frequency.value = 900; const tg = ac.createGain(); body.connect(tg).connect(p);
+        freqs.forEach((f) => { osc('sawtooth', f, when, dur, 0.06 * G, 0.15, 0.3, body); osc('sawtooth', f * 1.003, when, dur, 0.06 * G, 0.15, 0.3, body); });
+        const lfo = ac.createOscillator(); lfo.frequency.value = 6 + 4 * G; const d = ac.createGain(); d.gain.value = 0.5; tg.gain.value = 0.6; lfo.connect(d).connect(tg.gain); lfo.start(when); lfo.stop(when + dur + 0.05);
+        break;
+      }
+      case 'pad': // havadar pad + uzun flüt notası (en üst nota)
+        freqs.forEach((f) => osc('sine', f, when, dur * 1.3, 0.07 * G, dur * 0.4, dur * 0.5));
+        osc('triangle', freqs[freqs.length - 1] * 2, when + dur * 0.2, dur, 0.04 * G, 0.25, 0.4);
+        break;
+      case 'timpani': { // timpani: perdesi hafif düşen alçak ton + boğuk vuruş
+        const f = freqs[0], o = ac.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(f * 1.4, when); o.frequency.exponentialRampToValueAtTime(f, when + 0.08);
+        const g = ac.createGain(); o.connect(g).connect(p); g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.45 * G, when + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, when + 1.6); o.start(when); o.stop(when + 1.7);
+        const s = ac.createBufferSource(); s.buffer = this.noise(); const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 250; const ng = ac.createGain(); s.connect(lp).connect(ng).connect(p);
+        ng.gain.setValueAtTime(0.0001, when); ng.gain.exponentialRampToValueAtTime(0.25 * G, when + 0.005); ng.gain.exponentialRampToValueAtTime(0.0001, when + 0.25); s.start(when, 0.3); s.stop(when + 0.3);
+        break;
+      }
+      case 'marimba': // marimba (akor arpeji) + tahta üflemeli (kare dalga, yumuşak)
+        freqs.forEach((f, i) => { const t0 = when + (i * dur) / 4; osc('sine', f, t0, 0.5, 0.2 * G, 0.004, 0.45); osc('sine', f * 4, t0, 0.08, 0.04 * G, 0.002, 0.07); });
+        if (G > 0.22) { const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; lp.connect(p); osc('square', freqs[1] * 2, when + dur * 0.5, dur * 0.7, 0.025 * G, 0.12, 0.3, lp); }
+        break;
+      case 'pulse': // yumuşak synth nabzı: kısa üçgen notalar
+        for (let k = 0; k < 2; k++) osc('triangle', freqs[k % freqs.length], when + (k * dur) / 2, dur / 2.4, 0.12 * G, 0.02, 0.15);
+        break;
+      case 'celesta': // cam/çelesta: seyrek, parlak ama yumuşak
+        osc('sine', freqs[freqs.length - 1], when, 0.9, 0.12 * G, 0.003, 0.85); osc('sine', freqs[freqs.length - 1] * 2.76, when, 0.4, 0.03 * G, 0.003, 0.38);
+        break;
+      case 'drone': // sıcak, alçak drone
+        freqs.slice(0, 2).forEach((f) => { osc('sine', f, when, dur * 1.5, 0.1 * G, dur * 0.5, dur * 0.6); osc('triangle', f * 2, when, dur * 1.5, 0.025 * G, dur * 0.5, dur * 0.6); });
+        break;
+    }
+  }
+
   /** Kuzey işareti: her tur başında hafif bir üçgen (zil) vuruşu. */
   northTick(when: number) {
     const ac = this.ctx();

@@ -9,6 +9,7 @@
 import { engine } from './engine.ts';
 import { beamEvents, groupMean, noteHz, gainFor, PARTS, refEvents, registers, worldEvents, worldRefEvents, WORLD_BANDS, type FrameData, type SoundEvent } from '../lib/radar.ts';
 import { WORLD_OF, worldParams, seedOf, WORLD_PART } from '../lib/worlds.ts';
+import { moodOf, musicEvents, type Mood } from '../lib/music.ts';
 
 export interface RadarFrame extends FrameData {
   revSec: number; // bir tur (32 ışın) süresi; referans bölümü bunun dışında
@@ -24,6 +25,7 @@ export class RadarPlayer {
   private t0 = 0;     // 0. ışının (kuzey) ses zamanı — görsel açı hesabı için
   private get: () => RadarFrame | null;
   playing = false;
+  private mood: Mood | null = null; // her tur başında radar alanından (bir tur = bir müzikal cümle)
   /** Her tur tamamlandığında çağrılır — örn. zaman çizelgesini ilerletmek için. */
   onRevolution: (() => void) | null = null;
   /** Bir ışın adımı (ya da referans tonu) ÇALINDIĞI anda o adımın notaları — canlı gösterge için. beam = -1: referans. */
@@ -89,7 +91,7 @@ export class RadarPlayer {
       const tags = [...new Set(wr.map((e) => e.ref?.tag ?? ''))];
       const slot = tags.length > 1 ? 2 : LEAD;
       const tag = tags.length > 1 ? (pos === 0 ? tags[0] : pos === 2 ? tags[1] : null) : pos === 0 ? tags[0] : null;
-      if (tag !== null) { const es = wr.filter((e) => (e.ref?.tag ?? '') === tag); for (const e of es) engine.world(e.params, when, step * slot * 0.95, 0, e.seed, engine.mix.vol[e.layerId] ?? 1); this.emit(es, -1, when); }
+      if (tag !== null) { const es = wr.filter((e) => (e.ref?.tag ?? '') === tag); if ((F.sound ?? 'both') !== 'music') for (const e of es) engine.world(e.params, when, step * slot * 0.95, 0, e.seed, engine.mix.vol[e.layerId] ?? 1); this.emit(es, -1, when); }
     }
     const refs = refEvents(F);
     if (!refs.length) return; // merkezde veri yok → referans yok (sessiz)
@@ -118,8 +120,12 @@ export class RadarPlayer {
       const sea = F.layers.find((l) => l.layer.id === 'sst' && !WORLD_OF.sst); // okyanus artık ses dünyası (kendi dalgaları)
       if (sea) engine.waves(groupMean(sea.vals, P, b, 1).cover); else engine.wavesOff();
     } else engine.wavesOff();
-    const wev = worldEvents(F, b);
-    for (const e of wev) engine.world(e.params, when, step * e.durBeams, e.pan, e.seed, engine.mix.vol[e.layerId] ?? 1);
+    const wev = worldEvents(F, b), sound = F.sound ?? 'both';
+    if (sound !== 'music') for (const e of wev) engine.world(e.params, when, step * e.durBeams, e.pan, e.seed, engine.mix.vol[e.layerId] ?? 1);
+    if (sound !== 'nature') { // veriden doğan müzik (doğa seslerinin altında)
+      if (b === 0 || !this.mood) this.mood = moodOf(F);
+      for (const m of musicEvents(F, b, this.mood)) engine.musicNote(m.instr, m.freqs, when, step * m.durBeams, sound === 'music' ? m.gain * 3 : m.gain, m.pan);
+    }
     this.emit([...events, ...wev], b, when);
   }
 

@@ -28,7 +28,7 @@ import { ImageScan } from './components/ImageScan.tsx';
 import { INSTRUMENT_LABEL, M24 } from './lib/m24.ts';
 import { M24Panel } from './components/M24Panel.tsx';
 import { Cities, countryName, fold, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
-import { gainFor, noteHz, PARTS, type Mode, type RadarLayer, type Scale } from './lib/radar.ts';
+import { gainFor, noteHz, PARTS, type Mode, type RadarLayer, type Scale, type SoundMode } from './lib/radar.ts';
 import { landTexture, paintEquirect } from './lib/textures.ts';
 import { Globe3D, hasWebGL, type GlobeSource } from './three/Globe3D.tsx';
 
@@ -122,7 +122,10 @@ export default function App() {
   const [place, setPlace] = useState<Place | null>(null);
   const [rangeKm, setRange] = useState(2000);
   const [mode, setMode] = useState<Mode>('bilim'); // Adım 1: bilim modu varsayılan — yalnız veri sesleri; tam ton dizisi
-  const [scale, setScaleS] = useState<Scale>('global'); // ses dünyaları: KÜRESEL ölçek (Sahra hep tozlu, Amazon hep yeşil) // Adım 2: yerel ölçek varsayılan — bu alandaki farklar 2 oktava yayılır
+  const [scale, setScaleS] = useState<Scale>('global');
+  // Ses modu: doğa (bilim) · doğa + müzik (varsayılan) · sadece müzik
+  const [soundMode, setSoundModeS] = useState<SoundMode>(() => (['nature', 'both', 'music'].includes(store.get('soundMode') ?? '') ? store.get('soundMode') as SoundMode : 'both'));
+  const setSoundMode = (m: SoundMode) => { setSoundModeS(m); store.set('soundMode', m); const en = langRef.current === 'en'; announce(m === 'nature' ? (en ? 'Nature sounds only (science mode).' : 'Yalnız doğa sesleri (bilim modu).') : m === 'music' ? (en ? 'Music only.' : 'Yalnız müzik.') : (en ? 'Nature sounds with music from the same data underneath.' : 'Doğa sesleri ve altında aynı veriden doğan müzik.')); }; // ses dünyaları: KÜRESEL ölçek (Sahra hep tozlu, Amazon hep yeşil) // Adım 2: yerel ölçek varsayılan — bu alandaki farklar 2 oktava yayılır
   const [month, setMonth] = useState(0);
   const [advance, setAdvance] = useState(true);
   const [tFrame, setTFrame] = useState(0);
@@ -207,6 +210,7 @@ export default function App() {
   }, []);
   announceRef.current = announce;
   useEffect(() => engine.onStatus(setAudioOk) as unknown as void, []);
+  useEffect(() => speech.onChange((active) => engine.duck(active)), []);
 
   // katmanlar açılınca yükle
   useEffect(() => { if (on.temp && !temp) loadTemperature(BASE).then((t) => { setTemp(t); setTFrame(t.frames - 1); }).catch((e) => setErr(String(e))); }, [on.temp, temp]);
@@ -286,7 +290,7 @@ export default function App() {
       : `${layer.label}: ${Number.isNaN(c) ? 'merkezde veri yok' : 'merkezde ' + layer.fmt(c)}; en yüksek ${dir} yönünde, ${layer.fmt(bv)}.`);
   };
   const radar = useRadar({
-    placeName: active ? placeLabel(active) : '', center: active, layers, rangeKm, mode, scale, lang, announce,
+    placeName: active ? placeLabel(active) : '', center: active, layers, rangeKm, mode, sound: soundMode, scale, lang, announce,
     pair: compare && place && placeB ? [{ tag: 'A', name: placeLabel(place), center: place }, { tag: 'B', name: placeLabel(placeB), center: placeB }] : null,
     beamPlaces: (br) => {
       if (!cities || !active) return '';
@@ -663,6 +667,9 @@ export default function App() {
       else { setPickFor('B'); setPickOpen(true); }
       return true;
     }
+    if (has('sadece doga', 'muzigi kapat', 'muzik kapat', 'only nature', 'music off')) { setSoundMode('nature'); return true; }
+    if (has('sadece muzik', 'only music', 'music only')) { setSoundMode('music'); return true; }
+    if (has('muzigi ac', 'muzik ac', 'music on')) { setSoundMode('both'); return true; }
     if (has('yerel olcek', 'local scale', 'yerel')) { setScale('local'); return true; }
     if (has('kuresel olcek', 'global scale', 'kuresel', 'sabit olcek')) { setScale('global'); return true; }
     if (has('fark', 'difference')) { if (placeB) sayDiff(); else announce(en ? 'There is no second place yet. Say: compare with Tokyo.' : 'Henüz ikinci yer yok. Şöyle söyle: Tokyo ile karşılaştır.'); return true; }
@@ -999,7 +1006,7 @@ export default function App() {
           <>
             <NowCard lang={lang} placeLabel={(compare && placeB ? (active === placeB ? 'B · ' : 'A · ') : '') + placeLabel(active ?? place)} playing={radar.playing} onToggle={radar.toggle} onLegend={radar.runLegend} 
               onSummary={radar.summary} headline={headline} instruments={instruments} rangeKm={rangeKm} setRange={(km) => { setRange(km); announce(lang === 'en' ? `Range ${km} kilometers.` : `Menzil ${km} kilometre.`); }}
-              revSec={radar.revSec} setRevSec={radar.setRevSec} mode={mode} setMode={(m) => { setMode(m); announce(m === 'hikaye' ? (lang === 'en' ? 'Musical mode: pentatonic notes, with a soft chord and waves.' : 'Müzikal mod: pentatonik notalar, yumuşak zemin akoru ve dalga sesi.') : (lang === 'en' ? 'Science mode: whole-tone steps, so equal differences sound as equal steps. Data sounds only.' : 'Bilim modu: tam ton adımları; eşit fark eşit adım duyulur. Yalnız veri sesleri.')); }}
+              revSec={radar.revSec} setRevSec={radar.setRevSec} mode={mode} soundMode={soundMode} setSoundMode={setSoundMode} setMode={(m) => { setMode(m); announce(m === 'hikaye' ? (lang === 'en' ? 'Musical mode: pentatonic notes, with a soft chord and waves.' : 'Müzikal mod: pentatonik notalar, yumuşak zemin akoru ve dalga sesi.') : (lang === 'en' ? 'Science mode: whole-tone steps, so equal differences sound as equal steps. Data sounds only.' : 'Bilim modu: tam ton adımları; eşit fark eşit adım duyulur. Yalnız veri sesleri.')); }}
               scale={scale} setScale={setScale} scaleInfo={radar.scaleInfo} legend={radar.legend} talking={radar.talking} nowLines={radar.nowLines} liveLine={radar.liveLine}>
               <Explore lang={lang} placeA={placeLabel(place)} placeB={placeB ? placeLabel(placeB) : null} compare={compare}
                 setCompare={(v) => { setCompare(v); setCmpTurn(0); announce(v ? (lang === 'en' ? 'Listening in turns: one sweep for A, one sweep for B. Time stays fixed.' : 'Sırayla dinleme açık: bir tur A, bir tur B. Zaman sabit kalır.') : (lang === 'en' ? 'Listening in turns off.' : 'Sırayla dinleme kapalı.')); }}
@@ -1072,7 +1079,7 @@ export default function App() {
         layerNames={{ co2: LAYER_UI.co2.label[lang], temp: LAYER_UI.temp.label[lang], sst: LAYER_UI.sst.label[lang], aerosol: LAYER_UI.aerosol.label[lang] }}
         onTest={(id) => { engine.unlock(); const ids = id === 'aerosol' ? ['black_carbon', 'dust', 'sea_salt', 'sulfate'] : [id]; ids.forEach((t, i) => [0.2, 0.5, 0.8].forEach((v, j) => engine.voice(t, noteHz(v, PARTS[t as keyof typeof PARTS]), engine.now + 0.05 + i * 1.1 + j * 0.3, 0.5, 0.8, 0))); }} />
       <About open={aboutOpen} onClose={() => setAboutOpen(false)} lang={lang} credits={credits} extra={<DataInventory lang={lang} />} />
-      <Weather open={wxOpen} onClose={() => setWxOpen(false)} lang={lang} forecast={wx} error={wxErr} target={wxTarget} announce={announce} />
+      <Weather open={wxOpen} music={soundMode !== 'nature'} nature={soundMode !== 'music'} onClose={() => setWxOpen(false)} lang={lang} forecast={wx} error={wxErr} target={wxTarget} announce={announce} />
       <ImageScan open={scanOpen} onClose={() => setScanOpen(false)} lang={lang} announce={announce} />
 
       <div className="sr" aria-live="polite" aria-atomic="true">{live}</div>

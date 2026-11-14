@@ -2,7 +2,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { tr, type Lang } from '../i18n.ts';
 import { formatKm } from '../lib/geo.ts';
-import type { Mode, Scale } from '../lib/radar.ts';
+import type { Mode, Scale, SoundMode } from '../lib/radar.ts';
 import { IconContrast, IconGlobe, IconHeadphones, IconInfo, IconMic, IconPause, IconPin, IconPlay, IconSpeak } from './icons.tsx';
 
 // ---------------- Diyalog (modal): Esc kapatır, odak içeride döner, kapanınca açana döner
@@ -102,6 +102,7 @@ export interface NowProps {
   rangeKm: number; setRange: (km: number) => void; revSec: number; setRevSec: (s: number) => void; mode: Mode; setMode: (m: Mode) => void;
   /** Adım 2: ölçek anahtarı (yerel varsayılan) ve katman başına ölçek açıklaması. */
   scale: Scale; setScale: (s: Scale) => void; scaleInfo?: string[];
+  soundMode?: SoundMode; setSoundMode?: (m: SoundMode) => void;
   legend: string | null;
   /** Canlı gösterge: şu an çalan notaların verisi (her adımda) ve ekran okuyucu satırı (seyreltilmiş). */
   nowLines?: string[];
@@ -158,8 +159,18 @@ export function NowCard(p: NowProps) {
             <option value={12}>12 s</option><option value={8}>8 s</option><option value={5}>5 s</option>
           </select>
         </label>
-        <label className="switch"><input type="checkbox" checked={p.mode === 'hikaye'} onChange={(e) => p.setMode(e.target.checked ? 'hikaye' : 'bilim')} /> <span>{tr(lang, 'story')}</span></label>
+
       </div>
+      {p.setSoundMode && (
+        <fieldset className="fs">
+          <legend>{lang === 'en' ? 'Sound mode' : 'Ses modu'}</legend>
+          <div className="seg">
+            {(['nature', 'both', 'music'] as SoundMode[]).map((m) => (
+              <label key={m} className={m === p.soundMode ? 'on' : ''}><input type="radio" name="soundmode" checked={m === p.soundMode} onChange={() => p.setSoundMode!(m)} />{m === 'nature' ? (lang === 'en' ? 'Nature' : 'Doğa') : m === 'both' ? (lang === 'en' ? 'Nature + music' : 'Doğa + müzik') : (lang === 'en' ? 'Music only' : 'Sadece müzik')}</label>
+            ))}
+          </div>
+        </fieldset>
+      )}
       <fieldset className="fs">
         <legend>{lang === 'en' ? 'Note scale' : 'Nota ölçeği'}</legend>
         <div className="seg">

@@ -9,10 +9,12 @@ export type World = 'heat' | 'ocean' | 'dust' | 'smoke' | 'spray' | 'volcano' | 
 export const WORLD_OF: Partial<Record<Timbre, World>> = {
   temp: 'heat', sst: 'ocean', dust: 'dust', black_carbon: 'smoke', sea_salt: 'spray', sulfate: 'volcano', lightning: 'thunder', lights: 'city', ndvi: 'forest',
 };
+/** Gece ışıklarında (SVS 5313) ıssız karanın da arka plan parlaklığı var (çöl ~0.14–0.15, 1° ızgara): bunun altı "karanlık" sayılır. */
+export const CITY_BG = 0.17;
 /** every: kaç ışında bir yeni ses dokusu (dokular üst üste biner, kesintisiz duyulur) · gate: küresel ölçekte bu eşiğin altı "yok" → sessizlik. */
 export const WORLD_PART: Record<World, { every: number; gate: number }> = {
   heat: { every: 2, gate: -1 }, ocean: { every: 2, gate: -1 }, dust: { every: 1, gate: 0.07 }, smoke: { every: 2, gate: 0.07 },
-  spray: { every: 2, gate: 0.07 }, volcano: { every: 4, gate: 0.07 }, thunder: { every: 1, gate: 0.01 }, city: { every: 2, gate: 0.03 }, forest: { every: 2, gate: -1 },
+  spray: { every: 2, gate: 0.07 }, volcano: { every: 4, gate: 0.07 }, thunder: { every: 1, gate: 0.01 }, city: { every: 2, gate: CITY_BG }, forest: { every: 2, gate: -1 },
 };
 
 /** Sentez parametreleri (motor bunları seslendirir). Aynı girdi → aynı parametre (rastgele olaylar da seed'e bağlı). */
@@ -39,7 +41,7 @@ export function worldParams(world: World, v: number, t: number, dist: number): W
     case 'spray': return p(0.3 + 0.7 * t, 900 + 2600 * t, 0, 0.2 + 0.6 * t);                                  // dalga serpintisi
     case 'volcano': return p(0.3 + 0.7 * t, 160 + 260 * t, 0, t);                                             // derin volkan uğultusu
     case 'thunder': return p(0.35 + 0.65 * t, 2600 * (1 - 0.85 * dist) + 180, 0.4 + 5 * t, 1 - dist, {}, 0.05 + 0.6 * dist); // gürleme; yakın = sert çatırtı
-    case 'city': return p(0.2 + 0.8 * t, 500 + 1500 * t, 0, t, { traffic: clamp(0.3 + 0.7 * t), crowd: clamp((t - 0.2) / 0.8) });
+    case 'city': { const u = clamp((t - CITY_BG) / (1 - CITY_BG)); return p(0.25 + 0.75 * u, 500 + 1500 * u, 0, u, { traffic: clamp(0.35 + 0.65 * u), crowd: clamp((u - 0.15) / 0.85) }); } // arka plan üstü parlaklık
     case 'forest': {                                                                                             // yaprak + kuşlar; çıplak arazi = boş rüzgâr
       const rich = clamp((t - 0.25) / 0.65);
       return p(0.35 + 0.65 * t, 4500 + 3000 * t, 6 * rich * rich, 0.5, { leaves: rich, birds: rich, wind: 1 - rich });
@@ -66,7 +68,7 @@ export function describeWorld(world: World, v: number, t: number, lang: 'tr' | '
     case 'spray': return en ? `${L} sea spray (sea salt)` : `${L} dalga serpintisi (deniz tuzu)`;
     case 'volcano': return en ? `${L} deep volcanic rumble (sulfate)` : `${L} derin volkan uğultusu (sülfat)`;
     case 'thunder': return en ? `${L} thunder (lightning)` : `${L} gök gürültüsü (yıldırım)`;
-    case 'city': return t < 0.03 ? (en ? 'dark, quiet' : 'karanlık, sessiz') : en ? `${L} city hum (night lights)` : `${L} şehir uğultusu (gece ışıkları)`;
+    case 'city': { const u = clamp((t - CITY_BG) / (1 - CITY_BG)); return t < CITY_BG ? (en ? 'dark, quiet' : 'karanlık, sessiz') : en ? `${lvl(u, en)} city hum (night lights)` : `${lvl(u, en)} şehir uğultusu (gece ışıkları)`; }
     case 'forest': return t < 0.25 ? (en ? 'bare land, empty wind' : 'çıplak arazi, boş rüzgâr') : en ? `${L} forest, birds (vegetation)` : `${L} orman, kuşlar (bitki örtüsü)`;
     case 'heat': return v < 5 ? (en ? `icy wind (${Math.round(v)} °C)` : `buzlu rüzgâr (${Math.round(v)} °C)`) : v > 22 ? (en ? `cicadas, hot air (${Math.round(v)} °C)` : `ağustos böcekleri, sıcak hava (${Math.round(v)} °C)`) : (en ? `mild breeze (${Math.round(v)} °C)` : `ılık esinti (${Math.round(v)} °C)`);
     case 'ocean': return v < 3 ? (en ? `icy, crackling waves (${Math.round(v)} °C)` : `buzlu, çatırtılı dalgalar (${Math.round(v)} °C)`) : v > 22 ? (en ? `soft tropical waves (${Math.round(v)} °C)` : `yumuşak tropik dalgalar (${Math.round(v)} °C)`) : (en ? `cool waves (${Math.round(v)} °C)` : `serin dalgalar (${Math.round(v)} °C)`);

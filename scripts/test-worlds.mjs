@@ -67,7 +67,7 @@ for (const [name, p] of PLACES) for (const L of LAYERS) {
   const w = WORLD_OF[L.id]; const v = L.sample(p);
   if (Number.isNaN(v)) { rows.push({ yer: name, katman: L.label, deger: 'veri yok', ses: 'sessiz' }); continue; }
   const t = gainFor(v, L, 'global'), pr = worldParams(w, v, t, 0);
-  const gate = { dust: 0.07, smoke: 0.07, spray: 0.07, volcano: 0.07, thunder: 0.01, city: 0.03 }[w] ?? -1;
+  const gate = { dust: 0.07, smoke: 0.07, spray: 0.07, volcano: 0.07, thunder: 0.01, city: 0.17 }[w] ?? -1;
   rows.push({ yer: name, katman: L.label, deger: L.fmt(v), t: +t.toFixed(2), ses: t < gate ? 'sessiz (eşik altı)' : describeWorld(w, v, t, 'tr'), level: pr.level, cutoff: pr.cutoff, rate: pr.rate, sharp: pr.sharp, mix: Object.entries(pr.mix).map(([k, x]) => `${k}=${(+x).toFixed(2)}`).join(' ') });
 }
 const md = ['| Yer | Katman | Değer | t (küresel) | Ses | şiddet | süzgeç Hz | olay/sn | sertlik | karışım |', '|---|---|---|---|---|---|---|---|---|---|',
@@ -78,6 +78,7 @@ const get = (yer, kat) => rows.find((r) => r.yer.startsWith(yer) && r.katman.sta
 check((get('Sahra', 'Toz')?.t ?? 0) > 0.4, `Sahra: toz yüksek (t ${get('Sahra', 'Toz')?.t})`);
 check((get('Amazon', 'Orman')?.t ?? 0) > 0.6, `Amazon: orman/bitki örtüsü yüksek (t ${get('Amazon', 'Orman')?.t})`);
 check((get('Tokyo', 'Gece')?.t ?? 0) > 0.5, `Tokyo: şehir ışığı yüksek (t ${get('Tokyo', 'Gece')?.t})`);
+check(/sessiz/.test(get('Sahra', 'Gece')?.ses ?? ''), `Sahra: gece ışığı arka plan (t ${get('Sahra', 'Gece')?.t}) → sessiz, şehir sesi yok`);
 check(/buzlu|serin/.test(get('Kuzey', 'Okyanus')?.ses ?? ''), `Kuzey Atlantik: soğuk dalga (${get('Kuzey', 'Okyanus')?.deger} → ${get('Kuzey', 'Okyanus')?.ses})`);
 check((get('Orta Afrika', 'Yıldırım')?.t ?? 0) > 0.6, `Orta Afrika: yıldırım yüksek (t ${get('Orta Afrika', 'Yıldırım')?.t})`);
 console.log(fail ? `\n${fail} kontrol BAŞARISIZ` : '\nTüm ses dünyası kontrolleri geçti');

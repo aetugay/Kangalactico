@@ -4,9 +4,10 @@ import { engine } from '../audio/engine.ts';
 import { RadarPlayer, type RadarFrame } from '../audio/radarPlayer.ts';
 import { speech } from '../audio/speech.ts';
 import { shortcutAllowed } from '../lib/keys.ts';
+import { WORLD_OF, legendExamples, legendLine, seedOf, worldParams } from '../lib/worlds.ts';
 import type { Lang } from '../i18n.ts';
 import { compass8, type LatLon } from '../lib/geo.ts';
-import { beamSilences, DEFAULTS, describeBeam, describeScale, extremes, formatEvent, formatSilent, noteHz, playedRange, PARTS, sampleLayer, summarize, type Mode, type RadarLayer, type Scale } from '../lib/radar.ts';
+import { beamSilences, DEFAULTS, describeBeam, describeScale, extremes, formatEvents, formatSilent, noteHz, playedRange, PARTS, sampleLayer, summarize, type Mode, type RadarLayer, type Scale } from '../lib/radar.ts';
 
 interface Opts {
   placeName: string;
@@ -68,7 +69,7 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, scale = 'lo
   useEffect(() => {
     player.onEvents = (events, b) => {
       const F = frameRef.current; if (!F) return;
-      const lines = [...events.map((e) => formatEvent(e, langRef.current)), ...(b < 0 ? [] : beamSilences(F, b).map((s) => `${s.label}: ${formatSilent(s.bearing, langRef.current)}`))];
+      const lines = [...formatEvents(events, langRef.current), ...(b < 0 ? [] : beamSilences(F, b).map((s) => `${s.label}: ${formatSilent(s.bearing, langRef.current)}`))];
       if (!lines.length) return; // bu adımda sırası gelen katman yok (ritim) — gösterge son notada kalır
       setNowLines(lines);
       const now = Date.now();
@@ -135,7 +136,7 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, scale = 'lo
     };
     const lowHigh = (id: string) => { tone(id, 0.05, 0, 0, 0.9, 1); tone(id, 0.5, 0, 1.0, 0.9, 2); tone(id, 0.95, 0, 2.0, 0.9, 3); };
     const first = layers[0];
-    const steps: [string, () => void][] = en ? [
+    const noteSteps: [string, () => void][] = en ? [
       ['The radar sweeps around the place you chose, starting from north and turning clockwise. This bell marks north.', () => engine.northTick(engine.now + 0.05)],
       ['Places to the west sound in your left ear,', () => tone('temp', 0.5, -1)],
       ['places to the east in your right ear.', () => tone('temp', 0.5, 1)],
@@ -154,12 +155,29 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, scale = 'lo
       ['Her katman ayrı bir enstrümandır.', () => {}],
       ...layers.map((l): [string, () => void] => [`${l.label}: ${l.instrument}.`, () => { tone(l.id, 0.3, 0, 0, 0.6); tone(l.id, 0.6, 0, 0.45, 0.6); tone(l.id, 0.9, 0, 0.9, 0.8); }]),
     ];
-    for (const [text, fx] of steps) {
+    // SES DÜNYALARI lejantı: her dünya önce söylenir, SONRA "az" ve "çok" örneği çalar (konuşmayla üst üste binmez)
+    const worldLayers = layers.filter((l) => WORLD_OF[l.id]);
+    const play = (l: RadarLayer, v: number, t: number, dist: number, pan: number, dt: number, dur = 1.5) => {
+      const w = WORLD_OF[l.id]!; engine.world(worldParams(w, v, t, dist), engine.now + 0.05 + dt, dur, pan, seedOf('legend', l.id, v, dist), 1);
+    };
+    const wf = worldLayers[0];
+    const worldSteps: [string, () => void, number?][] = !wf ? [] : [
+      [en ? 'The radar turns around the place you chose, from north, clockwise. This bell marks north. Each sweep starts with the sound of your place itself, the clearest.' : 'Radar seçtiğin yerin çevresinde kuzeyden başlayıp saat yönünde döner. Bu zil kuzeyi gösterir. Her tur, bulunduğun yerin en net sesiyle başlar.', () => engine.northTick(engine.now + 0.05)],
+      [en ? 'Sounds to the west are in your left ear, to the east in your right ear.' : 'Batıdaki sesler sol kulakta, doğudakiler sağ kulakta.', () => { const [hv, ht] = legendExamples(WORLD_OF[wf.id]!, wf)[1]; play(wf, hv, ht, 0.3, -0.9, 0, 1.2); play(wf, hv, ht, 0.3, 0.9, 1.5, 1.2); }, 3000],
+      [en ? 'Near sounds are clear; far sounds are quieter and muffled. Near, then far.' : 'Yakındaki sesler net, uzaktakiler kısık ve boğuk. Önce yakın, sonra uzak.', () => { const [hv, ht] = legendExamples(WORLD_OF[wf.id]!, wf)[1]; play(wf, hv, ht, 0, 0, 0, 1.3); play(wf, hv, ht, 0.85, 0, 1.6, 1.3); }, 3200],
+      ...worldLayers.map((l): [string, () => void, number] => {
+        const w = WORLD_OF[l.id]!; const [[lv, lt], [hv, ht]] = legendExamples(w, l);
+        return [legendLine(w, lang), () => { play(l, lv, lt, 0, 0, 0); play(l, hv, ht, 0, 0, 1.9); }, 3800];
+      }),
+    ];
+    const steps: [string, () => void, number?][] = worldSteps.length ? worldSteps : noteSteps;
+    for (const [text, fx, after] of steps) {
       if (run !== legendRun.current) return;
-      setLegend(text); fx();
+      setLegend(text); if (!after) fx();
       const t0 = Date.now();
       const ok = await speech.say(text);
       if (!ok || run !== legendRun.current) return;
+      if (after) { fx(); await new Promise((r) => setTimeout(r, after)); continue; } // örnek konuşmadan SONRA
       const wait = 1300 - (Date.now() - t0); // örnek ses bitmeden sonraki cümleye geçme
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     }

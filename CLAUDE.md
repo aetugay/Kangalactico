@@ -18,6 +18,13 @@ Hedef ödüller: Local Impact, Best Use of Science, Most Inspirational, Art & Te
 - 2026 rakip repo: github.com/NASA-space-app-challenge-2026/shkim – 3D küre + HRTF. → 3D küreyi ana fikir yapma.
 - CO₂ ↑ = nota ↑ parçaları, Highcharts Sonification Studio, TwoTone. → genel "CSV'yi sese çevir" aracı yapma.
 
+## SES DÜNYALARI (15 Kasım 2026 gece, kullanıcı testinden sonra ANA YAKLAŞIM)
+- Nota/enstrüman eşlemesi bırakıldı (perde değişimi artış/azalış olarak hissedilmedi). Eski sürüm: dal `yedek-nota-motoru`.
+- Her veri doğadaki kendi sesiyle (auditory icons): TÜR = ne var, ŞİDDET + SIKLIK = ne kadar. Web Audio prosedürel sentez (ses dosyası yok): src/audio/engine.ts `world()`; saf parametreler src/lib/worlds.ts (`worldParams`, `describeWorld`); radar olayları src/lib/radar.ts `worldEvents` / `worldRefEvents`.
+- 6 katman (yalnız challenge SVS görsellerinden): aerosoller 5669 (toz = kum fırtınası, kara karbon = yangın çıtırtısı, deniz tuzu = serpinti, sülfat = volkan uğultusu) · yıldırım 5011 (gök gürültüsü; yakın sert, uzak boğuk + gecikmeli) · okyanus 3912 (dalga; sıcak yumuşak, soğuk sert/buzlu; akıntı hızı ızgaradan çıkarılamadı) · gece ışıkları 5313 (şehir uğultusu; karanlık = sessiz) · orman: radarda 5544 NDVI (yaprak + kuş; çıplak = rüzgâr), 4950 GEDI küre olduğu için yalnız "görüntüyü dinle" (orman sesiyle) · yüzey sıcaklığı 5147 (buzlu rüzgâr ↔ ağustos böcekleri). 5533 hava kalitesi YAPILMADI (indirilmedi).
+- Ölçek KÜRESEL. Radar: yön → stereo; her ışında yakın/orta/uzak bant ayrı doku (uzak = kısık + alçak geçiren + gürlemede gecikme); tur başında merkezin sesi en net. Gösterge ve ekran okuyucu her yön için sözlü özet ("Kuzeydoğu: yoğun kum fırtınası (toz) · yakın"). Lejant her dünyayı anlatıp az/çok örneği çalar. Temalar: Çöl ve Toz, Fırtına, Okyanus, Şehirler ve Ormanlar, Sıcak ve Soğuk.
+- CO₂ (OCO-2) ve MERRA-2 ana deneyimden çıktı; dosyalar duruyor, Hakkında → "Veri doğrulaması". Sınama: npm run test:worlds (data/ses_dunyalari_test.md).
+
 ## Ana deneyim: Radar (EVRENSEL)
 - NASA SVS düz 2:1 harita görselleri/videoları piksel analiziyle değere, değer sese çevrilir.
 - **Radar kullanıcının seçtiği herhangi bir yerde döner. Hiçbir şehir sabit kodlanmaz** (kod, varsayılan, örnek veri dahil). Açılışta varsayılan konum YOK; kullanıcıdan yer seçmesi istenir, seçmezse "Konumumu kullan" önerilir.

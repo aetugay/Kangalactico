@@ -5,13 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 import { engine } from '../audio/engine.ts';
 import { colorFor } from '../lib/grid.ts';
 import { loadScreenGrid, type ScreenGrid } from '../lib/layers.ts';
-import { pentaHz } from '../lib/radar.ts';
+import { seedOf, worldParams } from '../lib/worlds.ts';
 import { Dialog } from './Shell.tsx';
 
-type Id = '4950' | '5196';
+type Id = '4950';
 const META: Record<Id, { tr: string; en: string; inst: string; instTr: string; instEn: string; svs: string }> = {
-  '4950': { tr: 'Orman yüksekliği (GEDI)', en: 'Forest height (GEDI)', inst: 'sst', instTr: 'arp', instEn: 'harp', svs: 'SVS 4950' },
-  '5196': { tr: 'Küresel CO₂ (DYAMOND modeli, Ocak–Mart 2020)', en: 'Global CO₂ (DYAMOND model, Jan–Mar 2020)', inst: 'dust', instTr: 'çelesta', instEn: 'celesta', svs: 'SVS 5196' },
+  '4950': { tr: 'Orman yüksekliği (GEDI)', en: 'Forest height (GEDI)', inst: 'forest', instTr: 'orman sesi', instEn: 'forest sound', svs: 'SVS 4950' },
 };
 const BANDS = 12;
 
@@ -59,18 +58,16 @@ export function ImageScan({ open, onClose, lang, announce }: { open: boolean; on
     if (playing) { run.current++; setPlaying(false); setCol(-1); return; }
     engine.unlock(); const my = ++run.current; setPlaying(true);
     const m = META[id], step = 8 / g.w * 4; // 4 sütunda bir adım → ~8 sn
-    announce(en ? `${m.en}. Scanning the image from left to right in 8 seconds: higher on screen = higher note, stronger value = louder and brighter. This is a globe image, not a map: no geographic position, values are relative.`
-      : `${m.tr}. Görüntüyü 8 saniyede soldan sağa tarıyorum: ekranda yukarısı ince nota, güçlü değer daha yüksek ve parlak ses. Bu bir küre görüntüsü, harita değil: coğrafi konum yok, değerler göreli.`);
+    announce(en ? `${m.en}. Scanning the image from left to right in 8 seconds: taller forest = more leaves and birds, bare land = empty wind. This is a globe image, not a map: no geographic position, values are rough.`
+      : `${m.tr}. Görüntüyü 8 saniyede soldan sağa tarıyorum: orman ne kadar uzunsa o kadar çok yaprak ve kuş sesi, çıplak arazide boş rüzgâr. Bu bir küre görüntüsü, harita değil: coğrafi konum yok, değerler kaba.`);
     await new Promise((r) => setTimeout(r, 300));
     const t0 = engine.now + 0.1;
+    // ORMAN SES DÜNYASI: her sütunun ortalama orman yüksekliği → yaprak + kuş zenginliği (uzun orman = sık kuş); veri yoksa sessiz
     for (let x = 0, k = 0; x < g.w; x += 4, k++) {
       const when = t0 + k * step, pan = (x / (g.w - 1)) * 2 - 1;
-      bandsAt(g, frame, x).forEach((v, b) => {
-        if (Number.isNaN(v)) return;
-        const t = Math.max(0, Math.min(1, (v - g.cs.min) / (g.cs.max - g.cs.min || 1)));
-        if (t < 0.05) return;
-        engine.voice(m.inst, pentaHz(5 + (BANDS - 1 - b)), when, step * 1.6, t, pan, t);
-      });
+      const vs = bandsAt(g, frame, x).filter((v) => !Number.isNaN(v)); if (!vs.length) continue;
+      const v = vs.reduce((a, b) => a + b, 0) / vs.length, t = Math.max(0, Math.min(1, (v - g.cs.min) / (g.cs.max - g.cs.min || 1)));
+      engine.world(worldParams('forest', v, t, 0.2), when, step * 1.6, pan, seedOf('gedi', frame, x, Math.round(v * 10)), 1);
     }
     for (let x = 0; x < g.w; x += 4) { if (my !== run.current) return; setCol(x); await new Promise((r) => setTimeout(r, step * 1000)); }
     if (my === run.current) { setPlaying(false); setCol(-1); }

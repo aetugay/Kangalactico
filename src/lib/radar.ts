@@ -262,6 +262,7 @@ export function beamEvents(F: FrameData, b: number): SoundEvent[] {
   const out: SoundEvent[] = [];
   const regs = regsOf(F), scale = F.scale ?? 'local';
   F.layers.forEach(({ layer, vals, local }, li) => {
+    if (WORLD_OF[layer.id]) return; // ses dünyası katmanı: nota değil, worldEvents
     const part = PARTS[layer.id];
     if ((((b - part.offset) % part.every) + part.every) % part.every !== 0) return; // bu katmanın ritim adımı değil
     const { mean } = groupMean(vals, P, b, part.every);
@@ -281,9 +282,9 @@ export function beamEvents(F: FrameData, b: number): SoundEvent[] {
  * Karşılaştırmada önce A sonra B — iki yerin farkı her turda yan yana duyulur. Merkezde veri yoksa ton yok.
  */
 export function refEvents(F: FrameData): SoundEvent[] {
-  const first = F.layers[0];
+  const fi = F.layers.findIndex((l) => !WORLD_OF[l.layer.id]); const first = F.layers[fi];
   if (!first) return [];
-  const { layer, local } = first, part = PARTS[layer.id], reg = regsOf(F)[0], scale = F.scale ?? 'local';
+  const { layer, local } = first, part = PARTS[layer.id], reg = regsOf(F)[fi], scale = F.scale ?? 'local';
   const refs = F.refs?.length ? F.refs : [{ tag: '', name: '', center: F.P.center }];
   const out: SoundEvent[] = [];
   for (const r of refs) {
@@ -333,6 +334,8 @@ export function noteName(hz: number): string {
 /** Canlı gösterge satırı: "Karbondioksit · kuzeydoğu 45° · 0–2000 km ort. → 414.2 ppm → E5 (659 Hz)". */
 export function formatEvent(e: SoundEvent, lang: 'tr' | 'en' = 'tr'): string {
   const en = lang === 'en';
+  const w = (e as Partial<WorldEvent>).world;
+  if (w) return e.ref ? `${en ? 'Center' : 'Merkez'}${e.ref.tag ? ' ' + e.ref.tag : ''}: ${describeWorld(w, e.value, e.t, lang)}` : directionLine(e.bearing, w, e.value, e.t, (e as WorldEvent).band, lang);
   const note = `${noteName(e.freq)} (${Math.round(e.freq)} Hz)`;
   if (e.ref) {
     const who = e.ref.tag ? `${e.ref.tag}${e.ref.name ? ' · ' + e.ref.name : ''}` : (en ? 'center' : 'merkez');
@@ -367,4 +370,56 @@ export function beamCover(vals: Float32Array, P: RadarParams, b: number, count: 
     for (let k = 0; k < P.rings; k++) if (!Number.isNaN(vals[bb * P.rings + k])) { n++; break; }
   }
   return count ? n / count : 0;
+}
+
+// ---------------- SES DÜNYALARI: ışın başına yakın / orta / uzak bant olayları (saf; Node testinde de çalışır) ----------------
+import { WORLD_OF, WORLD_PART, worldParams, seedOf, describeWorld, directionLine, type World, type WorldParams } from './worlds.ts';
+/** Gösterge satırları: ses dünyası olayları katman başına tek satır (en güçlü bant), notalar olduğu gibi. */
+export function formatEvents(events: SoundEvent[], lang: 'tr' | 'en' = 'tr'): string[] {
+  const best = new Map<string, SoundEvent>(); const out: string[] = [];
+  for (const e of events) { if (!(e as Partial<WorldEvent>).world) { out.push(formatEvent(e, lang)); continue; } const k = e.layerId + (e.ref ? 'r' + e.ref.tag : ''); const o = best.get(k); if (!o || e.t > o.t) best.set(k, e); }
+  return [...[...best.values()].map((e) => formatEvent(e, lang)), ...out];
+}
+export interface WorldEvent extends SoundEvent { world: World; band: number; params: WorldParams; seed: number }
+/** Halka bantları: [başlangıç, bitiş] (menzil oranı) ve uzaklık (0 merkez … 1 sınır). */
+export const WORLD_BANDS: [number, number, number][] = [[0, 0.25, 0.15], [0.25, 0.625, 0.5], [0.625, 1, 0.85]];
+export const isWorldLayer = (id: Timbre) => !!WORLD_OF[id];
+
+/** b. ışın adımındaki ses dünyası olayları. Ölçek KÜRESEL; veri yoksa (ya da bandın yarısından azında varsa) o bant sessiz. */
+export function worldEvents(F: FrameData, b: number): WorldEvent[] {
+  const { P } = F; const out: WorldEvent[] = [];
+  for (const { layer, vals } of F.layers) {
+    const world = WORLD_OF[layer.id]; if (!world) continue;
+    const part = WORLD_PART[world];
+    if (b % part.every !== 0) continue;
+    const bearing = bearingOf(b + (part.every - 1) / 2, P.beams);
+    WORLD_BANDS.forEach(([r0, r1, dist], band) => {
+      const k0 = Math.round(r0 * P.rings), k1 = Math.max(k0 + 1, Math.round(r1 * P.rings));
+      const { mean, cover } = groupMean(vals, P, b, part.every, k0, k1);
+      if (Number.isNaN(mean) || cover < 0.5) return;
+      const t = gainFor(mean, layer, 'global');
+      if (part.gate > 0 && t < part.gate) return;
+      const params = worldParams(world, mean, t, dist);
+      out.push({ layerId: layer.id, label: layer.label, unit: layer.unit, beam: b, bearing, kmFrom: r0 * P.rangeKm, kmTo: r1 * P.rangeKm,
+        value: mean, valueText: layer.fmt(mean), t, freq: 0, gain: params.level, pan: panFor(bearing) * (0.6 + 0.4 * dist), durBeams: part.every * 1.5,
+        hits: 1, bright: t, world, band, params, seed: seedOf(layer.id, b, band, Math.round(mean * 1000)) });
+    });
+  }
+  return out;
+}
+/** Tur başı: MERKEZ noktanın sesi (uzaklık 0 → en net), her dünya için. Karşılaştırmada A sonra B. */
+export function worldRefEvents(F: FrameData): WorldEvent[] {
+  const out: WorldEvent[] = [];
+  const refs = F.refs?.length ? F.refs : [{ tag: '', name: '', center: F.P.center }];
+  refs.forEach((r, ri) => {
+    for (const { layer } of F.layers) {
+      const world = WORLD_OF[layer.id]; if (!world) continue;
+      const v = layer.sample(r.center); if (Number.isNaN(v)) continue;
+      const t = gainFor(v, layer, 'global'); if (WORLD_PART[world].gate > 0 && t < WORLD_PART[world].gate) continue;
+      const params = worldParams(world, v, t, 0);
+      out.push({ layerId: layer.id, label: layer.label, unit: layer.unit, beam: -1, bearing: 0, kmFrom: 0, kmTo: 0, value: v, valueText: layer.fmt(v), t, freq: 0,
+        gain: params.level, pan: 0, durBeams: 0, hits: 1, bright: t, world, band: -1, params, seed: seedOf(layer.id, 'ref', ri, Math.round(v * 1000)), ref: { tag: r.tag, name: r.name } });
+    }
+  });
+  return out;
 }

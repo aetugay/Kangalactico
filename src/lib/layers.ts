@@ -29,7 +29,7 @@ export class TemperatureSource {
   radarLayer(frame: number, lang: Lang = 'tr'): RadarLayer {
     const en = lang === 'en';
     return {
-      id: 'temp', label: en ? 'Surface temperature' : 'Yüzey sıcaklığı', instrument: en ? 'guitar' : 'gitar', unit: '°C',
+      id: 'temp', label: en ? 'Surface temperature' : 'Yüzey sıcaklığı', instrument: en ? 'icy wind ↔ cicadas' : 'buzlu rüzgâr ↔ ağustos böcekleri', unit: '°C',
       min: this.cs.min, max: this.cs.max, baseHz: 130.81, when: this.dateLabel(frame, lang),
       sample: (p) => this.layer.sample(frame, p),
       fmt: (v) => `${Math.round(v)} ${en ? 'degrees' : 'derece'}`,
@@ -114,7 +114,7 @@ export class SstSource {
   radarLayer(frame: number, lang: Lang = 'tr'): RadarLayer {
     const en = lang === 'en';
     return {
-      id: 'sst', label: en ? 'Ocean temperature' : 'Okyanus sıcaklığı', instrument: en ? 'harp and wave sound' : 'arp ve dalga sesi', unit: '°C',
+      id: 'sst', label: en ? 'Ocean temperature' : 'Okyanus sıcaklığı', instrument: en ? 'waves (warm soft, cold icy)' : 'dalgalar (sıcak yumuşak, soğuk buzlu)', unit: '°C',
       min: this.cs.min, max: this.cs.max, baseHz: 220, when: `model, ${this.dateLabel(frame, lang)}`,
       sample: (p) => this.layer.sample(frame, p),
       fmt: (v) => `${Math.round(v)} ${en ? 'degrees sea' : 'derece deniz'}`,
@@ -133,10 +133,10 @@ interface AerosolFile {
   layers: Record<string, { data: string; quant: Quant }>;
 }
 const AEROSOL_META: Record<string, { label: { tr: string; en: string }; instrument: { tr: string; en: string }; baseHz: number }> = {
-  black_carbon: { label: { tr: 'Kara karbon (is, duman)', en: 'Black carbon (soot, smoke)' }, instrument: { tr: 'çello', en: 'cello' }, baseHz: 98 },
-  dust: { label: { tr: 'Toz', en: 'Dust' }, instrument: { tr: 'çelesta (çan)', en: 'celesta (bells)' }, baseHz: 523 },
-  sea_salt: { label: { tr: 'Deniz tuzu', en: 'Sea salt' }, instrument: { tr: 'flüt', en: 'flute' }, baseHz: 175 },
-  sulfate: { label: { tr: 'Sülfat', en: 'Sulfate' }, instrument: { tr: 'marimba', en: 'marimba' }, baseHz: 330 },
+  black_carbon: { label: { tr: 'Kara karbon (is, duman)', en: 'Black carbon (soot, smoke)' }, instrument: { tr: 'yangın çıtırtısı', en: 'fire crackle' }, baseHz: 98 },
+  dust: { label: { tr: 'Toz', en: 'Dust' }, instrument: { tr: 'kum fırtınası', en: 'sandstorm' }, baseHz: 523 },
+  sea_salt: { label: { tr: 'Deniz tuzu', en: 'Sea salt' }, instrument: { tr: 'dalga serpintisi', en: 'sea spray' }, baseHz: 175 },
+  sulfate: { label: { tr: 'Sülfat', en: 'Sulfate' }, instrument: { tr: 'volkan uğultusu', en: 'volcanic rumble' }, baseHz: 330 },
 };
 export class AerosolSource {
   readonly file: AerosolFile;
@@ -169,7 +169,7 @@ export class NdviSource {
   dateLabel(f: number, lang: Lang = 'tr') { return lang === 'en' ? `frame ${f + 1}/${this.frames} (last ~2.5 years; exact date unknown)` : `kare ${f + 1}/${this.frames} (son ~2,5 yıl; kesin tarih bilinmiyor)`; }
   radarLayer(frame: number, lang: Lang = 'tr'): RadarLayer {
     const en = lang === 'en';
-    return { id: 'ndvi', label: en ? 'Vegetation (NDVI)' : 'Bitki örtüsü (NDVI)', instrument: en ? 'marimba' : 'marimba', unit: null, min: 0, max: 1, baseHz: 196,
+    return { id: 'ndvi', label: en ? 'Forest & vegetation (NDVI)' : 'Orman ve bitki örtüsü (NDVI)', instrument: en ? 'leaves + birds' : 'yaprak + kuşlar', unit: null, min: 0, max: 1, baseHz: 196,
       when: this.dateLabel(frame, lang), sample: (p) => this.layer.sample(frame, p),
       fmt: (v) => `${en ? 'relative vegetation' : 'göreli bitki örtüsü'} ${Math.round(v * 100)}` };
   }
@@ -187,7 +187,7 @@ export class LightsSource {
   get years() { return this.file.layers.years.list; }
   radarLayer(yi: number, lang: Lang = 'tr'): RadarLayer {
     const en = lang === 'en', mx = this.max;
-    return { id: 'lights', label: en ? 'Night lights' : 'Gece ışıkları', instrument: en ? 'celesta' : 'çelesta', unit: null, min: 0, max: mx, baseHz: 523,
+    return { id: 'lights', label: en ? 'Night lights' : 'Gece ışıkları', instrument: en ? 'city hum' : 'şehir uğultusu', unit: null, min: 0, max: mx, baseHz: 523,
       when: `${this.years[yi]} · Black Marble`, sample: (p) => this.layer.sample(yi, p),
       fmt: (v) => (v < mx * 0.02 ? (en ? 'dark' : 'karanlık') : `${en ? 'relative brightness' : 'göreli parlaklık'} ${Math.round((v / mx) * 100)}`) };
   }
@@ -207,7 +207,7 @@ export class LightningSource {
   value(p: LatLon): number { const { w, h } = this.file.grid; const i = Math.min(w - 1, Math.max(0, Math.floor(p.lon + 180))), j = Math.min(h - 1, Math.max(0, Math.floor(90 - p.lat))); const v = this.grid[j * w + i]; return v > 0 ? Math.log1p(v) / Math.log1p(this.max) : 0; }
   radarLayer(lang: Lang = 'tr'): RadarLayer {
     const en = lang === 'en';
-    return { id: 'lightning', label: en ? 'Lightning' : 'Yıldırım', instrument: en ? 'percussion (strikes)' : 'vurmalı (çakma)', unit: null, min: 0, max: 1, baseHz: 80,
+    return { id: 'lightning', label: en ? 'Lightning' : 'Yıldırım', instrument: en ? 'thunder' : 'gök gürültüsü', unit: null, min: 0, max: 1, baseHz: 80,
       when: `${this.file.time.dateRange.join(' – ')} · ISS LIS`, sample: (p) => this.value(p),
       fmt: (v) => (v <= 0 ? (en ? 'no lightning' : 'yıldırım yok') : `${en ? 'relative lightning activity' : 'göreli yıldırım etkinliği'} ${Math.round(v * 100)}`) };
   }

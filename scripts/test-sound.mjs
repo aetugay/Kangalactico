@@ -1,7 +1,7 @@
 // Adım 1 doğrulaması: "ses veriden gelir"; Adım 2: "farklar duyulsun". node scripts/test-sound.mjs  (npm run test:sound)
 // Arayüzün kullandığı saf fonksiyonu (src/lib/radar.ts → beamEvents) sınar; ses kartı gerekmez.
 import fs from 'node:fs';
-import { beamEvents, refEvents, registers, noteHz, sampleLayer, playedRange, DEFAULTS, PARTS, REG_MIN, pentaHz } from '../src/lib/radar.ts';
+import { worldEvents, beamEvents, refEvents, registers, noteHz, sampleLayer, playedRange, DEFAULTS, PARTS, REG_MIN, pentaHz } from '../src/lib/radar.ts';
 import { Co2Source, SstSource } from '../src/lib/layers.ts';
 import { Cities, rowToPlace } from '../src/lib/places.ts';
 
@@ -104,11 +104,13 @@ console.log('5) Gerçek veri');
   check(JSON.stringify(t1) === JSON.stringify(t2), 'CO₂ Sivas Ocak: iki çalıştırma aynı');
   check(JSON.stringify(t1) !== JSON.stringify(tour(frame([co2.radarLayer(6)], sivas))), 'CO₂ Sivas Ocak ≠ Temmuz (veri değişince ses değişiyor)');
   const inland = rowToPlace(cities.find('Ulan Bator'), 'arama'); // denizden ~1000+ km
-  const seaEvents = tour(frame([sst.radarLayer(0)], inland, 'bilim', 500)).flat();
+  // okyanus artık SES DÜNYASI (dalgalar): worldEvents
+  const wtour = (F) => Array.from({ length: F.P.beams }, (_, b) => worldEvents(F, b)).flat();
+  const seaEvents = wtour(frame([sst.radarLayer(0)], inland, 'bilim', 500));
   check(seaEvents.length === 0, `okyanus katmanı Ulan Bator 500 km (tamamı kara): ${seaEvents.length} nota → sessizlik`);
-  const coast = tour(frame([sst.radarLayer(0)], rowToPlace(cities.find('Lisbon'), 'arama'), 'bilim', 500)).flat();
+  const coast = wtour(frame([sst.radarLayer(0)], rowToPlace(cities.find('Lisbon'), 'arama'), 'bilim', 500));
   const lis = frame([sst.radarLayer(0)], rowToPlace(cities.find('Lisbon'), 'arama'), 'bilim', 500);
-  const lisEv = Array.from({ length: lis.P.beams }, (_, b) => beamEvents(lis, b)).flat();
+  const lisEv = wtour(lis);
   check(coast.length > 0 && lisEv.length > 0, `okyanus katmanı Lizbon 500 km (kıyı): ${coast.length} nota/tur`);
   check(lisEv.every((e) => e.bearing < 45 || e.bearing > 112), `Lizbon'un doğusu (İspanya, kara) sessiz; çalan yönler: ${[...new Set(lisEv.map((e) => Math.round(e.bearing)))].join(', ')}`);
   check(Object.values(PARTS).every((p) => p.every > 0), 'her katmanın ritmi tanımlı');

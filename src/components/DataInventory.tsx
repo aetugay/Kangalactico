@@ -4,16 +4,16 @@ import type { Lang } from '../i18n.ts';
 
 type Row = { name: [string, string]; src: string; cls: 'list' | 'eic' | 'nasa' | 'aux'; how: [string, string] };
 const ROWS: Row[] = [
-  { name: ['Yüzey hava sıcaklığı', 'Surface air temperature'], src: 'SVS 5147 (GEOS-FP)', cls: 'eic', how: ['radar', 'radar'] },
-  { name: ['Bitki örtüsü (NDVI, göreli)', 'Vegetation (NDVI, relative)'], src: 'SVS 5544', cls: 'eic', how: ['radar', 'radar'] },
-  { name: ['Okyanus sıcaklığı ve akıntılar', 'Ocean temperature & currents'], src: 'SVS 3912 (ECCO2)', cls: 'list', how: ['radar + küre videosu', 'radar + globe video'] },
-  { name: ['Aerosoller (4 tür, göreli)', 'Aerosols (4 types, relative)'], src: 'SVS 5669 (GEOS)', cls: 'list', how: ['radar', 'radar'] },
-  { name: ['Gece ışıkları 2012–2023 (göreli)', 'Night lights 2012–2023 (relative)'], src: 'SVS 5313 (Black Marble)', cls: 'list', how: ['radar', 'radar'] },
-  { name: ['Yıldırım 2017–2023', 'Lightning 2017–2023'], src: 'SVS 5011 (ISS LIS)', cls: 'list', how: ['radar, vurmalı olay', 'radar, percussive events'] },
-  { name: ['Orman yüksekliği (göreli)', 'Forest height (relative)'], src: 'SVS 4950 (GEDI)', cls: 'list', how: ['görüntüyü dinle (küre)', 'listen to image (globe)'] },
-  { name: ['Küresel CO₂ modeli (göreli)', 'Global CO₂ model (relative)'], src: 'SVS 5196 (DYAMOND)', cls: 'list', how: ['görüntüyü dinle (küre)', 'listen to image (globe)'] },
-  { name: ['Karbondioksit 2021 (ppm)', 'Carbon dioxide 2021 (ppm)'], src: 'OCO2_GEOS_L3CO2_DAY (GES DISC)', cls: 'nasa', how: ['radar (ana katman)', 'radar (main layer)'] },
-  { name: ['13 aylık katman (MERRA-2 2024 + OCO-2 2021)', '13 monthly layers (MERRA-2 2024 + OCO-2 2021)'], src: 'GES DISC (Ceyhun, paket v3)', cls: 'nasa', how: ['radar', 'radar'] },
+  { name: ['Yüzey hava sıcaklığı', 'Surface air temperature'], src: 'SVS 5147 (GEOS-FP)', cls: 'eic', how: ['ses dünyası: buzlu rüzgâr ↔ ağustos böcekleri', 'sound world: icy wind ↔ cicadas'] },
+  { name: ['Orman ve bitki örtüsü (NDVI, göreli)', 'Forest & vegetation (NDVI, relative)'], src: 'SVS 5544', cls: 'eic', how: ['ses dünyası: yaprak + kuşlar', 'sound world: leaves + birds'] },
+  { name: ['Okyanus sıcaklığı ve akıntılar', 'Ocean temperature & currents'], src: 'SVS 3912 (ECCO2)', cls: 'list', how: ['ses dünyası: dalgalar (+ küre videosu)', 'sound world: waves (+ globe video)'] },
+  { name: ['Aerosoller (4 tür, göreli)', 'Aerosols (4 types, relative)'], src: 'SVS 5669 (GEOS)', cls: 'list', how: ['ses dünyası: kum fırtınası, yangın, serpinti, volkan', 'sound world: sandstorm, fire, spray, volcano'] },
+  { name: ['Gece ışıkları 2012–2023 (göreli)', 'Night lights 2012–2023 (relative)'], src: 'SVS 5313 (Black Marble)', cls: 'list', how: ['ses dünyası: şehir uğultusu', 'sound world: city hum'] },
+  { name: ['Yıldırım 2017–2023', 'Lightning 2017–2023'], src: 'SVS 5011 (ISS LIS)', cls: 'list', how: ['ses dünyası: gök gürültüsü', 'sound world: thunder'] },
+  { name: ['Orman yüksekliği (göreli)', 'Forest height (relative)'], src: 'SVS 4950 (GEDI)', cls: 'list', how: ['görüntüyü dinle: orman sesi (küre, radar değil)', 'listen to image: forest sound (globe, not radar)'] },
+  { name: ['Küresel CO₂ modeli (göreli)', 'Global CO₂ model (relative)'], src: 'SVS 5196 (DYAMOND)', cls: 'list', how: ['kullanılmıyor (6 ses dünyasında yok)', 'not used (not one of the 6 sound worlds)'] },
+  { name: ['Karbondioksit 2021 (ppm)', 'Carbon dioxide 2021 (ppm)'], src: 'OCO2_GEOS_L3CO2_DAY (GES DISC)', cls: 'nasa', how: ['veri doğrulaması (ana deneyimde değil)', 'data validation (not in the main experience)'] },
+  { name: ['13 aylık katman (MERRA-2 2024 + OCO-2 2021)', '13 monthly layers (MERRA-2 2024 + OCO-2 2021)'], src: 'GES DISC (Ceyhun, paket v3)', cls: 'nasa', how: ['veri doğrulaması (ana deneyimde değil)', 'data validation (not in the main experience)'] },
   { name: ['Dünya olayları (canlı)', 'Earth events (live)'], src: 'NASA EONET', cls: 'nasa', how: ['liste + yere git', 'list + go to place'] },
   { name: ['Taban Dünya görüntüsü', 'Base Earth image'], src: 'NASA Blue Marble NG', cls: 'nasa', how: ['yalnız görsel altlık', 'display base only'] },
   { name: ['Kıyı çizgileri, kara poligonları', 'Coastlines, land polygons'], src: 'Natural Earth (kamu malı)', cls: 'aux', how: ['yalnız görsel; veri değil', 'display only; not data'] },
@@ -38,7 +38,8 @@ export function DataInventory({ lang }: { lang: Lang }) {
           <tbody>{ROWS.map((r) => <tr key={r.src + r.name[0]}><td>{r.name[i]}</td><td>{r.src}</td><td>{CLS[r.cls][i]}</td><td>{r.how[i]}</td></tr>)}</tbody>
         </table>
       </div>
-      <h3>{en ? 'Validation' : 'Doğrulama'}</h3>
+      <h3>{en ? 'Data validation' : 'Veri doğrulaması'}</h3>
+      <p className="small">{en ? 'The main experience uses only the 6 sound worlds made from challenge visualizations. NASA raw data (OCO-2 CO₂ 2021, MERRA-2 2024) stays in the project only to check that the values we read from the images are right:' : 'Ana deneyim yalnız challenge görsellerinden yapılan 6 ses dünyasını kullanır. NASA ham verisi (OCO-2 CO₂ 2021, MERRA-2 2024) projede yalnız görsellerden okuduğumuz değerlerin doğru olduğunu sınamak için durur:'}</p>
       <ul className="small">
         <li>{en ? 'MERRA-2 T2M (Nov 2024) ↔ SVS 5147 GEOS-FP 2 m temperature (image-derived): spatial correlation r = 0.966 (12,536 cells).' : 'MERRA-2 T2M (Kasım 2024) ↔ SVS 5147 GEOS-FP 2 m sıcaklığı (görselden okunan): mekânsal korelasyon r = 0,966 (12.536 hücre).'}</li>
         <li>{en ? 'MERRA-2 TSKINWTR (Jan 2024) ↔ SVS 3912 ECCO2 sea surface temperature (image-derived, 2007): r = 0.978 (5,693 sea cells; different years, pattern only).' : 'MERRA-2 TSKINWTR (Ocak 2024) ↔ SVS 3912 ECCO2 deniz yüzeyi sıcaklığı (görselden okunan, 2007): r = 0,978 (5.693 deniz hücresi; farklı yıllar, yalnız desen).'}</li>

@@ -4,6 +4,8 @@ import { speech } from './audio/speech.ts';
 import { handsFree, listener } from './audio/listen.ts';
 import { IconBars, IconBolt, IconBreath, IconGlobe, IconStrings, IconWave } from './components/icons.tsx';
 import { DataInventory } from './components/DataInventory.tsx';
+import { WorldThemes } from './components/WorldThemes.tsx';
+import { WORLD_OF, describeWorld } from './lib/worlds.ts';
 import { DEFAULT_MIX, EventsDialog, Explore, instrumentName, SoundDialog, StoriesDialog, type EarthEvent, type Mix, type StoryInfo } from './components/Extras.tsx';
 import { PlacePicker } from './components/PlacePicker.tsx';
 import { isFormTarget, shortcutAllowed } from './lib/keys.ts';
@@ -23,23 +25,31 @@ import { ImageScan } from './components/ImageScan.tsx';
 import { INSTRUMENT_LABEL, M24 } from './lib/m24.ts';
 import { M24Panel } from './components/M24Panel.tsx';
 import { Cities, countryName, fold, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
-import { noteHz, PARTS, type Mode, type RadarLayer, type Scale } from './lib/radar.ts';
+import { gainFor, noteHz, PARTS, type Mode, type RadarLayer, type Scale } from './lib/radar.ts';
 import { landTexture, paintEquirect } from './lib/textures.ts';
 import { Globe3D, hasWebGL, type GlobeSource } from './three/Globe3D.tsx';
 
 const BASE = import.meta.env.BASE_URL;
 type LayerId = 'co2' | 'temp' | 'sst' | 'aerosol' | 'ndvi' | 'lights' | 'lightning';
 /** Katmanlar panelinde: EIC görsellerinden (birincil) ve NASA ham verisi (ikincil). */
-const EIC_LAYERS: LayerId[] = ['temp', 'sst', 'aerosol', 'ndvi', 'lights', 'lightning'];
-const RAW_LAYERS: LayerId[] = ['co2'];
+const EIC_LAYERS: LayerId[] = ['aerosol', 'lightning', 'sst', 'lights', 'ndvi', 'temp'];
+const RAW_LAYERS: LayerId[] = []; // CO₂ (OCO-2) ve MERRA-2 ana deneyimden çıktı → Hakkında: veri doğrulaması
+/** Ses dünyası temaları (yalnız bu 6 katman). */
+const WORLD_THEMES: { tr: string; en: string; layers: LayerId[] }[] = [
+  { tr: 'Çöl ve Toz', en: 'Desert and dust', layers: ['aerosol', 'temp'] },
+  { tr: 'Fırtına', en: 'Storm', layers: ['lightning', 'sst'] },
+  { tr: 'Okyanus', en: 'Ocean', layers: ['sst', 'aerosol'] },
+  { tr: 'Şehirler ve Ormanlar', en: 'Cities and forests', layers: ['lights', 'ndvi'] },
+  { tr: 'Sıcak ve Soğuk', en: 'Hot and cold', layers: ['temp', 'sst'] },
+];
 const LAYER_UI: Record<LayerId, { label: { tr: string; en: string }; instrument: { tr: string; en: string }; color: string; icon: React.ReactNode }> = {
   co2: { label: { tr: 'Karbondioksit', en: 'Carbon dioxide' }, instrument: { tr: 'keman', en: 'violin' }, color: '#ffb547', icon: <IconBreath /> },
-  temp: { label: { tr: 'Yüzey sıcaklığı', en: 'Surface temperature' }, instrument: { tr: 'gitar', en: 'guitar' }, color: '#ff6b6b', icon: <IconStrings /> },
-  sst: { label: { tr: 'Okyanus sıcaklığı', en: 'Ocean temperature' }, instrument: { tr: 'arp + dalga sesi', en: 'harp + waves' }, color: '#4dd8e8', icon: <IconWave /> },
-  aerosol: { label: { tr: 'Aerosoller', en: 'Aerosols' }, instrument: { tr: 'çello, çelesta, flüt, marimba', en: 'cello, celesta, flute, marimba' }, color: '#c49bff', icon: <IconBars /> },
-  ndvi: { label: { tr: 'Bitki örtüsü (NDVI)', en: 'Vegetation (NDVI)' }, instrument: { tr: 'marimba', en: 'marimba' }, color: '#7ddc6a', icon: <IconGlobe /> },
-  lights: { label: { tr: 'Gece ışıkları', en: 'Night lights' }, instrument: { tr: 'çelesta', en: 'celesta' }, color: '#ffe08a', icon: <IconBreath /> },
-  lightning: { label: { tr: 'Yıldırım', en: 'Lightning' }, instrument: { tr: 'vurmalı (çakma)', en: 'percussion (strikes)' }, color: '#fff36b', icon: <IconBolt /> },
+  temp: { label: { tr: 'Yüzey sıcaklığı', en: 'Surface temperature' }, instrument: { tr: 'buzlu rüzgâr ↔ ağustos böcekleri', en: 'icy wind ↔ cicadas' }, color: '#ff6b6b', icon: <IconStrings /> },
+  sst: { label: { tr: 'Okyanus sıcaklığı', en: 'Ocean temperature' }, instrument: { tr: 'dalgalar', en: 'waves' }, color: '#4dd8e8', icon: <IconWave /> },
+  aerosol: { label: { tr: 'Aerosoller', en: 'Aerosols' }, instrument: { tr: 'kum fırtınası, yangın, serpinti, volkan', en: 'sandstorm, fire, spray, volcano' }, color: '#c49bff', icon: <IconBars /> },
+  ndvi: { label: { tr: 'Orman ve bitki örtüsü', en: 'Forest & vegetation' }, instrument: { tr: 'yaprak + kuşlar', en: 'leaves + birds' }, color: '#7ddc6a', icon: <IconGlobe /> },
+  lights: { label: { tr: 'Gece ışıkları', en: 'Night lights' }, instrument: { tr: 'şehir uğultusu', en: 'city hum' }, color: '#ffe08a', icon: <IconBreath /> },
+  lightning: { label: { tr: 'Yıldırım', en: 'Lightning' }, instrument: { tr: 'gök gürültüsü', en: 'thunder' }, color: '#fff36b', icon: <IconBolt /> },
 };
 const store = { get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* yok say */ } } };
 const params = new URLSearchParams(location.search);
@@ -96,13 +106,13 @@ export default function App() {
   const [place, setPlace] = useState<Place | null>(null);
   const [rangeKm, setRange] = useState(2000);
   const [mode, setMode] = useState<Mode>('bilim'); // Adım 1: bilim modu varsayılan — yalnız veri sesleri; tam ton dizisi
-  const [scale, setScaleS] = useState<Scale>('local'); // Adım 2: yerel ölçek varsayılan — bu alandaki farklar 2 oktava yayılır
+  const [scale, setScaleS] = useState<Scale>('global'); // ses dünyaları: KÜRESEL ölçek (Sahra hep tozlu, Amazon hep yeşil) // Adım 2: yerel ölçek varsayılan — bu alandaki farklar 2 oktava yayılır
   const [month, setMonth] = useState(0);
   const [advance, setAdvance] = useState(true);
   const [tFrame, setTFrame] = useState(0);
   const [sstFrame, setSstFrame] = useState(0);
-  const [on, setOn] = useState<Record<LayerId, boolean>>({ co2: true, temp: false, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false });
-  const [visual, setVisual] = useState<LayerId>('co2');
+  const [on, setOn] = useState<Record<LayerId, boolean>>({ co2: false, temp: true, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false });
+  const [visual, setVisual] = useState<LayerId>('temp');
   // 2024 aylık NASA katmanları (MERRA-2 / OCO-2; denetimden geçenler) — ayrı durum, mevcut 4 katmana dokunmaz
   const [m24, setM24] = useState<M24 | null>(null);
   const [m24Loading, setM24Loading] = useState(false);
@@ -129,6 +139,14 @@ export default function App() {
   const anyM24On = Object.values(m24On).some(Boolean);
   /** Ceyhun'un presetleri: yalnız UYGUN katmanlar açılır, diğer aylık katmanlar kapanır; çıkarılanlar söylenir. */
   const [activeTheme, setActiveTheme] = useState<string | null>(null);
+  const [worldTheme, setWorldTheme] = useState<string | null>(null);
+  const applyWorldTheme = (i: number) => {
+    const th = WORLD_THEMES[i];
+    setOn({ co2: false, temp: false, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false, ...Object.fromEntries(th.layers.map((k) => [k, true])) });
+    setM24On({}); setVisual(th.layers[0]); setWorldTheme(th.tr);
+    const en = langRef.current === 'en';
+    announce(`${en ? th.en : th.tr}: ${th.layers.map((k) => `${LAYER_UI[k].label[en ? 'en' : 'tr']} (${LAYER_UI[k].instrument[en ? 'en' : 'tr']})`).join(', ')}.`);
+  };
   const applyM24Preset = (ids: string[], name: string, removed: string[]) => {
     setActiveTheme(name);
     setM24On(Object.fromEntries(ids.map((id) => [id, true]))); setM24Visual(ids[0] ?? null);
@@ -231,6 +249,7 @@ export default function App() {
   }, [m24Rev, on, co2, temp, sst, aer, ndvi, lights, lightning, ndviFrame, lightsYear, month, tFrame, sstFrame, lang, mix.inst, m24, m24On]);
 
   const advanceRef = useRef(advance); advanceRef.current = advance;
+  const layersRef = useRef(layers); layersRef.current = layers;
   const anyM24RefOn = useRef(false); anyM24RefOn.current = anyM24On;
   // zaman uyumsuz akışların (hikâye, anlatıcı, tur geri çağrısı) güncel durumu okuması için
   const live2 = useRef({ compare: false, story: null as string | null, narrator: false, place: null as Place | null, placeB: null as Place | null, co2, temp, aer, cities, rangeKm, month, tFrame, lang });
@@ -274,6 +293,7 @@ export default function App() {
   };
 
   const toggleLayer = (id: LayerId) => {
+    setWorldTheme(null);
     const v = !on[id];
     if (v) setM24Visual(null);
     setOn((o) => ({ ...o, [id]: v }));
@@ -286,15 +306,15 @@ export default function App() {
   // ---------- yer değişince duyuru. Radar çalıyorsa kısa tut (müzik kesilmeden yeni yerin sesi gelir).
   const playingRef = useRef(false); playingRef.current = radar.playing;
   useEffect(() => {
-    if (!place || !co2) return;
+    if (!place) return;
     const name = placeLabel(place);
     if (playingRef.current) { announce(`${name}.`); return; }
-    const ppm = co2.grid.bilinear(place, month).toFixed(1);
+    const here = layersRef.current.map((l) => { const w = WORLD_OF[l.id]; const v = l.sample(place); return w && !Number.isNaN(v) ? describeWorld(w, v, gainFor(v, l, 'global'), lang) : null; }).filter(Boolean).join('; ');
     announce(lang === 'en'
-      ? `${name} selected. Carbon dioxide at the center: ${ppm} ppm, ${co2.monthLabel(month, 'en')}. Press Space to play the radar, or press T and say "play". Press L for the audio legend, H for help.`
-      : `${name} seçildi. Merkezde karbondioksit ${ppm} ppm, ${co2.monthLabel(month)}. Radarı çalmak için Boşluk tuşuna bas ya da T tuşuna basıp "çal" de. Sesli lejant için L, yardım için H.`);
+      ? `${name} selected.${here ? ' Here: ' + here + '.' : ''} Press Space to listen, or say "Earth, play". Press L for the audio legend, H for help.`
+      : `${name} seçildi.${here ? ' Burada: ' + here + '.' : ''} Dinlemek için Boşluk tuşuna bas ya da "Dünya, çal" de. Sesli lejant için L, yardım için H.`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [place, co2]);
+  }, [place]);
 
   // ---------- sesli rehber: karşılama, yardım, düğme adlarını okuma, kısayollar
   const helpText = useCallback(() => (langRef.current === 'en'
@@ -441,11 +461,9 @@ export default function App() {
   const storyRun = useRef(0);
   const stopStory = () => { if (!live2.current.story) return; storyRun.current++; setStory(null); speech.stop(); };
   const storyList: StoryInfo[] = lang === 'en' ? [
-    { id: 'breath', title: 'The planet breathes', text: 'One year of carbon dioxide above your place, month by month (violin).' },
     { id: 'journey', title: 'Journey toward the equator', text: 'Travel from your place toward the equator and hear the temperature change (guitar).' },
     { id: 'dust', title: 'Travelers in the air', text: 'Find the densest dust within 5000 km of your place and go there (celesta).' },
   ] : [
-    { id: 'breath', title: 'Gezegenin nefesi', text: 'Bulunduğun yerin üstündeki karbondioksitin bir yılı, ay ay (keman).' },
     { id: 'journey', title: 'Ekvatora yolculuk', text: 'Bulunduğun yerden ekvatora doğru git, sıcaklığın değişimini dinle (gitar).' },
     { id: 'dust', title: 'Havadaki yolcular', text: '5000 km içindeki en yoğun tozu bul ve oraya git (çelesta).' },
   ];
@@ -629,7 +647,7 @@ export default function App() {
     if (has('anlatici', 'narrator')) { setNarrator(!has('kapat', ' off ', 'kapa ')); return true; }
 
     // 2024 aylık NASA katmanları (önce: daha özgül ifadeler). "deniz sıcaklığı" → 2024 MERRA-2; "okyanus" → ECCO2 katmanı
-    const m24id = has('deniz yuzeyi sicakl', 'deniz sicakl', 'sea surface temp', 'sea temperature', 'sea surface') ? 'sst_24'
+    const m24id = false && has('deniz yuzeyi sicakl', 'deniz sicakl', 'sea surface temp', 'sea temperature', 'sea surface') ? 'sst_24'
       : has('yagis', 'yagmur', 'precip', ' rain') ? 'precip_24'
         : has('deniz buzu', ' buz', 'sea ice', ' ice ') ? 'seaice_24'
           : has('kukurt', 'so2', 's o 2', 'sulfur', 'sulphur') ? 'so2_24'
@@ -647,7 +665,7 @@ export default function App() {
       setM24Layer(m24id, want);
       return true;
     }
-    const layer: LayerId | null = has('yildirim', 'simsek', 'lightning') ? 'lightning' : has('gece isik', 'night light', 'isiklar') ? 'lights' : has('bitki ortusu', 'ndvi', 'vejetasyon', 'vegetation', 'bitki') ? 'ndvi' : has('okyanus', 'deniz', 'ocean', ' sea ') ? 'sst' : has('karbon', 'co2', 'c o 2', 'carbon') ? 'co2' : has('sicakl', 'temperature', ' isi ') ? 'temp' : has('aerosol', 'toz', 'duman', 'dust', 'smoke') ? 'aerosol' : null;
+    const layer: LayerId | null = has('yildirim', 'simsek', 'lightning') ? 'lightning' : has('gece isik', 'night light', 'isiklar') ? 'lights' : has('bitki ortusu', 'ndvi', 'vejetasyon', 'vegetation', 'bitki', 'orman', 'forest') ? 'ndvi' : has('okyanus', 'deniz', 'ocean', ' sea ') ? 'sst' : has('sicakl', 'temperature', ' isi ') ? 'temp' : has('aerosol', 'toz', 'duman', 'dust', 'smoke') ? 'aerosol' : null;
     if (layer) {
       const want = has('kapat', 'kapa ', 'kaldir', ' off ', 'remove') ? false : has(' ac ', 'ekle', 'goster', ' on ', ' add ', 'dinle', 'listen') ? true : !on[layer];
       if (on[layer] !== want) toggleLayer(layer);
@@ -961,7 +979,7 @@ export default function App() {
                 narrator={narrator} setNarrator={setNarrator} story={story} onStopStory={stopStory} showNarrator={false} />
             </NowCard>
             <div className="right-col">
-            <LayerPills lang={lang} rawPills={pills.filter((p) => RAW_LAYERS.includes(p.id as LayerId))} onScan={() => setScanOpen(true)} rawTop={<M24Panel part="themes" activeTheme={activeTheme} lang={lang} m24={m24} loading={m24Loading} onOpen={openM24} on={m24On} visualId={null} month={month} place={active} announce={announce} setOn={setM24Layer} onPreset={applyM24Preset} onShow={() => {}} />} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }}>
+            <LayerPills lang={lang} top={<WorldThemes lang={lang} active={worldTheme} onPick={applyWorldTheme} />} onScan={() => setScanOpen(true)} rawTop={false && <M24Panel part="themes" activeTheme={activeTheme} lang={lang} m24={m24} loading={m24Loading} onOpen={openM24} on={m24On} visualId={null} month={month} place={active} announce={announce} setOn={setM24Layer} onPreset={applyM24Preset} onShow={() => {}} />} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }}>
               {on.temp && temp && (
                 <div className="sub-time">
                   <label htmlFor="t-date" className="small">{lang === 'tr' ? 'Sıcaklık tarihi' : 'Temperature date'}</label>
@@ -994,9 +1012,6 @@ export default function App() {
               )}
               {on.lightning && <p className="small muted">{lang === 'tr' ? 'Yıldırım: ISS LIS 2017–2023 toplamı (videodaki kareler tarihsiz); radar yıldırımlı hücreden geçince çakma sesi.' : 'Lightning: ISS LIS 2017–2023 total (video frames are undated); a strike sounds when the radar passes a cell with lightning.'}</p>}
               {on.aerosol && <p className="small muted">{lang === 'tr' ? 'Aerosoller: 19 Ağu 2025 20:00 UTC; yoğunluk göreli.' : 'Aerosols: 19 Aug 2025 20:00 UTC; relative density.'}</p>}
-              <M24Panel lang={lang} m24={m24} loading={m24Loading} onOpen={openM24} on={m24On} visualId={m24Idx >= 0 ? m24Visual : null} month={month} place={active} announce={announce}
-                setOn={setM24Layer} onPreset={applyM24Preset}
-                onShow={(id) => setM24Visual(id)} />
             </LayerPills>
             {guidePanel}
             </div>

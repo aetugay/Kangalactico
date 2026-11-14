@@ -184,7 +184,7 @@ export interface Pill { id: string; label: string; instrument: string; icon: Rea
  *  1) "NASA EIC görsellerinden" (birincil, üstte): challenge listesindeki / EIC galerisindeki SVS görsellerinden üretilen katmanlar + "Görüntüyü dinle"
  *  2) "NASA ham verisi (OCO-2, MERRA-2)": her yerde sayısal değer ve doğrulama (rawPills + rawTop + children)
  */
-export function LayerPills({ lang, pills, rawPills = [], onToggle, onShow, children, rawTop, onScan }: { lang: Lang; pills: Pill[]; rawPills?: Pill[]; onToggle: (id: string) => void; onShow: (id: string) => void; children?: React.ReactNode; rawTop?: React.ReactNode; onScan?: () => void }) {
+export function LayerPills({ lang, pills, rawPills = [], onToggle, onShow, children, rawTop, onScan, top }: { lang: Lang; pills: Pill[]; rawPills?: Pill[]; onToggle: (id: string) => void; onShow: (id: string) => void; children?: React.ReactNode; rawTop?: React.ReactNode; onScan?: () => void; top?: React.ReactNode }) {
   const raw = new Set(rawPills.map((p) => p.id));
   const pillList = (list: Pill[]) => (
       <ul className="pills">
@@ -205,16 +205,17 @@ export function LayerPills({ lang, pills, rawPills = [], onToggle, onShow, child
     <section className="glass panel layers" aria-labelledby="layers-h">
       <h2 id="layers-h" className="sr">{tr(lang, 'layers')}</h2>
       <section className="layer-sec" aria-labelledby="eic-h">
-        <h3 id="eic-h" className="eyebrow sec-h">{lang === 'tr' ? 'NASA EIC görsellerinden' : 'From NASA EIC visualizations'}</h3>
+        <h3 id="eic-h" className="eyebrow sec-h">{lang === 'tr' ? 'Ses dünyaları — NASA EIC görsellerinden' : 'Sound worlds — from NASA EIC visualizations'}</h3>
+        {top}
         {pillList(pills.filter((p) => !raw.has(p.id)))}
-        {onScan && <button type="button" className="btn scan-btn" onClick={onScan}>{lang === 'tr' ? 'Görüntüyü dinle (küre görselleri: GEDI, DYAMOND)' : 'Listen to an image (globe visuals: GEDI, DYAMOND)'}</button>}
+        {children}
+        {onScan && <button type="button" className="btn scan-btn" onClick={onScan}>{lang === 'tr' ? 'Orman yüksekliğini dinle (GEDI küre görseli)' : 'Listen to forest height (GEDI globe visual)'}</button>}
       </section>
-      <section className="layer-sec raw" aria-labelledby="raw-h">
+      {(rawPills.length > 0 || !!rawTop) && <section className="layer-sec raw" aria-labelledby="raw-h">
         <h3 id="raw-h" className="eyebrow sec-h">{lang === 'tr' ? 'NASA ham verisi (OCO-2, MERRA-2) — her yerde sayısal değer ve doğrulama' : 'NASA raw data (OCO-2, MERRA-2) — numeric values everywhere and validation'}</h3>
         {pillList(rawPills)}
         {rawTop}
-        {children}
-      </section>
+      </section>}
     </section>
   );
 }

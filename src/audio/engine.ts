@@ -1,4 +1,5 @@
 import { INSTRUMENT_OF } from '../lib/radar.ts';
+import type { WorldParams } from '../lib/worlds.ts';
 // Web Audio motoru (demo/index.html'den taşındı). Tek örnek: `engine`.
 // Ses yalnızca kullanıcı dokunuşu içinde unlock() çağrılınca başlar.
 
@@ -341,6 +342,117 @@ class AudioEngine {
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
       o.start(t); o.stop(t + 0.2);
     });
+  }
+
+  // ---------------- SES DÜNYALARI (prosedürel sentez; ses dosyası yok, internetsiz) ----------------
+  /**
+   * Bir ses dünyası dokusu: when'den dur saniye. p = lib/worlds.ts worldParams (veriden). seed → olay zamanları (aynı veri = aynı ses).
+   * Frekans bölgeleri: volkan 40–160 Hz · gürleme 80–400 · trafik ~300 · dalga 400–2200 · kum/çıtırtı 2–6 kHz · böcek/kuş 3–6 kHz.
+   */
+  world(p: WorldParams, when: number, dur: number, pan: number, seed: number, vol = 1) {
+    if (p.level <= 0.001 || vol <= 0.01) return;
+    const ac = this.ctx(), rnd = seeded(seed);
+    const out = this.panNode(pan);
+    const bus = ac.createGain(); bus.gain.value = vol;
+    const lpf = ac.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = p.cutoff; lpf.Q.value = 0.5; // uzaklık → boğukluk
+    bus.connect(lpf).connect(out);
+    const end = when + dur;
+    /** Süzülmüş gürültü katmanı: tip/frekans/Q, zarf (atak, tepe, bırakma). */
+    const noise = (type: BiquadFilterType, f: number, q: number, peak: number, atk: number, rel: number, t0 = when, t1 = end) => {
+      const s = ac.createBufferSource(); s.buffer = this.noise(); s.loop = true;
+      const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+      const g = ac.createGain(); s.connect(fl).connect(g).connect(bus);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0 + atk);
+      g.gain.setValueAtTime(peak, Math.max(t0 + atk, t1 - rel)); g.gain.linearRampToValueAtTime(0.0001, t1);
+      s.start(t0, rnd() * 1.5); s.stop(t1 + 0.05);
+      return { g, fl };
+    };
+    /** Kısa olay (tane, çıtırtı, buz çatırtısı): yüksek geçiren gürültü patlaması. */
+    const click = (t: number, f: number, len: number, peak: number) => {
+      const s = ac.createBufferSource(); s.buffer = this.noise();
+      const fl = ac.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = 1.2;
+      const g = ac.createGain(); s.connect(fl).connect(g).connect(bus);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      s.start(t, rnd() * 1.8); s.stop(t + len + 0.02);
+    };
+    const tone = (type: OscillatorType, f: number, peak: number, atk: number, rel: number, t0 = when, t1 = end, f2?: number) => {
+      const o = ac.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t1);
+      const g = ac.createGain(); o.connect(g).connect(bus);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0 + atk); g.gain.setValueAtTime(peak, Math.max(t0 + atk, t1 - rel)); g.gain.linearRampToValueAtTime(0.0001, t1);
+      o.start(t0); o.stop(t1 + 0.05); return o;
+    };
+    /** dur içinde rate (olay/sn) kadar olayı seed'li zamanlara dağıt. */
+    const events = (rate: number, fn: (t: number, k: number) => void) => { const n = Math.round(rate * dur); for (let k = 0; k < n; k++) fn(when + rnd() * dur, k); };
+    const L = p.level, atk = Math.min(0.25, dur * 0.3), rel = Math.min(0.35, dur * 0.4);
+    switch (p.world) {
+      case 'dust': // kum fırtınası: geniş hışırtı + rüzgâr savruluşu + savrulan kum taneleri
+        noise('bandpass', 2600 + 1200 * p.sharp, 0.7, 0.10 * L, atk, rel);
+        noise('lowpass', 700, 0.4, 0.05 * L, atk, rel);
+        events(p.rate, (t) => click(t, 3000 + 3000 * rnd(), 0.006 + 0.01 * rnd(), (0.03 + 0.06 * p.sharp) * L));
+        break;
+      case 'smoke': // yangın: alçak uğultu + rastgele çıtırtılar
+        noise('lowpass', 170, 0.6, 0.14 * L, atk, rel);
+        events(p.rate, (t) => click(t, 2200 + 3500 * rnd(), 0.004 + 0.012 * rnd(), (0.05 + 0.12 * p.sharp * rnd()) * L));
+        break;
+      case 'spray': { // dalga serpintisi: kabaran dalga + tepede serpinti hışırtısı
+        noise('lowpass', 900, 0.5, 0.10 * L, dur * 0.45, dur * 0.5);
+        noise('highpass', 3200, 0.5, 0.05 * L * (0.4 + p.sharp), dur * 0.5, dur * 0.45, when + dur * 0.2, end);
+        break;
+      }
+      case 'volcano': // derin volkan uğultusu: iki alçak ton + boğuk gürültü
+        tone('sine', 41, 0.16 * L, atk * 2, rel * 2); tone('sine', 61.5, 0.08 * L, atk * 2, rel * 2);
+        noise('lowpass', 120, 0.7, 0.12 * L, atk * 2, rel * 2);
+        break;
+      case 'thunder': { // gök gürültüsü: yakın = sert çatırtı + gürleme; uzak = geç gelen boğuk uzun gürleme
+        const n = Math.max(1, Math.round(p.rate * dur));
+        for (let k = 0; k < n; k++) {
+          const t0 = when + p.delay + rnd() * dur * 0.8, len = 1.2 + 1.6 * (1 - p.sharp) + rnd() * 0.6;
+          if (p.sharp > 0.55) click(t0, 1800 + 1500 * rnd(), 0.05, 0.35 * L);
+          const { g } = noise('lowpass', 140 + 180 * p.sharp, 0.8, 0.0001, 0.01, 0.01, t0, t0 + len);
+          g.gain.cancelScheduledValues(t0); g.gain.setValueAtTime(0.0001, t0);
+          g.gain.exponentialRampToValueAtTime(0.35 * L, t0 + 0.05 + 0.25 * (1 - p.sharp));
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+        }
+        break;
+      }
+      case 'city': { // şehir uğultusu: trafik (alçak bant) + kalabalık mırıltısı (dalgalanan orta bant)
+        noise('bandpass', 280, 0.6, 0.12 * L * (p.mix.traffic ?? 1), atk, rel);
+        if ((p.mix.crowd ?? 0) > 0.02) {
+          const { g } = noise('bandpass', 750, 1.1, 0.07 * L * p.mix.crowd, atk, rel);
+          const lfo = ac.createOscillator(); lfo.frequency.value = 2.5 + rnd() * 2; const d = ac.createGain(); d.gain.value = 0.03 * L * p.mix.crowd;
+          lfo.connect(d).connect(g.gain); lfo.start(when); lfo.stop(end + 0.05);
+        }
+        break;
+      }
+      case 'forest': { // yaprak hışırtısı + kuş cıvıltıları; çıplak arazide yalnız boş rüzgâr
+        if ((p.mix.leaves ?? 0) > 0.02) noise('highpass', 4200, 0.6, 0.05 * L * p.mix.leaves, atk, rel);
+        if ((p.mix.wind ?? 0) > 0.02) noise('lowpass', 450, 0.4, 0.07 * L * p.mix.wind, atk, rel);
+        events(p.rate, (t) => { // kuş: 2–3 hızlı yükselen ıslık hecesi
+          const base = 2400 + 2200 * rnd(), syl = 2 + Math.floor(rnd() * 2);
+          for (let k = 0; k < syl; k++) { const s0 = t + k * 0.09; tone('sine', base, 0.05 * L, 0.01, 0.03, s0, s0 + 0.07, base * (1.25 + 0.2 * rnd())); }
+        });
+        break;
+      }
+      case 'heat': { // soğuk: buzlu ıslıklı rüzgâr + buz çatırtısı · ılık: yumuşak esinti · sıcak: ağustos böcekleri + titreşen hava
+        const { icy = 0, hot = 0, breeze = 0 } = p.mix;
+        if (icy > 0.02) { noise('bandpass', 1300, 4, 0.10 * L * icy, atk, rel); events(p.rate, (t) => click(t, 4200 + 1500 * rnd(), 0.02, 0.08 * L * icy)); }
+        if (breeze > 0.02) noise('lowpass', 600, 0.4, 0.07 * L * breeze, atk, rel);
+        if (hot > 0.02) {
+          const { g } = noise('bandpass', 4800, 9, 0.16 * L * hot, atk, rel);
+          const lfo = ac.createOscillator(); lfo.frequency.value = 24 + 10 * hot; const d = ac.createGain(); d.gain.value = 0.12 * L * hot;
+          lfo.connect(d).connect(g.gain); lfo.start(when); lfo.stop(end + 0.05);
+          noise('highpass', 6500, 0.5, 0.015 * L * hot, atk, rel); // sıcak hava titremesi
+        }
+        break;
+      }
+      case 'ocean': { // dalga: sıcak = yumuşak, yavaş kabaran; soğuk = sert, parlak; buzlu = çatırtı
+        const { cold = 0, ice = 0 } = p.mix;
+        noise('lowpass', 500 + 1500 * cold, 0.5 + cold, 0.13 * L, dur * (0.45 - 0.2 * cold), dur * 0.5);
+        if (cold > 0.4) noise('highpass', 2500, 0.6, 0.03 * L * cold, atk, rel);
+        if (ice > 0.02) events(p.rate, (t) => click(t, 3800 + 1800 * rnd(), 0.015, 0.07 * L * ice));
+        break;
+      }
+    }
   }
 
   /** Kuzey işareti: her tur başında hafif bir üçgen (zil) vuruşu. */

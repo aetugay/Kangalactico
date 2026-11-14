@@ -7,7 +7,8 @@
 // Adım 2: her tur LEAD adımlık bir referans bölümüyle başlar: merkezin değeri "referans" tınısıyla (karşılaştırmada A sonra B).
 //  Sonra kuzey zili ve 32 ışınlık tarama. Her nota: perde + vuruş sayısı (1–3) + parlaklık, üçü de aynı değerden.
 import { engine } from './engine.ts';
-import { beamEvents, groupMean, noteHz, gainFor, PARTS, refEvents, registers, type FrameData, type SoundEvent } from '../lib/radar.ts';
+import { beamEvents, groupMean, noteHz, gainFor, PARTS, refEvents, registers, worldEvents, worldRefEvents, WORLD_BANDS, type FrameData, type SoundEvent } from '../lib/radar.ts';
+import { WORLD_OF, worldParams, seedOf, WORLD_PART } from '../lib/worlds.ts';
 
 export interface RadarFrame extends FrameData {
   revSec: number; // bir tur (32 ışın) süresi; referans bölümü bunun dışında
@@ -82,6 +83,14 @@ export class RadarPlayer {
 
   /** Referans bölümü: 1 referans → adım 0'da 3 adım boyu; 2 referans (A, B) → adım 0 ve 2'de, ikişer adım. */
   private playLead(F: RadarFrame, pos: number, when: number, step: number) {
+    // ses dünyaları: merkez noktanın sesi (uzaklık 0 → en net). Karşılaştırmada A (adım 0) sonra B (adım 2).
+    const wr = worldRefEvents(F);
+    if (wr.length) {
+      const tags = [...new Set(wr.map((e) => e.ref?.tag ?? ''))];
+      const slot = tags.length > 1 ? 2 : LEAD;
+      const tag = tags.length > 1 ? (pos === 0 ? tags[0] : pos === 2 ? tags[1] : null) : pos === 0 ? tags[0] : null;
+      if (tag !== null) { const es = wr.filter((e) => (e.ref?.tag ?? '') === tag); for (const e of es) engine.world(e.params, when, step * slot * 0.95, 0, e.seed, engine.mix.vol[e.layerId] ?? 1); this.emit(es, -1, when); }
+    }
     const refs = refEvents(F);
     if (!refs.length) return; // merkezde veri yok → referans yok (sessiz)
     const slot = refs.length > 1 ? 2 : 3;
@@ -106,10 +115,12 @@ export class RadarPlayer {
     }
     if (F.mode === 'hikaye') {
       // dalga sesi: yalnız hikâye modunda; düzeyi bu ışının denize düşen payı (veri yoksa 0 → sessiz)
-      const sea = F.layers.find((l) => l.layer.id === 'sst');
+      const sea = F.layers.find((l) => l.layer.id === 'sst' && !WORLD_OF.sst); // okyanus artık ses dünyası (kendi dalgaları)
       if (sea) engine.waves(groupMean(sea.vals, P, b, 1).cover); else engine.wavesOff();
     } else engine.wavesOff();
-    this.emit(events, b, when);
+    const wev = worldEvents(F, b);
+    for (const e of wev) engine.world(e.params, when, step * e.durBeams, e.pan, e.seed, engine.mix.vol[e.layerId] ?? 1);
+    this.emit([...events, ...wev], b, when);
   }
 
   private emit(events: SoundEvent[], b: number, when: number) {
@@ -136,6 +147,16 @@ export class RadarPlayer {
     const pan = Math.sin(((b * 360) / P.beams) * (Math.PI / 180));
     const regs = registers(F.layers.map((l) => l.layer.id));
     F.layers.forEach(({ layer, vals, local }, li) => {
+      const world = WORLD_OF[layer.id];
+      if (world) { // ses dünyası: yakın → orta → uzak, sırayla
+        WORLD_BANDS.forEach(([r0, r1, dist], i) => {
+          const { mean } = groupMean(vals, P, b, 1, Math.round(r0 * P.rings), Math.max(Math.round(r0 * P.rings) + 1, Math.round(r1 * P.rings)));
+          if (Number.isNaN(mean)) return;
+          const t = gainFor(mean, layer, 'global'); if (WORLD_PART[world].gate > 0 && t < WORLD_PART[world].gate) return;
+          engine.world(worldParams(world, mean, t, dist), when + i * 0.45, 0.6, pan, seedOf(layer.id, 'm', b, i, Math.round(mean * 1000)), engine.mix.vol[layer.id] ?? 1);
+        });
+        return;
+      }
       const part = PARTS[layer.id];
       bands.forEach(([k0, k1], i) => {
         const { mean } = groupMean(vals, P, b, 1, k0, k1);

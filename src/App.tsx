@@ -192,7 +192,7 @@ export default function App() {
   const [mix, setMixS] = useState<Mix>(() => { try { const m = JSON.parse(store.get('mix') ?? 'null'); return m ? { ...DEFAULT_MIX, ...m, vol: { ...DEFAULT_MIX.vol, ...m.vol }, inst: { ...DEFAULT_MIX.inst, ...m.inst } } : DEFAULT_MIX; } catch { return DEFAULT_MIX; } });
   const setMix = (m: Mix) => { setMixS(m); store.set('mix', JSON.stringify(m)); };
   useEffect(() => {
-    engine.setMaster(mix.master); engine.setReverb(mix.reverb); speech.setRate(mix.rate);
+    engine.setMaster(mix.master); engine.setReverb(mix.reverb); engine.setMusic(mix.music); speech.setRate(mix.rate);
     engine.mix.vol = { co2: mix.vol.co2, temp: mix.vol.temp, sst: mix.vol.sst, black_carbon: mix.vol.aerosol, dust: mix.vol.aerosol, sea_salt: mix.vol.aerosol, sulfate: mix.vol.aerosol };
     engine.mix.inst = { ...mix.inst };
   }, [mix]);
@@ -669,6 +669,8 @@ export default function App() {
     }
     if (has('sadece doga', 'muzigi kapat', 'muzik kapat', 'only nature', 'music off')) { setSoundMode('nature'); return true; }
     if (has('sadece muzik', 'only music', 'music only')) { setSoundMode('music'); return true; }
+    if (has('muzigi yukselt', 'muzigi artir', 'muzik yukselt', 'louder music', 'music louder', 'raise the music')) { const v = Math.min(3, +(mixRef.current.music + 0.3).toFixed(2)); setMix({ ...mixRef.current, music: v }); if (soundMode === 'nature') setSoundModeS('both'); announce(en ? `Music level ${Math.round(v * 100)} percent.` : `Müzik seviyesi yüzde ${Math.round(v * 100)}.`); return true; }
+    if (has('muzigi kis', 'muzik kis', 'muzigi azalt', 'quieter music', 'music quieter', 'lower the music')) { const v = Math.max(0.2, +(mixRef.current.music - 0.3).toFixed(2)); setMix({ ...mixRef.current, music: v }); announce(en ? `Music level ${Math.round(v * 100)} percent.` : `Müzik seviyesi yüzde ${Math.round(v * 100)}.`); return true; }
     if (has('muzigi ac', 'muzik ac', 'music on')) { setSoundMode('both'); return true; }
     if (has('yerel olcek', 'local scale', 'yerel')) { setScale('local'); return true; }
     if (has('kuresel olcek', 'global scale', 'kuresel', 'sabit olcek')) { setScale('global'); return true; }

@@ -551,9 +551,12 @@ class AudioEngine {
 
   // ---------------- VERİDEN DOĞAN MÜZİK (doğa seslerinin ~10 dB altında; orta bölgede, 2.8 kHz üstü kesik → hışırtıları maskelemez) ----------------
   private musicBus: GainNode | null = null;
+  /** Müzik kanalı kazancı (Ses sahnem → Müzik seviyesi). 1.1 (+ nota kazancı × √(every/2)): radar çalarken doğa seslerinin ort. ~7 dB altı (ölçüm: Sahra/Çöl ve Toz 9.4 dB, Amazon/Şehirler ve Ormanlar 4.3 dB altı; 0.25'te ~15 dB altıydı). */
+  musicLevel = 1.1;
+  setMusic(v: number) { this.musicLevel = v; if (this.ac && this.musicBus) this.musicBus.gain.setTargetAtTime(v, this.ac.currentTime, 0.1); }
   private music(): GainNode {
     if (this.musicBus) return this.musicBus;
-    const ac = this.ctx(), g = ac.createGain(); g.gain.value = 0.25; // ölçüldü: nota 0.25 → ~0.06 seviye; doğa sesleri 0.12–0.48 → müzik ~6–18 dB altta
+    const ac = this.ctx(), g = ac.createGain(); g.gain.value = this.musicLevel;
     const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2800; lp.Q.value = 0.5;
     g.connect(lp).connect(this.out()); this.musicBus = g; return g;
   }

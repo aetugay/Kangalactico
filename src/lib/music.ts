@@ -69,7 +69,8 @@ export function musicEvents(F: FrameData, b: number, mood: Mood): MusicEvent[] {
   const oct = instr === 'timpani' || instr === 'drone' ? -24 : instr === 'celesta' ? 12 : 0;
   const freqs = (instr === 'timpani' ? [ch[0]] : instr === 'tremolo' ? [ch[0] - 12, ch[0]] : ch).map((m) => midi(m + oct));
   const bearing = bearingOf(b + (mood.every - 1) / 2, P.beams);
-  return [{ beam: b, instr, world: best.w, freqs, gain: +(0.32 * (0.55 + 0.45 * clamp(best.t)) * (best.far ? 0.55 : 1)).toFixed(4), pan: panFor(bearing) * 0.8, durBeams: mood.every * 1.4, minor: mood.minor, t: +clamp(best.t).toFixed(3) }];
+  // kazanç × √(every/2): seyrek müzikte nota biraz güçlü, sık müzikte yumuşak → ortalama düzey sabit
+  return [{ beam: b, instr, world: best.w, freqs, gain: +(0.32 * (0.55 + 0.45 * clamp(best.t)) * (best.far ? 0.55 : 1) * Math.sqrt(mood.every / 2)).toFixed(4), pan: panFor(bearing) * 0.8, durBeams: mood.every * 1.4, minor: mood.minor, t: +clamp(best.t).toFixed(3) }];
 }
 
 /** Hava durumu müziği (günün verisinden): güneşli → parlak majör; yağmurlu → yumuşak minör piyano; karlı → seyrek çelesta; fırtınalı → gerilimli yaylı + timpani. */

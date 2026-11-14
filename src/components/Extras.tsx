@@ -98,8 +98,8 @@ export function EventsDialog({ open, onClose, lang, events, status, onGo }: { op
 }
 
 // ---------------- Kişisel ses sahnesi
-export interface Mix { master: number; reverb: number; rate: number; vol: Record<string, number>; inst: Record<string, string> }
-export const DEFAULT_MIX: Mix = { master: 0.8, reverb: 0.3, rate: 1, vol: { co2: 1, temp: 1, sst: 1, aerosol: 1 }, inst: { co2: 'co2', temp: 'temp', sst: 'sst' } };
+export interface Mix { master: number; reverb: number; rate: number; music: number; vol: Record<string, number>; inst: Record<string, string> }
+export const DEFAULT_MIX: Mix = { master: 0.8, reverb: 0.3, rate: 1, music: 1.1, vol: { co2: 1, temp: 1, sst: 1, aerosol: 1 }, inst: { co2: 'co2', temp: 'temp', sst: 'sst' } };
 export const INSTRUMENTS: { id: string; tr: string; en: string }[] = [
   { id: 'co2', tr: 'keman', en: 'violin' }, { id: 'temp', tr: 'gitar', en: 'guitar' }, { id: 'sst', tr: 'arp', en: 'harp' },
   { id: 'black_carbon', tr: 'çello', en: 'cello' }, { id: 'dust', tr: 'çelesta', en: 'celesta' }, { id: 'sea_salt', tr: 'flüt', en: 'flute' }, { id: 'sulfate', tr: 'marimba', en: 'marimba' },
@@ -118,6 +118,7 @@ export function SoundDialog({ open, onClose, lang, mix, setMix, layerNames, onTe
     <Dialog open={open} onClose={onClose} title={T(lang, 'Ses sahnem', 'My soundscape')} lang={lang}>
       <p className="small muted">{T(lang, 'Orkestrayı kendine göre kur: her katmanın sesini ve enstrümanını seç. Ayarların bu cihazda saklanır.', 'Arrange the orchestra your way: set each layer\'s volume and instrument. Your settings are saved on this device.')}</p>
       {slider('mix-master', T(lang, 'Genel ses', 'Master volume'), mix.master, 0, 1, (v) => setMix({ ...mix, master: v }))}
+      {slider('mix-music', T(lang, 'Müzik seviyesi (doğa seslerinin altında)', 'Music level (under the nature sounds)'), mix.music, 0, 3, (v) => setMix({ ...mix, music: v }))}
       {slider('mix-reverb', T(lang, 'Salon yankısı', 'Hall reverb'), mix.reverb, 0, 0.8, (v) => setMix({ ...mix, reverb: v }))}
       {slider('mix-rate', T(lang, 'Konuşma hızı', 'Speech rate'), mix.rate, 0.6, 1.8, (v) => setMix({ ...mix, rate: v }), `${mix.rate.toFixed(2)}×`)}
       {(['co2', 'temp', 'sst', 'aerosol'] as const).map((id) => (

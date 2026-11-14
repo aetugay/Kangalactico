@@ -31,7 +31,7 @@ class AudioEngine {
     const ac = new Ctor();
     const comp = ac.createDynamicsCompressor();
     this.master = ac.createGain();
-    this.master.gain.value = 0.8;
+    this.master.gain.value = this.mix?.master ?? 0.8;
     this.master.connect(comp).connect(ac.destination);
     // seviye ölçer (görsel nabız halkası için; sese etkisi yok)
     this.analyser = ac.createAnalyser(); this.analyser.fftSize = 512;
@@ -175,6 +175,11 @@ class AudioEngine {
   get now(): number { return this.ctx().currentTime; }
 
   private bus: GainNode | null = null;
+  private wet: GainNode | null = null;
+  /** Kişisel ses sahnesi: genel ses, yankı, katman başına ses düzeyi ve enstrüman seçimi. */
+  readonly mix = { master: 0.8, reverb: 0.3, vol: {} as Record<string, number>, inst: {} as Record<string, string> };
+  setMaster(v: number) { this.mix.master = v; if (this.ac) this.master.gain.setTargetAtTime(v, this.ac.currentTime, 0.05); }
+  setReverb(v: number) { this.mix.reverb = v; if (this.ac && this.wet) this.wet.gain.setTargetAtTime(v, this.ac.currentTime, 0.05); }
   private ksCache = new Map<string, AudioBuffer>();
   private waveGain: GainNode | null = null;
 
@@ -192,7 +197,7 @@ class AudioEngine {
         for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
       }
       const conv = ac.createConvolver(); conv.buffer = ir;
-      const wet = ac.createGain(); wet.gain.value = 0.3;
+      const wet = ac.createGain(); wet.gain.value = this.mix.reverb; this.wet = wet;
       bus.connect(conv).connect(wet).connect(this.master);
     } catch { /* yankısız da çalışır */ }
     this.bus = bus;
@@ -262,11 +267,14 @@ class AudioEngine {
    */
   voice(timbre: string, freq: number, when: number, dur: number, gain: number, pan: number) {
     if (gain <= 0.001) return;
+    const vol = this.mix.vol[timbre] ?? 1;
+    if (vol <= 0.01) return;
+    const kind = this.mix.inst[timbre] ?? timbre; // kullanıcı bu katmana başka enstrüman atamış olabilir
     const ac = this.ctx();
     const out = this.panNode(pan);
     const g = ac.createGain();
     g.connect(out);
-    const lvl = 0.45 + 0.55 * Math.min(1, gain); // değer vurguyu artırır ama ses hiç kaybolmaz
+    const lvl = (0.45 + 0.55 * Math.min(1, gain)) * vol; // değer vurguyu artırır ama ses hiç kaybolmaz
     const osc = (type: OscillatorType, f: number, level: number, dest: AudioNode, len: number, detune = 0) => {
       const o = ac.createOscillator(); o.type = type; o.frequency.value = f; o.detune.value = detune;
       const lg = ac.createGain(); lg.gain.value = level; o.connect(lg).connect(dest);
@@ -287,7 +295,7 @@ class AudioEngine {
       g.gain.setValueAtTime(amp * lvl, when);
       s.start(when);
     };
-    switch (timbre) {
+    switch (kind) {
       case 'co2': { // keman: iki testere + gövde filtresi, yumuşak yay atağı, gecikmeli vibrato
         const len = Math.max(0.5, dur);
         const body = ac.createBiquadFilter(); body.type = 'lowpass'; body.frequency.value = Math.min(5200, 1400 + freq * 2.6); body.Q.value = 0.8;

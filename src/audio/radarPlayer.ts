@@ -64,7 +64,7 @@ export class RadarPlayer {
     const step = F.revSec / F.P.beams;
     // sekme arka planda kaldıysa (zamanlayıcı yavaşlar) geride kalan adımları atla; ses yığılmasın
     if (this.next < engine.now - 0.3) { this.next = engine.now + 0.05; this.t0 = this.next - this.beam * step; }
-    while (this.next < engine.now + 0.15) {
+    while (this.next < engine.now + 0.3) { // 0.3 sn ileri bakış: ana iş parçacığı kısa süre takılsa da ritim bozulmaz
       this.playBeam(F, this.beam, this.next, step);
       this.beam = (this.beam + 1) % F.P.beams;
       this.next += step;

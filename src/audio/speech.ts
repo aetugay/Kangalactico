@@ -3,6 +3,7 @@
 export type SpeechLang = 'tr' | 'en';
 
 let lang: SpeechLang = 'tr';
+let rateMul = 1;        // kullanıcının konuşma hızı tercihi
 let token = 0;          // her yeni konuşma/iptal bir öncekini geçersiz kılar
 let priority = false;   // öncelikli konuşma sürüyor mu
 const listeners = new Set<(active: boolean) => void>();
@@ -24,7 +25,7 @@ function chunks(text: string): string[] {
 function utter(text: string, rate: number): SpeechSynthesisUtterance {
   const u = new SpeechSynthesisUtterance(text);
   u.lang = lang === 'tr' ? 'tr-TR' : 'en-US';
-  u.rate = rate;
+  u.rate = rate * rateMul;
   const v = voiceFor(lang); if (v) u.voice = v;
   return u;
 }
@@ -32,6 +33,7 @@ function utter(text: string, rate: number): SpeechSynthesisUtterance {
 export const speech = {
   supported,
   setLang(l: SpeechLang) { lang = l; },
+  setRate(mul: number) { rateMul = Math.max(0.6, Math.min(1.8, mul)); },
   /** Öncelikli konuşma sürerken true (özet/lejant düğmelerini "durdur"a çevirmek için). */
   get active() { return priority; },
   onChange(fn: (active: boolean) => void) { listeners.add(fn); return () => { listeners.delete(fn); }; },

@@ -47,15 +47,19 @@ export class Co2Grid {
   /** Bir yerin 12 aylık serisi (ayın 1. günü değerleri). */
   monthSeries(p: LatLon): number[] { return this.f.months.map((_, m) => this.bilinear(p, m)); }
   /** Bir aydaki tüm ızgaranın min/max'ı (renk/ses ölçeği için). */
+  private rangeMemo: ({ min: number; max: number } | undefined)[] = [];
+  private yearMemo: { min: number; max: number } | null = null;
   monthRange(month: number): { min: number; max: number } {
+    const hit = this.rangeMemo[month]; if (hit) return hit; // her pikselde çağrılır: bir kez hesapla
     let min = Infinity, max = -Infinity;
     for (const v of this.f.values[month]) { const x = decodePpm(v); if (x < min) min = x; if (x > max) max = x; }
-    return { min, max };
+    return (this.rangeMemo[month] = { min, max });
   }
   yearRange(): { min: number; max: number } {
+    if (this.yearMemo) return this.yearMemo;
     let min = Infinity, max = -Infinity;
     for (let m = 0; m < this.f.months.length; m++) { const r = this.monthRange(m); min = Math.min(min, r.min); max = Math.max(max, r.max); }
-    return { min, max };
+    return (this.yearMemo = { min, max });
   }
 }
 

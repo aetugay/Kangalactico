@@ -1,0 +1,30 @@
+# bağımlılıklar ve derleme çıktıları
+node_modules/
+dist/
+.vercel/
+*.tsbuildinfo
+
+# indirilen NASA medyası (yüzlerce MB) ve ekip ham paketleri — scripts/ ile yeniden üretilir
+raw/
+referans/
+
+# gizli bilgiler
+.env
+.env.*
+!.env.example
+
+# büyük medya / arşivler (veri public/data/*.json olarak işlenmiş halde depoda)
+*.mp4
+*.mov
+*.webm
+*.m4v
+*.tif
+*.tiff
+*.exr
+*.zip
+
+# işletim sistemi / editör
+desktop.ini
+Thumbs.db
+.DS_Store
+*.log

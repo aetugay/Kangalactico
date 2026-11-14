@@ -1,0 +1,269 @@
+{
+    "id": 13786,
+    "url": "http://svs.gsfc.nasa.gov/13786/",
+    "page_type": "Produced Video",
+    "title": "Data Sonification: Caldwell 73",
+    "description": "Located 40,000 light-years from Earth in the constellation Columba, this globular cluster is called Caldwell 73 or NGC 1851. A globular cluster is a spherical group of stars that are gravitationally bound to each other, with most of the stars concentrated at the cluster’s center.  As the radar scans around in this sonification, the radius of the stars is mapped to pitch, so stars farther from the center are higher pitched. The entire image is converted to the sound of a choir, while the orange and red stars are represented by a marimba, and the blue stars are represented by a glockenspiel.Credit: SYSTEM Sounds (M. Russo, A. Santaguida)For more information about the Hubble Space Telescope and its images, visit https://nasa.gov/hubble. || ",
+    "release_date": "2020-12-23T09:00:00-05:00",
+    "update_date": "2023-05-03T13:44:24.562486-04:00",
+    "main_image": {
+        "id": 380687,
+        "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013700/a013786/SW.jpg",
+        "filename": "SW.jpg",
+        "media_type": "Image",
+        "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+        "width": 320,
+        "height": 180,
+        "pixels": 57600
+    },
+    "main_video": {
+        "id": 380686,
+        "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013700/a013786/Caldwell73_2K_Final.mp4",
+        "filename": "Caldwell73_2K_Final.mp4",
+        "media_type": "Movie",
+        "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+        "width": 1920,
+        "height": 1920,
+        "pixels": 3686400
+    },
+    "main_credits": {},
+    "progress": "Complete",
+    "media_groups": [
+        {
+            "id": 318233,
+            "url": "http://svs.gsfc.nasa.gov/13786/#media_group_318233",
+            "widget": "Basic text with HTML",
+            "title": "",
+            "caption": "",
+            "description": "Located 40,000 light-years from Earth in the constellation Columba, this globular cluster is called Caldwell 73 or NGC 1851. A globular cluster is a spherical group of stars that are gravitationally bound to each other, with most of the stars concentrated at the cluster’s center. <br> <br>As the radar scans around in this sonification, the radius of the stars is mapped to pitch, so stars farther from the center are higher pitched. The entire image is converted to the sound of a choir, while the orange and red stars are represented by a marimba, and the blue stars are represented by a glockenspiel.<br><br>Credit: SYSTEM Sounds (M. Russo, A. Santaguida)<br><br>For more information about the Hubble Space Telescope and its images, visit <a href=\"https://nasa.gov/hubble\" target=\"_blank\">https://nasa.gov/hubble</a>.<br><br>",
+            "items": [],
+            "extra_data": {}
+        },
+        {
+            "id": 318234,
+            "url": "http://svs.gsfc.nasa.gov/13786/#media_group_318234",
+            "widget": "Video player",
+            "title": "",
+            "caption": "",
+            "description": "<b>Master Version</b><p>Horizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+            "items": [
+                {
+                    "id": 223340,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": null,
+                    "instance": {
+                        "id": 380688,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013700/a013786/print.jpg",
+                        "filename": "print.jpg",
+                        "media_type": "Image",
+                        "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+                        "width": 1920,
+                        "height": 1080,
+                        "pixels": 2073600
+                    }
+                },
+                {
+                    "id": 223341,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": null,
+                    "instance": {
+                        "id": 380689,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013700/a013786/wide.jpg",
+                        "filename": "wide.jpg",
+                        "media_type": "Image",
+                        "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+                        "width": 1920,
+                        "height": 1080,
+                        "pixels": 2073600
+                    }
+                },
+                {
+                    "id": 223339,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": null,
+                    "instance": {
+                        "id": 380687,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013700/a013786/SW.jpg",
+                        "filename": "SW.jpg",
+                        "media_type": "Image",
+                        "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+                        "width": 320,
+                        "height": 180,
+                        "pixels": 57600
+                    }
+                },
+                {
+                    "id": 223338,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": null,
+                    "instance": {
+                        "id": 380686,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013700/a013786/Caldwell73_2K_Final.mp4",
+                        "filename": "Caldwell73_2K_Final.mp4",
+                        "media_type": "Movie",
+                        "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+                        "width": 1920,
+                        "height": 1920,
+                        "pixels": 3686400
+                    }
+                },
+                {
+                    "id": 223342,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": null,
+                    "instance": {
+                        "id": 380690,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013700/a013786/Caldwell73_2K_Final.webm",
+                        "filename": "Caldwell73_2K_Final.webm",
+                        "media_type": "Movie",
+                        "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+                        "width": 1920,
+                        "height": 1920,
+                        "pixels": 3686400
+                    }
+                },
+                {
+                    "id": 223337,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": null,
+                    "instance": {
+                        "id": 849122,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013700/a013786/CALDWELL73.en_US.SRT",
+                        "filename": "CALDWELL73.en_US.SRT",
+                        "media_type": "Captions",
+                        "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+                        "label": "English",
+                        "language_code": ""
+                    }
+                }
+            ],
+            "extra_data": {}
+        }
+    ],
+    "studio": "gms",
+    "funding_sources": [
+        "PAO"
+    ],
+    "credits": [
+        {
+            "role": "Technical support",
+            "people": [
+                {
+                    "name": "Aaron E. Lepsch",
+                    "employer": "ADNET Systems, Inc."
+                }
+            ]
+        }
+    ],
+    "missions": [
+        "Hubble"
+    ],
+    "series": [],
+    "tapes": [],
+    "papers": [],
+    "datasets": [],
+    "nasa_science_categories": [
+        "Universe"
+    ],
+    "keywords": [
+        "HST",
+        "Hubble Space Telescope",
+        "Sonification"
+    ],
+    "recommended_pages": [],
+    "related": [
+        {
+            "id": 13999,
+            "url": "http://svs.gsfc.nasa.gov/13999/",
+            "page_type": "Produced Video",
+            "title": "Sonification of the Bubble Nebula",
+            "description": "In this Hubble image, a super-hot, massive star is blowing an enormous bubble into space. Fittingly named the Bubble Nebula, this beautiful cosmic object is roughly seven light-years across and resides 7,100 light-years from Earth. Scanned from top to bottom, color is mapped to pitch in this sonification of the nebula. The bright blue of the bubble can be heard as higher pitches; the red and orange regions’ lower pitches are heard most clearly at the beginning on the left and in the top half of the bubble in the middle. Brightness controls the volume and stars are represented by chimes.Sonification credits: SYSTEM Sounds (M. Russo, A. Santaguida)For more information about the Hubble Space Telescope and its images, visit https://nasa.gov/hubble. || ",
+            "release_date": "2021-11-24T09:55:00-05:00",
+            "update_date": "2023-05-03T13:43:42.609478-04:00",
+            "main_image": {
+                "id": 375452,
+                "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013900/a013999/13999_BUBBLE_PRINT.jpg",
+                "filename": "13999_BUBBLE_PRINT.jpg",
+                "media_type": "Image",
+                "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        },
+        {
+            "id": 13998,
+            "url": "http://svs.gsfc.nasa.gov/13998/",
+            "page_type": "Produced Video",
+            "title": "Sonification of the Butterfly Nebula",
+            "description": "This spectacular Hubble image of the Butterfly Nebula shows a colorful view of star death. The \"wings\" of the butterfly are regions of gas heated to more than 36,000° F (about 20,000° C) that are tearing across space at more than 600,000 miles an hour (966,000 kph)! Vertical position is mapped to pitch – meaning that light towards the top of the image is higher pitched. The nebula is played on strings and synthetic tones, while stars are represented by digital harp. Brightness controls the volume, and the tilted hourglass orientation of the nebula produces an overall rising motion, with the prominent iron-rich jet producing a quick rise near the center.Sonification credits: SYSTEM Sounds (M. Russo, A. Santaguida)For more information about the Hubble Space Telescope and its images, visit https://nasa.gov/hubble. || ",
+            "release_date": "2021-11-16T09:55:00-05:00",
+            "update_date": "2023-05-03T13:43:43.959859-04:00",
+            "main_image": {
+                "id": 375447,
+                "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013900/a013998/13998_Butterfly_PRINT.jpg",
+                "filename": "13998_Butterfly_PRINT.jpg",
+                "media_type": "Image",
+                "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        },
+        {
+            "id": 13997,
+            "url": "http://svs.gsfc.nasa.gov/13997/",
+            "page_type": "Produced Video",
+            "title": "Sonification of NGC 2392",
+            "description": "About 5,000 light-years from Earth, the stunning nebula NGC 2392 formed after the demise of a star like our Sun. In this sonification, the image is scanned clockwise like a radar. The radius is mapped to pitch, so light farther from the center is higher pitched. The outline of the nebula’s shell can be heard in the rising and falling of pitch, punctuated by its spokes. Brightness controls the volume. Sonification credits: SYSTEM Sounds (M. Russo, A. Santaguida)For more information about the Hubble Space Telescope and its images, visit https://nasa.gov/hubble. || ",
+            "release_date": "2021-11-05T09:55:00-04:00",
+            "update_date": "2023-05-03T13:43:45.436909-04:00",
+            "main_image": {
+                "id": 375248,
+                "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013900/a013997/13997_2392_Print.jpg",
+                "filename": "13997_2392_Print.jpg",
+                "media_type": "Image",
+                "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        },
+        {
+            "id": 13893,
+            "url": "http://svs.gsfc.nasa.gov/13893/",
+            "page_type": "Produced Video",
+            "title": "Sonification of Hubble Ultra Deep Field (2014)",
+            "description": "This sonification of the Hubble Ultra Deep Field (2014) image plays a note for each galaxy when it emitted the light captured in this image. The farther away the galaxy is, the longer its light has traveled before reaching the Hubble Space Telescope.  In just under a minute, we can hear back nearly 13 billion years to the farthest galaxies in that photo. The light we receive from those galaxies was emitted when the universe was only a few hundred million years old.  Sonification credits: SYSTEM Sounds (M. Russo, A. Santaguida)For more information about the Hubble Space Telescope and its images, visit https://nasa.gov/hubble. || ",
+            "release_date": "2021-08-03T09:55:00-04:00",
+            "update_date": "2023-05-03T13:44:02.102687-04:00",
+            "main_image": {
+                "id": 377902,
+                "url": "http://svs.gsfc.nasa.gov/vis/a010000/a013800/a013893/HUDF_THUMB_copy.jpg",
+                "filename": "HUDF_THUMB_copy.jpg",
+                "media_type": "Image",
+                "alt_text": "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally.",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        }
+    ],
+    "sources": [],
+    "products": [],
+    "newer_versions": [],
+    "older_versions": [],
+    "alternate_versions": []
+}

@@ -1,0 +1,664 @@
+{
+    "id": 5669,
+    "url": "http://svs.gsfc.nasa.gov/5669/",
+    "page_type": "Visualization",
+    "title": "GEOS Aerosols (2025)",
+    "description": "Aerosols are tiny solid or liquid particles that float in the atmosphere and can travel long distances, affecting air quality and visibility far from their sources. This visualization still, captured for August 19, 2025 (20:00 UTC), is based on NASA's Goddard Earth Observing System (GEOS) model. The GEOS model delivers realistic, high-resolution weather and aerosol data that enable customized environmental prediction and advances in AI research.",
+    "release_date": "2026-08-10T15:15:00-04:00",
+    "update_date": "2026-08-10T17:08:45.208253-04:00",
+    "main_image": {
+        "id": 1205026,
+        "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005669/Aerosols_2025-08-19T20_00_00_1920x1080.png",
+        "filename": "Aerosols_2025-08-19T20_00_00_1920x1080.png",
+        "media_type": "Image",
+        "alt_text": "",
+        "width": 1920,
+        "height": 1080,
+        "pixels": 2073600
+    },
+    "main_video": null,
+    "main_credits": {
+        "Visualizations by": [
+            {
+                "name": "Joseph V. Ardizzone",
+                "employer": "NASA/GSFC"
+            },
+            {
+                "name": "Helen-Nicole Kostis",
+                "employer": "Science and Technology Corporation"
+            }
+        ],
+        "Scientific consulting by": [
+            {
+                "name": "Lesley Ott",
+                "employer": "NASA/GSFC"
+            }
+        ]
+    },
+    "progress": "Complete",
+    "media_groups": [
+        {
+            "id": 380698,
+            "url": "http://svs.gsfc.nasa.gov/5669/#media_group_380698",
+            "widget": "Single image",
+            "title": "",
+            "caption": "Visualization still image showing aerosols as modeled by NASA's Goddard Earth Observing System (GEOS) on August 19, 2025 (20:00 UTC).\r\n\r\nAerosols are tiny solid or liquid particles suspended in the atmosphere that can travel vast distances, affecting air quality and visibility far from their original sources. This visualization is based on the GEOS model, which provides realistic, high-resolution weather and aerosol data that enables customized environmental prediction and advances in AI research.",
+            "description": "",
+            "items": [
+                {
+                    "id": 523423,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": "",
+                    "instance": {
+                        "id": 1205026,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005669/Aerosols_2025-08-19T20_00_00_1920x1080.png",
+                        "filename": "Aerosols_2025-08-19T20_00_00_1920x1080.png",
+                        "media_type": "Image",
+                        "alt_text": "",
+                        "width": 1920,
+                        "height": 1080,
+                        "pixels": 2073600
+                    }
+                },
+                {
+                    "id": 523424,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": "",
+                    "instance": {
+                        "id": 1205027,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005669/Aerosols_2025-08-19T20_00_00_3840x2160.png",
+                        "filename": "Aerosols_2025-08-19T20_00_00_3840x2160.png",
+                        "media_type": "Image",
+                        "alt_text": "",
+                        "width": 3840,
+                        "height": 2160,
+                        "pixels": 8294400
+                    }
+                },
+                {
+                    "id": 523425,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": "",
+                    "instance": {
+                        "id": 1205028,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005669/Aerosols_2025-08-19T20_00_00_5760x3240.png",
+                        "filename": "Aerosols_2025-08-19T20_00_00_5760x3240.png",
+                        "media_type": "Image",
+                        "alt_text": "",
+                        "width": 5760,
+                        "height": 3240,
+                        "pixels": 18662400
+                    }
+                },
+                {
+                    "id": 523426,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": "",
+                    "instance": {
+                        "id": 1205029,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005669/Aerosols_2025-08-19T20_00_00_7680x4320.png",
+                        "filename": "Aerosols_2025-08-19T20_00_00_7680x4320.png",
+                        "media_type": "Image",
+                        "alt_text": "",
+                        "width": 7680,
+                        "height": 4320,
+                        "pixels": 33177600
+                    }
+                }
+            ],
+            "extra_data": {}
+        },
+        {
+            "id": 380700,
+            "url": "http://svs.gsfc.nasa.gov/5669/#media_group_380700",
+            "widget": "Basic text",
+            "title": "",
+            "caption": "",
+            "description": "NASA uses satellites, ground measurements, and powerful computer models to track tiny particles floating in our air called aerosols. These small solid or liquid particles can travel thousands of miles, affecting the air we breathe and how far we can see, even far from where they originated.\r\n\r\nThis visualization still, shows how these particles travel through Earth's atmosphere on August 19, 2025 (20:00 UTC) . Different colors represent different types of aerosols: sea salt (blue), dust (pink/magenta), smoke from fires (orange/red), and sulfates from pollution and volcanoes (green).\r\n\r\nThis visualization still image highlights several atmopsheric phenomena:\r\n\r\n**Hurricane Erin**: As the first Atlantic hurricane of the 2025 season, Erin is visible in the Atlantic Ocean pulling in dust from Africa. The storm's powerful winds churn up ocean water, creating sea salt particles visible as blue spirals. Although it steered clear of making a direct landfall, the hurricane delivered heavy rain and tropical storm conditions to coastal areas of Puerto Rico, the Turks and Caicos Islands, the Bahamas, and the U.S. Atlantic coast.\r\n\r\n**Saharan Dust Journey**: Desert dust from the Sahara travels all the way across the Atlantic Ocean, creating hazy skies in the Caribbean and affecting air quality as it reaches the United States.\r\n\r\n**Volcanic Plumes**: Hawaii's Kilauea Volcano released a narrow stream of sulfate particles moving westward, while Italy's Mount Etna created similar streams over southern Europe.\r\n\r\n**Wildfire Smoke:**\r\n\r\n* In southern Africa, seasonal agricultural burning created smoke that drifted over the Atlantic Ocean\r\n* Wildfires raged across multiple regions in Spain \r\n\r\nThe swirling blue patterns over oceans show sea salt kicked up by strong winds.\r\n\r\nThis visualization still image highlights how our atmosphere connects distant parts of the world. What happens in one region—whether natural events or human activities—can affect weather patterns and air quality thousands of miles away. By tracking these movements, NASA helps communities prepare for changes in air quality and visibility while advancing our understanding of Earth's complex atmospheric system.\r\n\r\nThe visualization was developed using NASA’s Goddard Earth Observing System (GEOS), a complex modeling and data assimilation system that creates global analyses of the Earth System. GEOS integrates satellite observations, in situ measurements, and approximately one million weather observations collected hourly to inform its models. Through the GEOS Forward Processing (FP) product, the system generates both analyses and forecasts in near real-time. Images for this visualization were created by NASA’s Global Modeling and Assimilation Office (GMAO).",
+            "items": [],
+            "extra_data": {}
+        },
+        {
+            "id": 380699,
+            "url": "http://svs.gsfc.nasa.gov/5669/#media_group_380699",
+            "widget": "Single image",
+            "title": "Print-Quality Version (14:11 Aspect Ratio)",
+            "caption": "Visualization still image (14:11 aspect ratio) showing aerosols as modeled by NASA's Goddard Earth Observing System (GEOS) on August 19, 2025 (20:00 UTC).\r\n\r\nAerosols are tiny solid or liquid particles suspended in the atmosphere that can travel vast distances, affecting air quality and visibility far from their original sources. This visualization is based on the GEOS model, which provides realistic, high-resolution weather and aerosol data that enables customized environmental prediction and advances in AI research.\r\n\r\n*Note: A print-quality version (300 dpi) is available in this content block under \"Download\"*",
+            "description": "",
+            "items": [
+                {
+                    "id": 523428,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": "",
+                    "instance": {
+                        "id": 1205031,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005669/Aerosols_2025-08-19T20_00_00_1500x1179_72dpi.png",
+                        "filename": "Aerosols_2025-08-19T20_00_00_1500x1179_72dpi.png",
+                        "media_type": "Image",
+                        "alt_text": "",
+                        "width": 1500,
+                        "height": 1179,
+                        "pixels": 1768500
+                    }
+                },
+                {
+                    "id": 523429,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": "",
+                    "instance": {
+                        "id": 1205032,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005669/Aerosols_2025-08-19T20_00_00_4200x3300_300dpi.png",
+                        "filename": "Aerosols_2025-08-19T20_00_00_4200x3300_300dpi.png",
+                        "media_type": "Image",
+                        "alt_text": "",
+                        "width": 4200,
+                        "height": 3300,
+                        "pixels": 13860000
+                    }
+                }
+            ],
+            "extra_data": {}
+        },
+        {
+            "id": 380701,
+            "url": "http://svs.gsfc.nasa.gov/5669/#media_group_380701",
+            "widget": "Single image",
+            "title": "",
+            "caption": "Colorbar for the aerosols visualization.",
+            "description": "",
+            "items": [
+                {
+                    "id": 523427,
+                    "type": "media",
+                    "extra_data": null,
+                    "title": null,
+                    "caption": "",
+                    "instance": {
+                        "id": 1205030,
+                        "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005669/Aerosols_cbar.png",
+                        "filename": "Aerosols_cbar.png",
+                        "media_type": "Image",
+                        "alt_text": "",
+                        "width": 1500,
+                        "height": 300,
+                        "pixels": 450000
+                    }
+                }
+            ],
+            "extra_data": {}
+        }
+    ],
+    "studio": "svs",
+    "funding_sources": [],
+    "credits": [
+        {
+            "role": "Data visualizer",
+            "people": [
+                {
+                    "name": "Joseph V. Ardizzone",
+                    "employer": "NASA/GSFC"
+                },
+                {
+                    "name": "Helen-Nicole Kostis",
+                    "employer": "Science and Technology Corporation"
+                }
+            ]
+        },
+        {
+            "role": "Scientist",
+            "people": [
+                {
+                    "name": "Lesley Ott",
+                    "employer": "NASA/GSFC"
+                }
+            ]
+        }
+    ],
+    "missions": [],
+    "series": [],
+    "tapes": [],
+    "papers": [],
+    "datasets": [
+        {
+            "name": "GEOS Forward Processing 2Km Replay",
+            "common_name": "GEOS-FP 2Km Replay",
+            "platform": null,
+            "sensor": null,
+            "type": "Model",
+            "organizations": [],
+            "description": "",
+            "credit": "",
+            "url": "",
+            "date_range": "August 19, 2025"
+        }
+    ],
+    "nasa_science_categories": [
+        "Earth"
+    ],
+    "keywords": [
+        "Aerosol Optical Depth/Thickness",
+        "GEOS",
+        "Models"
+    ],
+    "recommended_pages": [
+        {
+            "id": 5668,
+            "url": "http://svs.gsfc.nasa.gov/5668/",
+            "page_type": "Visualization",
+            "title": "Unprecedented Wildfires in the Pacific Northwest Engulf the Region in Smoke",
+            "description": "Record-breaking wildfires impacted the Pacific Northwest. Watch how NASA’s GEOS model tracks the long-range transport of wildfire smoke as it travels across the continent. Additionally, Sentinel satellite imagery reveals the localized ground-level aftermath, showing burn scars and fire spread near Spokane, WA, as well as throughout Washington and Oregon.",
+            "release_date": "2026-08-06T00:00:00-04:00",
+            "update_date": "2026-08-06T14:58:08.086728-04:00",
+            "main_image": {
+                "id": 1204991,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005668/SmokeIntensity_PacificNW_1920x1080.png",
+                "filename": "SmokeIntensity_PacificNW_1920x1080.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        },
+        {
+            "id": 5666,
+            "url": "http://svs.gsfc.nasa.gov/5666/",
+            "page_type": "Visualization",
+            "title": "Smoke from Record-Breaking Wildfires in Spain and France",
+            "description": "Record-breaking wildfires in July 2026 severely impacted European air quality. Watch how NASA’s GEOS model tracks the dramatic transport of wildfire smoke across the continent, alongside two NASA FEDS visualizations showing the rapid expansion of active fire perimeters in Madrid, Spain, and Bordeaux, France.",
+            "release_date": "2026-07-30T16:02:00-04:00",
+            "update_date": "2026-08-25T15:32:16.461583-04:00",
+            "main_image": {
+                "id": 1204875,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005666/SmokeIntensity_EuropeanWildfires_1920x1080.png",
+                "filename": "SmokeIntensity_EuropeanWildfires_1920x1080.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        },
+        {
+            "id": 5665,
+            "url": "http://svs.gsfc.nasa.gov/5665/",
+            "page_type": "Visualization",
+            "title": "Long-range Transport of 2026 Canadian Wildfire Smoke into the United States (July 14-20, 2026)",
+            "description": "Powered by NASA's GEOS model, this animation visualizes the transport of brown carbon from July 14 to 20, 2026, and its impact on U.S. air quality.",
+            "release_date": "2026-07-20T13:30:00-04:00",
+            "update_date": "2026-07-22T11:17:40.880015-04:00",
+            "main_image": {
+                "id": 1204626,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005665/CanadianWildfires_WithActiveFireLocations_07202026_1920x1080.png",
+                "filename": "CanadianWildfires_WithActiveFireLocations_07202026_1920x1080.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        },
+        {
+            "id": 5664,
+            "url": "http://svs.gsfc.nasa.gov/5664/",
+            "page_type": "Visualization",
+            "title": "Long-range Transport of 2026 Canadian Wildfire Smoke into the United States (July 14-17, 2026)",
+            "description": "Powered by NASA's GEOS model, this animation visualizes the transport of brown carbon from July 14 to 17, 2026, and its impact on U.S. air quality.",
+            "release_date": "2026-07-17T18:00:00-04:00",
+            "update_date": "2026-07-23T09:21:29.709358-04:00",
+            "main_image": {
+                "id": 1204624,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005664/CanadianWildfires_WithActiveFireLocations_07172026_1920x1080.png",
+                "filename": "CanadianWildfires_WithActiveFireLocations_07172026_1920x1080.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        },
+        {
+            "id": 5639,
+            "url": "http://svs.gsfc.nasa.gov/5639/",
+            "page_type": "Visualization",
+            "title": "Daily Visualizations of the Largest Wildfires in the United States: 2026",
+            "description": "Wildland fires pose significant threats to ecosystems, property, and human lives. Leveraging NASA’s satellite data, advanced models, visualization capacity and computing power, we analyze fire events, monitor how weather conditions impact fires and how regional air quality affects communities. Through this webpage we offer daily updated visualizations of the two largest active wildfires events in the continental United States throughout fire season.",
+            "release_date": "2026-06-08T22:00:00-04:00",
+            "update_date": "2026-11-14T02:00:13.716995-05:00",
+            "main_image": {
+                "id": 1204334,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005639/daily_wildfires_preview_image.png",
+                "filename": "daily_wildfires_preview_image.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        },
+        {
+            "id": 5624,
+            "url": "http://svs.gsfc.nasa.gov/5624/",
+            "page_type": "Visualization",
+            "title": "Global Smoke Forecast Visualization (Daily Updated)",
+            "description": "This daily global wildfire smoke visualization uses NASA's GEOS-FP model to show smoke transport patterns from yesterday through four days ahead. The visualization shows wildfire smoke intensity based on brown carbon aerosol optical depth, using a 0-1 scale with colors ranging from light brown/red to dark brown. Wildfire smoke contains dangerous PM2.5 particles and can travel thousands of miles, making tracking essential for understanding air quality impacts.",
+            "release_date": "2026-05-29T18:59:59-04:00",
+            "update_date": "2026-11-14T01:00:03.250337-05:00",
+            "main_image": {
+                "id": 1204169,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005624/GMAO_global_smoke_forecast_1024x512.png",
+                "filename": "GMAO_global_smoke_forecast_1024x512.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        },
+        {
+            "id": 5631,
+            "url": "http://svs.gsfc.nasa.gov/5631/",
+            "page_type": "Visualization",
+            "title": "Long-range Transport of 2023 Canadian Wildfire Smoke into the Northeastern United States",
+            "description": "In summer 2023, Canada experienced its most intense wildfire season on record. Smoke from wildfires in Alberta and Quebec was transported thousands of miles, driven by favorable meteorological conditions, resulting in record-breaking poor air quality across the northeastern United States. This animation, powered by NASA's GEOS model, visualizes aerosol transport from May 31 – July 7, 2023 — the period of most dramatic impact on eastern U.S. air quality.",
+            "release_date": "2026-04-27T16:00:00-04:00",
+            "update_date": "2026-06-01T23:59:43.101190-04:00",
+            "main_image": {
+                "id": 1203439,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005600/a005631/CanadianWildfires2023_SmokeIntensity_Sphere_1024x576.png",
+                "filename": "CanadianWildfires2023_SmokeIntensity_Sphere_1024x576.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 1024,
+                "height": 576,
+                "pixels": 589824
+            }
+        }
+    ],
+    "related": [
+        {
+            "id": 14899,
+            "url": "http://svs.gsfc.nasa.gov/14899/",
+            "page_type": "Produced Video",
+            "title": "Inside the Visualization: Aerosols",
+            "description": "Complete transcript available. || YTframe_Design_DEMO_v01.jpg (1920x1080) [1.2 MB] || YTframe_Design_DEMO_v01_print.jpg (1024x576) [623.1 KB] || YTframe_Design_DEMO_v01_searchweb.png (320x180) [107.3 KB] || YTframe_Design_DEMO_v01_web.png (320x180) [107.3 KB] || YTframe_Design_DEMO_v01_thm.png (80x40) [7.9 KB] || 11_09_Inside_The_Visualization_Final2.webm (3840x2160) [68.2 MB] || 11_09_Inside_The_Visualization_Final2.mp4 (3840x2160) [1.7 GB] || ",
+            "release_date": "2025-09-14T00:00:00-04:00",
+            "update_date": "2025-09-23T11:05:05-04:00",
+            "main_image": {
+                "id": 1158256,
+                "url": "http://svs.gsfc.nasa.gov/vis/a010000/a014800/a014899/YTframe_Design_DEMO_v01.jpg",
+                "filename": "YTframe_Design_DEMO_v01.jpg",
+                "media_type": "Image",
+                "alt_text": "Complete transcript available.",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        },
+        {
+            "id": 5572,
+            "url": "http://svs.gsfc.nasa.gov/5572/",
+            "page_type": "Visualization",
+            "title": "GEOS Aerosols",
+            "description": "Aerosols are tiny solid or liquid particles that float in the atmosphere and can travel long distances, affecting air quality and visibility far from their sources. This visualization covers the period from August 1 to September 14, 2024, and is based on NASA's Goddard Earth Observing System (GEOS) model, which delivers realistic, high-resolution weather and aerosol data that enable customized environmental prediction and advances in AI research.",
+            "release_date": "2025-08-08T14:00:02-04:00",
+            "update_date": "2026-04-15T14:50:55.726218-04:00",
+            "main_image": {
+                "id": 1157349,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005500/a005572/Aerosols_1920x647_30p_0000.png",
+                "filename": "Aerosols_1920x647_30p_0000.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 1920,
+                "height": 647,
+                "pixels": 1242240
+            }
+        },
+        {
+            "id": 5552,
+            "url": "http://svs.gsfc.nasa.gov/5552/",
+            "page_type": "Visualization",
+            "title": "Science On A Sphere: Aerosols in the Air",
+            "description": "NASA merges observations, advanced models and computing power to monitor aerosols in the atmosphere. Aerosols are tiny invisible solid or liquid particles that float in the atmosphere and can travel long distances affecting air quality and visibility far from their source. These particles come from natural and human sources and include black carbon (orange/red), sea salt (cyan), dust (magenta) and sulfates (green).",
+            "release_date": "2025-06-23T09:00:00-04:00",
+            "update_date": "2026-01-14T13:38:39.274274-05:00",
+            "main_image": {
+                "id": 1156371,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005500/a005552/SOS_Aerosols_1024x512.png",
+                "filename": "SOS_Aerosols_1024x512.png",
+                "media_type": "Image",
+                "alt_text": "Visualization of aerosols by NASA's Goddard Earth Observing (GEOS) model.",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        },
+        {
+            "id": 5533,
+            "url": "http://svs.gsfc.nasa.gov/5533/",
+            "page_type": "Visualization",
+            "title": "Air Quality Model Runs",
+            "description": "NASA utilizes satellite instruments and models to monitor sources of air pollutants and their movement through the atmosphere. This visualization shows concentrations of air pollutants, such as Particulate Matter (PM2.5, fine particles smaller than 2.5 micrometers), Ozone (O~3~), Carbon Monoxide (CO), and Nitrogen Oxides (NO~x~) as they are tracked from NASA's Goddard Earth Observing System Composition Forecasting (GEOS-CF) system.",
+            "release_date": "2025-05-05T12:30:00-04:00",
+            "update_date": "2026-01-28T17:21:23.820283-05:00",
+            "main_image": {
+                "id": 1154743,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005500/a005533/AirQuality_Sphere_1920x1080_0000.png",
+                "filename": "AirQuality_Sphere_1920x1080_0000.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        },
+        {
+            "id": 5518,
+            "url": "http://svs.gsfc.nasa.gov/5518/",
+            "page_type": "Visualization",
+            "title": "Science On A Sphere: Air Quality Model Runs",
+            "description": "NASA utilizes satellite instruments and models to monitor sources of air pollutants and their movement through the atmosphere. This visualization shows concentrations of air pollutants, such as Particulate Matter (PM2.5, fine particles smaller than 2.5 micrometers), Ozone (O~3~), Carbon Monoxide (CO), and Nitrogen Oxides (NO~x~) as they are tracked from NASA's Goddard Earth Observing System Composition Forecasting (GEOS-CF) system.",
+            "release_date": "2025-05-05T11:30:00-04:00",
+            "update_date": "2026-02-18T21:16:12.213175-05:00",
+            "main_image": {
+                "id": 1156851,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005500/a005518/AirQuality_1920x1080_preview.png",
+                "filename": "AirQuality_1920x1080_preview.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 1920,
+                "height": 1080,
+                "pixels": 2073600
+            }
+        },
+        {
+            "id": 5147,
+            "url": "http://svs.gsfc.nasa.gov/5147/",
+            "page_type": "Visualization",
+            "title": "GEOS-FP Near-Surface Temperature",
+            "description": "Near-surface temperature is calculated by sampling 3-D atmospheric fields from NASA’s GEOS-FP system 3 meters above Earth’s surface. GEOS-FP combines millions of weather observations with a predictive model to create a global best estimate of weather conditions that are used to begin a forecast.",
+            "release_date": "2023-09-26T17:00:00-04:00",
+            "update_date": "2026-11-14T02:00:14.958609-05:00",
+            "main_image": {
+                "id": 858328,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005100/a005147/MC01_stage3_GMAO_near_surface_temperature_2048x1024_en.00001_print.jpg",
+                "filename": "MC01_stage3_GMAO_near_surface_temperature_2048x1024_en.00001_print.jpg",
+                "media_type": "Image",
+                "alt_text": "Near surface temperature is calculated by sampling 3-D atmospheric fields from NASA’s GEOS-FP system 3 meters above Earth’s surface. GEOS-FP combines millions of weather observations with a predictive model to create a global best estimate of weather conditions that are used to begin a forecast.",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        },
+        {
+            "id": 5148,
+            "url": "http://svs.gsfc.nasa.gov/5148/",
+            "page_type": "Visualization",
+            "title": "GEOS-FP Near-Surface Wind Speed",
+            "description": "Near-surface wind speed is calculated by sampling 3-D atmospheric fields from NASA’s GEOS-FP system 10 meters above Earth’s surface. GEOS-FP combines millions of weather observations with a predictive model to create a global best estimate of weather conditions that are used to begin a forecast.",
+            "release_date": "2023-09-26T17:00:00-04:00",
+            "update_date": "2026-11-14T02:00:23.891294-05:00",
+            "main_image": {
+                "id": 858325,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005100/a005148/MC02_stage3_GMAO_near_surface_wind_2048x1024_en.00001_print.jpg",
+                "filename": "MC02_stage3_GMAO_near_surface_wind_2048x1024_en.00001_print.jpg",
+                "media_type": "Image",
+                "alt_text": "Near-surface wind speed is calculated by sampling 3-D atmospheric fields from NASA’s GEOS-FP system 10 meters above Earth’s surface. GEOS-FP combines millions of weather observations with a predictive model to create a global best estimate of weather conditions that are used to begin a forecast.",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        },
+        {
+            "id": 5149,
+            "url": "http://svs.gsfc.nasa.gov/5149/",
+            "page_type": "Visualization",
+            "title": "GEOS-FP Precipitation and Clouds",
+            "description": "Precipitation and clouds are calculated using fields from NASA’s GEOS-FP system. GEOS-FP combines millions of weather observations with a predictive model to create a global best estimate of weather conditions, which can be used to estimate the formation of clouds along with rain and snowfall.",
+            "release_date": "2023-09-26T17:00:00-04:00",
+            "update_date": "2026-11-14T02:00:49.687402-05:00",
+            "main_image": {
+                "id": 858332,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005100/a005149/MC03_stage3_GMAO_precipitation_2048x1024_en.00001_print.jpg",
+                "filename": "MC03_stage3_GMAO_precipitation_2048x1024_en.00001_print.jpg",
+                "media_type": "Image",
+                "alt_text": "Precipitation and clouds are calculated using fields from NASA’s GEOS-FP system. GEOS-FP combines millions of weather observations with a predictive model to create a global best estimate of weather conditions, which can be used to estimate the formation of clouds along with rain and snowfall.",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        },
+        {
+            "id": 5150,
+            "url": "http://svs.gsfc.nasa.gov/5150/",
+            "page_type": "Visualization",
+            "title": "GEOS-FP Near-Surface Humidity",
+            "description": "Near-surface Humidity, also known as specific humidity (Q2M) from NASA’s GEOS-FP system. GEOS-FP combines millions of weather observations with a predictive model to create a global best estimate of weather conditions that are used to begin a forecast.",
+            "release_date": "2023-09-26T17:00:00-04:00",
+            "update_date": "2026-11-14T02:00:56.359417-05:00",
+            "main_image": {
+                "id": 1202189,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005100/a005150/MC04_stage3_GMAO_near_surface_humidity_2048x1024.png",
+                "filename": "MC04_stage3_GMAO_near_surface_humidity_2048x1024.png",
+                "media_type": "Image",
+                "alt_text": "",
+                "width": 2048,
+                "height": 1024,
+                "pixels": 2097152
+            }
+        },
+        {
+            "id": 5151,
+            "url": "http://svs.gsfc.nasa.gov/5151/",
+            "page_type": "Visualization",
+            "title": "Particulate Matter (PM) 2.5",
+            "description": "Near surface concentration of fine particular matter (PM2.5) estimated from NASA’s aerosol and weather fields produced by NASA’s GEOS-CF model.",
+            "release_date": "2023-09-26T17:00:00-04:00",
+            "update_date": "2026-11-14T02:00:58.490675-05:00",
+            "main_image": {
+                "id": 858344,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005100/a005151/MC01_stage4_GMAO_pm25_2048x1024_en.00001_print.jpg",
+                "filename": "MC01_stage4_GMAO_pm25_2048x1024_en.00001_print.jpg",
+                "media_type": "Image",
+                "alt_text": "Near surface concentration of fine particular matter (PM2.5) estimated from NASA’s aerosol and weather fields produced by NASA’s GEOS-CF model.",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        },
+        {
+            "id": 5152,
+            "url": "http://svs.gsfc.nasa.gov/5152/",
+            "page_type": "Visualization",
+            "title": "Near surface Ozone (O3)",
+            "description": "Near surface concentration of ozone (O3) estimated by NASA’s GEOS-CF model.",
+            "release_date": "2023-09-26T17:00:00-04:00",
+            "update_date": "2026-11-14T02:01:04.513176-05:00",
+            "main_image": {
+                "id": 858348,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005100/a005152/MC02_stage4_GMAO_O3_2048x1024_en.00001_print.jpg",
+                "filename": "MC02_stage4_GMAO_O3_2048x1024_en.00001_print.jpg",
+                "media_type": "Image",
+                "alt_text": "Near surface concentration of ozone (O3) estimated by NASA’s GEOS-CF model.",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        },
+        {
+            "id": 5153,
+            "url": "http://svs.gsfc.nasa.gov/5153/",
+            "page_type": "Visualization",
+            "title": "Carbon Monoxide (CO)",
+            "description": "Near surface concentration of carbon monoxide (CO) estimated by NASA’s GEOS-CF model.",
+            "release_date": "2023-09-26T17:00:00-04:00",
+            "update_date": "2026-11-14T02:01:07.983049-05:00",
+            "main_image": {
+                "id": 858352,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005100/a005153/MC03_stage4_GMAO_CO_2048x1024_en.00001_print.jpg",
+                "filename": "MC03_stage4_GMAO_CO_2048x1024_en.00001_print.jpg",
+                "media_type": "Image",
+                "alt_text": "Near surface concentration of carbon monoxide (CO) estimated by NASA’s GEOS-CF model.",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        },
+        {
+            "id": 5154,
+            "url": "http://svs.gsfc.nasa.gov/5154/",
+            "page_type": "Visualization",
+            "title": "Nitrogen Oxides (NOx)",
+            "description": "Near surface concentration of Nitrogen Oxides (NOx) estimated from concentrations of nitrogen oxide and nitrogen dioxide produced by  NASA’s GEOS-CF model.",
+            "release_date": "2023-09-26T17:00:00-04:00",
+            "update_date": "2026-11-14T02:01:12.293142-05:00",
+            "main_image": {
+                "id": 858357,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005100/a005154/MC04_stage4_GMAO_NO2_2048x1024_en.00001_print.jpg",
+                "filename": "MC04_stage4_GMAO_NO2_2048x1024_en.00001_print.jpg",
+                "media_type": "Image",
+                "alt_text": "Near surface concentration of Nitrogen Oxides (NOx) estimated from concentrations of nitrogen oxide and nitrogen dioxide produced by NASA’s GEOS-CF model.",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        }
+    ],
+    "sources": [],
+    "products": [],
+    "newer_versions": [],
+    "older_versions": [],
+    "alternate_versions": [
+        {
+            "id": 5552,
+            "url": "http://svs.gsfc.nasa.gov/5552/",
+            "page_type": "Visualization",
+            "title": "Science On A Sphere: Aerosols in the Air",
+            "description": "NASA merges observations, advanced models and computing power to monitor aerosols in the atmosphere. Aerosols are tiny invisible solid or liquid particles that float in the atmosphere and can travel long distances affecting air quality and visibility far from their source. These particles come from natural and human sources and include black carbon (orange/red), sea salt (cyan), dust (magenta) and sulfates (green).",
+            "release_date": "2025-06-23T09:00:00-04:00",
+            "update_date": "2026-01-14T13:38:39.274274-05:00",
+            "main_image": {
+                "id": 1156371,
+                "url": "http://svs.gsfc.nasa.gov/vis/a000000/a005500/a005552/SOS_Aerosols_1024x512.png",
+                "filename": "SOS_Aerosols_1024x512.png",
+                "media_type": "Image",
+                "alt_text": "Visualization of aerosols by NASA's Goddard Earth Observing (GEOS) model.",
+                "width": 1024,
+                "height": 512,
+                "pixels": 524288
+            }
+        }
+    ]
+}

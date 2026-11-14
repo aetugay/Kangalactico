@@ -1,0 +1,775 @@
+{
+ "generated": "2026-11-14T11:50:46.911Z",
+ "reference": "5544 nrt_ndvi_equi_2048p30.mp4 kare 929 (API: equirectangular), FULL sınırlar varsayıldı",
+ "sets": {
+  "3912": {
+   "file": "raw/3912/ecco2_sst_flow.mp4",
+   "frame": {
+    "frame": 1000
+   },
+   "size": [
+    2048,
+    1024
+   ],
+   "region": {
+    "x0": 0,
+    "x1": 2048
+   },
+   "latBand": [
+    -85,
+    85
+   ],
+   "bounds": {
+    "lonL": -180.15,
+    "lonR": 180.05,
+    "latT": 90.1,
+    "latB": -90
+   },
+   "match": 0.9761,
+   "matchIfFull": 0.9756,
+   "points": [
+    {
+     "name": "Sivas",
+     "px": {
+      "x": 1234.8,
+      "y": 286.3
+     },
+     "dx": 1,
+     "dy": 0,
+     "errPx": 1,
+     "errKm": 15,
+     "kmPerPx": {
+      "x": 15.04,
+      "y": 19.56
+     },
+     "matchAt0": 0.9442,
+     "matchBest": 0.9483,
+     "landFrac": 0.65,
+     "measurable": true
+    },
+    {
+     "name": "Tokyo",
+     "px": {
+      "x": 1818.5,
+      "y": 309.4
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 15.88,
+      "y": 19.56
+     },
+     "matchAt0": 0.9517,
+     "matchBest": 0.9517,
+     "landFrac": 0.11,
+     "measurable": true
+    },
+    {
+     "name": "Lagos",
+     "px": {
+      "x": 1043.6,
+      "y": 475.6
+     },
+     "dx": 1,
+     "dy": 0,
+     "errPx": 1,
+     "errKm": 19.4,
+     "kmPerPx": {
+      "x": 19.43,
+      "y": 19.56
+     },
+     "matchAt0": 0.9771,
+     "matchBest": 0.9813,
+     "landFrac": 0.6,
+     "measurable": true
+    },
+    {
+     "name": "New York",
+     "px": {
+      "x": 603.5,
+      "y": 280.8
+     },
+     "dx": -1,
+     "dy": 0,
+     "errPx": 1,
+     "errKm": 14.8,
+     "kmPerPx": {
+      "x": 14.82,
+      "y": 19.56
+     },
+     "matchAt0": 0.9569,
+     "matchBest": 0.9633,
+     "landFrac": 0.58,
+     "measurable": true
+    },
+    {
+     "name": "Sidney",
+     "px": {
+      "x": 1884,
+      "y": 704.9
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 16.24,
+      "y": 19.56
+     },
+     "matchAt0": 0.9843,
+     "matchBest": 0.9843,
+     "landFrac": 0.45,
+     "measurable": true
+    }
+   ]
+  },
+  "5011": {
+   "file": "raw/5011/iss_lightning_sos_2048x1024.mp4",
+   "frame": {
+    "medianFps": 0.15
+   },
+   "size": [
+    2048,
+    1024
+   ],
+   "region": {
+    "x0": 0,
+    "x1": 2048
+   },
+   "latBand": [
+    -45,
+    45
+   ],
+   "bounds": {
+    "lonL": -180.2,
+    "lonR": 180,
+    "latT": 90.4,
+    "latB": -90.8
+   },
+   "match": 0.927,
+   "matchIfFull": 0.9242,
+   "points": [
+    {
+     "name": "Sivas",
+     "px": {
+      "x": 1235,
+      "y": 286.2
+     },
+     "dx": 1,
+     "dy": 0,
+     "errPx": 1,
+     "errKm": 15,
+     "kmPerPx": {
+      "x": 15.04,
+      "y": 19.68
+     },
+     "matchAt0": 0.8541,
+     "matchBest": 0.8559,
+     "landFrac": 0.48,
+     "measurable": true
+    },
+    {
+     "name": "Tokyo",
+     "px": {
+      "x": 1818.8,
+      "y": 309.2
+     },
+     "dx": -1,
+     "dy": -1,
+     "errPx": 1.41,
+     "errKm": 25.3,
+     "kmPerPx": {
+      "x": 15.88,
+      "y": 19.68
+     },
+     "matchAt0": 0.9093,
+     "matchBest": 0.9105,
+     "landFrac": 0.06,
+     "measurable": true
+    },
+    {
+     "name": "Lagos",
+     "px": {
+      "x": 1043.9,
+      "y": 474.4
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 19.43,
+      "y": 19.68
+     },
+     "matchAt0": 0.7679,
+     "matchBest": 0.7679,
+     "landFrac": 0.47,
+     "measurable": true
+    },
+    {
+     "name": "New York",
+     "px": {
+      "x": 603.8,
+      "y": 280.8
+     },
+     "dx": -8,
+     "dy": -1,
+     "errPx": 8.06,
+     "errKm": 120.2,
+     "kmPerPx": {
+      "x": 14.82,
+      "y": 19.68
+     },
+     "matchAt0": 0.7587,
+     "matchBest": 0.8312,
+     "landFrac": 0.38,
+     "measurable": true
+    },
+    {
+     "name": "Sidney",
+     "px": {
+      "x": 1884.3,
+      "y": 702.3
+     },
+     "dx": -1,
+     "dy": -1,
+     "errPx": 1.41,
+     "errKm": 25.5,
+     "kmPerPx": {
+      "x": 16.24,
+      "y": 19.68
+     },
+     "matchAt0": 0.8499,
+     "matchBest": 0.8569,
+     "landFrac": 0.3,
+     "measurable": true
+    }
+   ]
+  },
+  "5313-sol": {
+   "file": "raw/5313/nightlights_flat_series_and_change_wZooms_13_EIC_2160p30_h265.mp4",
+   "frame": {
+    "frame": 60
+   },
+   "size": [
+    7680,
+    2160
+   ],
+   "region": {
+    "x0": 0,
+    "x1": 3840
+   },
+   "latBand": [
+    -85,
+    85
+   ],
+   "bounds": {
+    "lonL": -168.575,
+    "lonR": 191.325,
+    "latT": 89.95,
+    "latB": -89.925
+   },
+   "match": 0.9905,
+   "matchIfFull": 0.8372,
+   "points": [
+    {
+     "name": "Sivas",
+     "px": {
+      "x": 2193.6,
+      "y": 602.8
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 8.01,
+      "y": 9.26
+     },
+     "matchAt0": 0.9778,
+     "matchBest": 0.9778,
+     "landFrac": 0.7,
+     "measurable": true
+    },
+    {
+     "name": "Tokyo",
+     "px": {
+      "x": 3289.1,
+      "y": 651.6
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 8.46,
+      "y": 9.26
+     },
+     "matchAt0": 0.9807,
+     "matchBest": 0.9807,
+     "landFrac": 0.16,
+     "measurable": true
+    },
+    {
+     "name": "Lagos",
+     "px": {
+      "x": 1834.9,
+      "y": 1002.6
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 10.36,
+      "y": 9.26
+     },
+     "matchAt0": 0.9897,
+     "matchBest": 0.9897,
+     "landFrac": 0.62,
+     "measurable": true
+    },
+    {
+     "name": "New York",
+     "px": {
+      "x": 1009,
+      "y": 591.3
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 7.9,
+      "y": 9.26
+     },
+     "matchAt0": 0.9775,
+     "matchBest": 0.9775,
+     "landFrac": 0.61,
+     "measurable": true
+    },
+    {
+     "name": "Sidney",
+     "px": {
+      "x": 3412,
+      "y": 1486.9
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 8.65,
+      "y": 9.26
+     },
+     "matchAt0": 0.9882,
+     "matchBest": 0.9882,
+     "landFrac": 0.47,
+     "measurable": true
+    }
+   ]
+  },
+  "5313-sag": {
+   "file": "raw/5313/nightlights_flat_series_and_change_wZooms_13_EIC_2160p30_h265.mp4",
+   "frame": {
+    "frame": 60
+   },
+   "size": [
+    7680,
+    2160
+   ],
+   "region": {
+    "x0": 3840,
+    "x1": 7680
+   },
+   "latBand": [
+    -85,
+    85
+   ],
+   "bounds": {
+    "lonL": -168.7,
+    "lonR": 191.1,
+    "latT": 89.95,
+    "latB": -89.9
+   },
+   "match": 0.9901,
+   "matchIfFull": 0.8383,
+   "points": [
+    {
+     "name": "Sivas",
+     "px": {
+      "x": 6035.5,
+      "y": 602.9
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 8.01,
+      "y": 9.26
+     },
+     "matchAt0": 0.9794,
+     "matchBest": 0.9794,
+     "landFrac": 0.7,
+     "measurable": true
+    },
+    {
+     "name": "Tokyo",
+     "px": {
+      "x": 7131.3,
+      "y": 651.7
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 8.46,
+      "y": 9.26
+     },
+     "matchAt0": 0.9789,
+     "matchBest": 0.9789,
+     "landFrac": 0.16,
+     "measurable": true
+    },
+    {
+     "name": "Lagos",
+     "px": {
+      "x": 5676.7,
+      "y": 1002.8
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 10.35,
+      "y": 9.26
+     },
+     "matchAt0": 0.9878,
+     "matchBest": 0.9878,
+     "landFrac": 0.63,
+     "measurable": true
+    },
+    {
+     "name": "New York",
+     "px": {
+      "x": 4850.6,
+      "y": 591.3
+     },
+     "dx": 1,
+     "dy": -1,
+     "errPx": 1.41,
+     "errKm": 12.2,
+     "kmPerPx": {
+      "x": 7.9,
+      "y": 9.26
+     },
+     "matchAt0": 0.9745,
+     "matchBest": 0.9759,
+     "landFrac": 0.62,
+     "measurable": true
+    },
+    {
+     "name": "Sidney",
+     "px": {
+      "x": 7254.3,
+      "y": 1487.1
+     },
+     "dx": 0,
+     "dy": -1,
+     "errPx": 1,
+     "errKm": 9.3,
+     "kmPerPx": {
+      "x": 8.65,
+      "y": 9.26
+     },
+     "matchAt0": 0.9877,
+     "matchBest": 0.9886,
+     "landFrac": 0.46,
+     "measurable": true
+    }
+   ]
+  },
+  "5544-oz": {
+   "file": "raw/5544/nrt_ndvi_equi_2048p30.mp4",
+   "frame": {
+    "frame": 0
+   },
+   "size": [
+    4096,
+    2048
+   ],
+   "region": {
+    "x0": 0,
+    "x1": 4096
+   },
+   "latBand": [
+    -85,
+    85
+   ],
+   "bounds": {
+    "lonL": -180,
+    "lonR": 180,
+    "latT": 90,
+    "latB": -90
+   },
+   "match": 0.9982,
+   "matchIfFull": 0.9977,
+   "points": [
+    {
+     "name": "Sivas",
+     "px": {
+      "x": 2469.2,
+      "y": 571.8
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 7.51,
+      "y": 9.77
+     },
+     "matchAt0": 0.997,
+     "matchBest": 0.997,
+     "landFrac": 0.69,
+     "measurable": true
+    },
+    {
+     "name": "Tokyo",
+     "px": {
+      "x": 3637.4,
+      "y": 617.9
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 7.94,
+      "y": 9.77
+     },
+     "matchAt0": 0.9954,
+     "matchBest": 0.9954,
+     "landFrac": 0.15,
+     "measurable": true
+    },
+    {
+     "name": "Lagos",
+     "px": {
+      "x": 2086.6,
+      "y": 950.6
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 9.71,
+      "y": 9.77
+     },
+     "matchAt0": 0.998,
+     "matchBest": 0.998,
+     "landFrac": 0.62,
+     "measurable": true
+    },
+    {
+     "name": "New York",
+     "px": {
+      "x": 1206,
+      "y": 560.8
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 7.41,
+      "y": 9.77
+     },
+     "matchAt0": 0.9951,
+     "matchBest": 0.9951,
+     "landFrac": 0.62,
+     "measurable": true
+    },
+    {
+     "name": "Sidney",
+     "px": {
+      "x": 3768.4,
+      "y": 1409.4
+     },
+     "dx": 0,
+     "dy": 0,
+     "errPx": 0,
+     "errKm": 0,
+     "kmPerPx": {
+      "x": 8.11,
+      "y": 9.77
+     },
+     "matchAt0": 0.9981,
+     "matchBest": 0.9981,
+     "landFrac": 0.46,
+     "measurable": true
+    }
+   ]
+  }
+ },
+ "extra": {
+  "4950": {
+   "note": "Küre (3B, hareketli kamera) → lat/lon dönüşümü YOK."
+  },
+  "5011": {
+   "method": "ek görsel kontrol: medyan arka plan, kontrast×7 kırpımları (raw/_check/vis_5011_c.png), FULL sınırlar",
+   "points": [
+    {
+     "name": "Samsun/Tokyo/Lagos/New York/Sidney",
+     "errPx": "≤1",
+     "note": "kıyı çizgisi artıda"
+    }
+   ],
+   "note": "Maske yöntemi New York’ta 8 px verdi: ABD kuzeydoğusunda kara (13–20) okyanus (20) kadar koyu → maske orada güvenilmez; görsel kontrol ±1 px. Kullanılan sınırlar: FULL."
+  },
+  "5147": {
+   "method": "görsel: kırpım + kırmızı artı (raw/_check/vis_5147_5669.png), FULL sınırlar",
+   "bounds": {
+    "lonL": -180,
+    "lonR": 180,
+    "latT": 90,
+    "latB": -90
+   },
+   "size": [
+    2048,
+    1024
+   ],
+   "points": [
+    {
+     "name": "Samsun (Sivas vekili, kıyı)",
+     "errPx": "≤1",
+     "note": "kara/deniz sıcaklık sınırı artıda"
+    },
+    {
+     "name": "Tokyo",
+     "errPx": "≤1"
+    },
+    {
+     "name": "New York",
+     "errPx": "≤1"
+    },
+    {
+     "name": "Lagos",
+     "errPx": null,
+     "note": "ÖLÇÜLEMEZ: kıyıda sıcaklık kontrastı yok"
+    },
+    {
+     "name": "Sidney",
+     "errPx": null,
+     "note": "ÖLÇÜLEMEZ: kıyıda sıcaklık kontrastı yok"
+    }
+   ],
+   "kmPerPx": "x: 19.6·cos(enlem) km, y: 19.6 km",
+   "note": "Kare 0 = 2026-10-30 09:00 UTC, saatlik; kare 371 = 2026-11-14 20:00 UTC. 363–371 indirme anına (11:23 UTC) göre gelecekte → TAHMİN."
+  },
+  "5196": {
+   "note": "Küre (3B nokta bulutu, hareketli kamera) → lat/lon dönüşümü YOK."
+  },
+  "5544": {
+   "note": "Referans. Görsel kontrol (raw/_check/vis_5544.png): Samsun kıyısı, Tokyo körfezi, Lagos, NY, Sidney artıda (≤1 px). İlk ve son kare arası kayma 0 px."
+  },
+  "5669": {
+   "method": "şehir ışığı merkezi (±3 px, beyazlık = min kanal) — raw/_check/lights.mjs; FULL sınırlar 1920x1080 (16:9’a gerilmiş tam küre)",
+   "bounds": {
+    "lonL": -180,
+    "lonR": 180,
+    "latT": 90,
+    "latB": -90
+   },
+   "size": [
+    1920,
+    1080
+   ],
+   "points": [
+    {
+     "name": "Sivas",
+     "errPx": 1.09,
+     "errKm": 19
+    },
+    {
+     "name": "Tokyo",
+     "errPx": 0.48,
+     "errKm": 8.7
+    },
+    {
+     "name": "Lagos",
+     "errPx": 0.82,
+     "errKm": 15.4
+    },
+    {
+     "name": "New York",
+     "errPx": 0.51,
+     "errKm": 8
+    },
+    {
+     "name": "Sidney",
+     "errPx": 0.81,
+     "errKm": 14.1
+    }
+   ]
+  }
+ },
+ "recommendedBounds": {
+  "3912": {
+   "lonL": -180,
+   "lonR": 180,
+   "latT": 90,
+   "latB": -90
+  },
+  "5011": {
+   "lonL": -180,
+   "lonR": 180,
+   "latT": 90,
+   "latB": -90
+  },
+  "5147": {
+   "lonL": -180,
+   "lonR": 180,
+   "latT": 90,
+   "latB": -90
+  },
+  "5313": {
+   "note": "iki kopya; her biri 3840 px",
+   "left": {
+    "x0": 0,
+    "x1": 3840,
+    "lonL": -168.575,
+    "lonR": 191.325,
+    "latT": 89.95,
+    "latB": -89.925
+   },
+   "right": {
+    "x0": 3840,
+    "x1": 7680,
+    "lonL": -168.7,
+    "lonR": 191.1,
+    "latT": 89.95,
+    "latB": -89.9
+   }
+  },
+  "5544": {
+   "lonL": -180,
+   "lonR": 180,
+   "latT": 90,
+   "latB": -90
+  },
+  "5669": {
+   "lonL": -180,
+   "lonR": 180,
+   "latT": 90,
+   "latB": -90
+  }
+ },
+ "recommendedNote": "FULL önerilen yerlerde oturtulan sınırlar FULL’dan ≤0.2° (3912) / ≤0.9° (5011, gürültülü maske) farklı; şehir testleri FULL ile ≤1–1.4 px → FULL kullanılır."
+}

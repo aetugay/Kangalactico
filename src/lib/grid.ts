@@ -22,14 +22,19 @@ export class Layer {
     if (this.quant.encoding === 'sqrt') return (this.quant.max ?? 1) * (q / 254) ** 2;
     return (this.quant.offset ?? 0) + q * (this.quant.scale ?? 1);
   }
-  /** Çift doğrusal örnekleme (veri olmayan komşular ağırlıktan düşülür). Boylam sarmalanır. */
-  sample(frame: number, p: LatLon): number {
+  /**
+   * Çift doğrusal örnekleme (veri olmayan komşular ağırlıktan düşülür). Boylam sarmalanır.
+   * mode: 'sound' (varsayılan; radar/ses — kendi hücresi boşsa NaN) · 'smooth' (yalnız görsel; kıyıyı kara/deniz poligonu keser)
+   *       · 'cells' (yalnız görsel; ham hücre değeri, "veri hücrelerini göster").
+   */
+  sample(frame: number, p: LatLon, mode: 'sound' | 'smooth' | 'cells' = 'sound'): number {
     const { w, h, lonL, lonR, latT, latB } = this.grid;
     const fx = ((p.lon - lonL) / (lonR - lonL)) * w - 0.5;
     const fy = ((latT - p.lat) / (latT - latB)) * h - 0.5;
     // Noktanın KENDİ hücresinde veri yoksa NaN (ör. okyanus katmanı karada): komşu hücrelerden değer taşınmaz.
     const ci = ((Math.floor(fx + 0.5) % w) + w) % w, cj = Math.min(h - 1, Math.max(0, Math.floor(fy + 0.5)));
-    if (Number.isNaN(this.cell(frame, ci, cj))) return NaN;
+    if (mode === 'cells') return this.cell(frame, ci, cj);
+    if (mode === 'sound' && Number.isNaN(this.cell(frame, ci, cj))) return NaN;
     const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
     let s = 0, ws = 0;
     for (let dy = 0; dy <= 1; dy++) {

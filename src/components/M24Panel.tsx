@@ -23,9 +23,10 @@ interface Props {
   onPreset?: (ids: string[], name: string, removed: string[]) => void;
   /** themes: yalnız "Hazır temalar" çipleri (panelin en üstü); list: katman listesi (her zaman görünür, katlanmaz). */
   part?: 'themes' | 'list';
+  activeTheme?: string | null;
 }
 
-export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onShow, month, place, announce, onPreset, part = 'list' }: Props) {
+export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onShow, month, place, announce, onPreset, part = 'list', activeTheme = null }: Props) {
   // aylık katmanlar panel açılır açılmaz yüklenir (artık katlanmış bölümde gizli değil)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { onOpen(); }, []);
@@ -71,7 +72,7 @@ export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onSh
         <h3 className="eyebrow" id="themes-h">{en ? 'Ready-made themes' : 'Hazır temalar'}</h3>
         <div className="m24-presets" role="group" aria-labelledby="themes-h">
           {m24.meta.presets.map((p) => (
-            <button key={p.key} type="button" className="chip small-chip" onClick={() => onPreset(p.layers, p.ad, p.removed)}
+            <button key={p.key} type="button" className="chip small-chip theme-chip" aria-pressed={activeTheme === p.ad} onClick={() => onPreset(p.layers, p.ad, p.removed)}
               aria-label={p.removed.length ? `${p.ad}. ${en ? 'Not included (did not pass the data audit)' : 'Eklenmedi (veri denetiminden geçmedi)'}: ${p.removed.join(', ')}` : p.ad}
               title={p.removed.length ? (en ? `Not included (did not pass the audit): ${p.removed.join(', ')}` : `Eklenmedi (denetimden geçmedi): ${p.removed.join(', ')}`) : undefined}>
               {p.ad}{p.removed.length ? ' *' : ''}

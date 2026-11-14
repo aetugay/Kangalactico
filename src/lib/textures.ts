@@ -3,7 +3,7 @@ import type { LatLon } from './geo.ts';
 import type { LandMask } from './land.ts';
 
 /** Bir boyama fonksiyonundan 2:1 canvas (veri yoksa saydam). */
-export function paintEquirect(paint: (p: LatLon) => [number, number, number] | null, w = 720, h = 360): HTMLCanvasElement {
+export function paintEquirect(paint: (p: LatLon) => [number, number, number] | null, w = 720, h = 360, keep?: (lat: number, lon: number) => boolean): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   const ctx = c.getContext('2d')!;
@@ -11,8 +11,9 @@ export function paintEquirect(paint: (p: LatLon) => [number, number, number] | n
   for (let j = 0; j < h; j++) {
     const lat = 90 - ((j + 0.5) / h) * 180;
     for (let i = 0; i < w; i++) {
-      const rgb = paint({ lat, lon: -180 + ((i + 0.5) / w) * 360 });
-      const o = (j * w + i) * 4;
+      const lon = -180 + ((i + 0.5) / w) * 360, o = (j * w + i) * 4;
+      if (keep && !keep(lat, lon)) { img.data[o + 3] = 0; continue; } // kara/deniz poligonuyla kırpma (yalnız görsel)
+      const rgb = paint({ lat, lon });
       if (!rgb) { img.data[o + 3] = 0; continue; }
       img.data[o] = rgb[0]; img.data[o + 1] = rgb[1]; img.data[o + 2] = rgb[2]; img.data[o + 3] = 255;
     }

@@ -5,11 +5,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { R_EARTH, type LatLon } from '../lib/geo.ts';
 
-export interface GlobeSource { key: string; el: HTMLCanvasElement | HTMLImageElement | HTMLVideoElement }
+/** opacity: taban Dünya görüntüsünün üstünde veri katmanının opaklığı (yumuşak görünüm ~0.72; ham hücreler / tam görsel 1). */
+export interface GlobeSource { key: string; el: HTMLCanvasElement | HTMLImageElement | HTMLVideoElement; opacity?: number }
 
 interface Props {
   source: GlobeSource | null;
   landCanvas: HTMLCanvasElement | null;
+  /** Taban Dünya görüntüsü (NASA Blue Marble: Next Generation, kamu malı). Veri ızgarası taban haritada ASLA kara/deniz maskesi olarak görünmez. */
+  baseUrl?: string;
   center: LatLon | null;
   rangeKm: number;
   angle: () => number | null;  // derece, kuzeyden saat yönü
@@ -52,14 +55,14 @@ const EARTH_FS = /* glsl */ `
   uniform float uHasA; uniform float uHasB; uniform float uMix; uniform float uHasLand;
   uniform vec3 uCenter; uniform vec3 uNorth; uniform vec3 uEast; uniform float uRange;
   uniform float uHasCenter; uniform float uSweep; uniform float uHasSweep; uniform float uLevel;
-  uniform vec3 uLightDir; uniform float uCoastW;
+  uniform vec3 uLightDir; uniform float uCoastW; uniform sampler2D uBase; uniform float uHasBase; uniform float uOpA; uniform float uOpB;
   varying vec2 vUv; varying vec3 vPos; varying vec3 vNormalW;
   const float TAU = 6.2831853;
   void main() {
     vec3 L = uHasLand > 0.5 ? texture2D(uLand, vUv).rgb : vec3(0.0);
-    vec3 base = mix(vec3(0.02, 0.06, 0.15), vec3(0.13, 0.16, 0.20), L.g);
+    vec3 base = uHasBase > 0.5 ? texture2D(uBase, vUv).rgb * 0.92 : mix(vec3(0.02, 0.06, 0.15), vec3(0.13, 0.16, 0.20), L.g);
     vec4 a = texture2D(uTexA, vUv), b = texture2D(uTexB, vUv);
-    vec3 ca = mix(base, a.rgb, a.a * uHasA), cb = mix(base, b.rgb, b.a * uHasB);
+    vec3 ca = mix(base, a.rgb, a.a * uHasA * uOpA), cb = mix(base, b.rgb, b.a * uHasB * uOpB);
     vec3 col = mix(ca, cb, uMix);
     col *= 0.62 + 0.45 * max(dot(normalize(vNormalW), uLightDir), 0.0);
     col = mix(col, vec3(0.95), L.r * uCoastW);                       // kıyı çizgisi
@@ -123,6 +126,7 @@ export function Globe3D(props: Props) {
       uRange: { value: 0.3 }, uHasCenter: { value: 0 }, uSweep: { value: 0 }, uHasSweep: { value: 0 }, uLevel: { value: 0 },
       uLightDir: { value: new THREE.Vector3(0.6, 0.5, 0.8).normalize() },
       uCoastW: { value: 0.55 }, // raster kıyı (kara maskesinden); vektör kıyı yüklenince kapanır
+      uBase: { value: empty as THREE.Texture }, uHasBase: { value: 0 }, uOpA: { value: 1 }, uOpB: { value: 1 },
     };
     const earthMat = new THREE.ShaderMaterial({ uniforms, vertexShader: EARTH_VS, fragmentShader: EARTH_FS });
     const earth = new THREE.Mesh(new THREE.SphereGeometry(1, 160, 96), earthMat);
@@ -134,6 +138,11 @@ export function Globe3D(props: Props) {
     const maxAniso = Math.max(1, renderer.capabilities.getMaxAnisotropy());
     // vektör kıyı çizgileri: Natural Earth 1:50m (kamu malı) — yaklaşınca bulanıklaşmaz. Veri katmanlarının çözünürlüğü DEĞİŞMEZ (yalnız altlık).
     let disposed = false;
+    if (P.current.baseUrl) new THREE.TextureLoader().load(P.current.baseUrl, (t) => {
+      if (disposed) { t.dispose(); return; }
+      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso; t.needsUpdate = true;
+      uniforms.uBase.value = t; uniforms.uHasBase.value = 1; uniforms.uCoastW.value = 0; // taban görüntüsü varken raster kara maskesi kullanılmaz
+    });
     fetch(`${import.meta.env.BASE_URL}data/coastline_50m.json`).then((r) => (r.ok ? r.json() : null)).then((c: { points: number; starts: number[]; data: string } | null) => {
       if (!c || disposed) return;
       const bin = atob(c.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
@@ -170,11 +179,11 @@ export function Globe3D(props: Props) {
     let fade: { t0: number; dur: number } | null = null;
     const finishFade = () => {
       if (uniforms.uTexA.value !== empty && uniforms.uTexA.value !== uniforms.uTexB.value) uniforms.uTexA.value.dispose();
-      uniforms.uTexA.value = uniforms.uTexB.value; uniforms.uHasA.value = uniforms.uHasB.value; uniforms.uMix.value = 0; fade = null;
+      uniforms.uTexA.value = uniforms.uTexB.value; uniforms.uHasA.value = uniforms.uHasB.value; uniforms.uOpA.value = uniforms.uOpB.value; uniforms.uMix.value = 0; fade = null;
     };
     const setSource = (s: GlobeSource | null) => {
       if (fade) finishFade();
-      uniforms.uTexB.value = s ? texOf(s) : empty; uniforms.uHasB.value = s ? 1 : 0;
+      uniforms.uTexB.value = s ? texOf(s) : empty; uniforms.uHasB.value = s ? 1 : 0; uniforms.uOpB.value = s?.opacity ?? 1;
       if (P.current.reducedMotion) { uniforms.uMix.value = 1; finishFade(); } else { uniforms.uMix.value = 0; fade = { t0: performance.now(), dur: 700 }; }
     };
     const setLand = (c: HTMLCanvasElement | null) => {
@@ -275,7 +284,7 @@ export function Globe3D(props: Props) {
       renderer.domElement.removeEventListener('pointerdown', onDown); renderer.domElement.removeEventListener('pointerup', onUp);
       renderer.domElement.removeEventListener('pointermove', onMove); renderer.domElement.removeEventListener('pointerleave', onLeave);
       scene.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose(); const mat = m.material as THREE.Material | undefined; mat?.dispose?.(); });
-      [uniforms.uTexA.value, uniforms.uTexB.value, uniforms.uLand.value].forEach((t) => t !== empty && t.dispose());
+      [uniforms.uTexA.value, uniforms.uTexB.value, uniforms.uLand.value, uniforms.uBase.value].forEach((t) => t !== empty && t.dispose());
       renderer.dispose(); el.removeChild(renderer.domElement); api.current = null;
     };
   }, []);

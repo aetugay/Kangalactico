@@ -10,7 +10,7 @@ import { monthName } from './co2.ts';
 export interface M24LayerMeta {
   index: number; src: string; id: string; tr: string; en: string; product: string; variable: string; unit: string;
   nasa: string; note?: string; daily?: boolean; transform: 'linear' | 'log1p'; vmin: number; vmax: number; sourceLabel: string;
-  year: number; signed?: boolean;
+  year: number; signed?: boolean; domain?: 'land' | 'sea' | 'all';
   kanit?: { nasa_koleksiyon?: string; netcdf_degiskeni?: string; nasa_long_name?: string; orijinal_birim?: string; ornek_granul_dosyasi?: string; dosya_sayisi?: number };
 }
 export interface M24Preset { key: string; ad: string; layers: string[]; removed: string[] }
@@ -112,10 +112,11 @@ export class M24 {
     return arr[slab * g.nLat * g.nLon + kk * g.nLon + ii];
   }
   /** Çift doğrusal (gerçek birimde). Noktanın kendi hücresi boşsa NaN — komşudan değer taşınmaz. */
-  private sampleSlab(arr: Int16Array, slab: number, L: M24LayerMeta, p: LatLon): number {
+  private sampleSlab(arr: Int16Array, slab: number, L: M24LayerMeta, p: LatLon, mode: 'sound' | 'smooth' | 'cells' = 'sound'): number {
     const g = this.meta.grid;
     const fk = (p.lat - g.lat0) / g.dLat, fi = (p.lon - g.lon0) / g.dLon;
-    if (this.q(arr, slab, Math.round(fk), Math.round(fi)) < 0) return NaN;
+    if (mode === 'cells') return m24Phys(L, this.q(arr, slab, Math.round(fk), Math.round(fi)));
+    if (mode === 'sound' && this.q(arr, slab, Math.round(fk), Math.round(fi)) < 0) return NaN;
     const k0 = Math.floor(fk), i0 = Math.floor(fi), tk = fk - k0, ti = fi - i0;
     let s = 0, w = 0;
     for (const [dk, di] of [[0, 0], [0, 1], [1, 0], [1, 1]]) {
@@ -130,6 +131,8 @@ export class M24 {
       if (!ready || this.pending) return NaN; } // yükleme bitmeden (eksik hücre/halka) hiç nota yok: kısa sessizlik, yanlış değer değil
     return this.sampleSlab(this.monthly, layerIdx * 12 + month, this.meta.layers[layerIdx], p);
   }
+  /** Yalnız GÖRSEL örnekleme (ses kullanmaz): smooth = komşu hücrelerden yumuşak, cells = ham hücre. */
+  visual(layerIdx: number, month: number, p: LatLon, mode: 'smooth' | 'cells'): number { return this.sampleSlab(this.monthly, layerIdx * 12 + month, this.meta.layers[layerIdx], p, mode); }
 
   /** O ayın küresel min/max'ı (gerçek birim; görsel renk ölçeği için). */
   monthRange(layerIdx: number, month: number) {

@@ -75,7 +75,8 @@ const meta = {
   presets,
   layers: keepIds.map((k, i) => {
     const L = M.layers[k], kan = L.kanit ?? {};
-    return { index: i, src: k, ...KEEP[k], product: shortOf(kan.ornek_granul_dosyasi ?? '', kan.nasa_koleksiyon), variable: kan.netcdf_degiskeni,
+    const domain = ['SST', 'SEAICE'].includes(k) ? 'sea' : ['IMERG', 'GRACE', 'NDVI', 'SMAP'].includes(k) ? 'land' : 'all';
+    return { index: i, src: k, ...KEEP[k], domain, product: shortOf(kan.ornek_granul_dosyasi ?? '', kan.nasa_koleksiyon), variable: kan.netcdf_degiskeni,
       year: yearOf(kan.ornek_granul_dosyasi ?? '') ?? 2024, transform: L.transform === 'log' ? 'log1p' : 'linear', vmin: L.vmin, vmax: L.vmax, signed: !!L.signed, sourceLabel: L.ad,
       kanit: { nasa_koleksiyon: kan.nasa_koleksiyon, netcdf_degiskeni: kan.netcdf_degiskeni, nasa_long_name: kan.nasa_long_name, orijinal_birim: kan.orijinal_birim, ornek_granul_dosyasi: kan.ornek_granul_dosyasi, dosya_sayisi: kan.dosya_sayisi } };
   }),

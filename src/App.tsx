@@ -6,6 +6,7 @@ import { IconBars, IconBreath, IconStrings, IconWave } from './components/icons.
 import { DEFAULT_MIX, EventsDialog, Explore, instrumentName, SoundDialog, StoriesDialog, type EarthEvent, type Mix, type StoryInfo } from './components/Extras.tsx';
 import { PlacePicker } from './components/PlacePicker.tsx';
 import { isFormTarget, shortcutAllowed } from './lib/keys.ts';
+import { loadLandRaster, type LandRaster } from './lib/nemask.ts';
 import { Guide, type CmdEntry, type GuideStatus } from './components/Guide.tsx';
 import { monthName } from './lib/co2.ts';
 import { RadarView } from './components/RadarView.tsx';
@@ -104,6 +105,7 @@ export default function App() {
     seaice_24: { tr: 'Deniz buzu oranı 2024', en: 'Sea-ice fraction 2024' },
   };
   const setM24Layer = (id: string, v: boolean) => {
+    setActiveTheme(null); // elle değişiklik → tema vurgusu kalkar
     if (!m24 && !m24Loading) openM24();
     setM24On((o) => ({ ...o, [id]: v }));
     if (v) setM24Visual(id); else setM24Visual((cur) => (cur === id ? null : cur));
@@ -112,7 +114,9 @@ export default function App() {
   };
   const anyM24On = Object.values(m24On).some(Boolean);
   /** Ceyhun'un presetleri: yalnız UYGUN katmanlar açılır, diğer aylık katmanlar kapanır; çıkarılanlar söylenir. */
+  const [activeTheme, setActiveTheme] = useState<string | null>(null);
   const applyM24Preset = (ids: string[], name: string, removed: string[]) => {
+    setActiveTheme(name);
     setM24On(Object.fromEntries(ids.map((id) => [id, true]))); setM24Visual(ids[0] ?? null);
     setOn({ co2: false, temp: false, sst: false, aerosol: false }); // tema = yalnız o katmanlar
     const en = langRef.current === 'en', names = ids.map((id) => M24_NAMES[id]?.[en ? 'en' : 'tr'] ?? id).join(', ');
@@ -282,7 +286,8 @@ export default function App() {
   const [hfWanted, setHfWantedS] = useState(() => store.get('hf') !== '0'); // eller serbest dinleme tercihi (varsayılan açık)
   const hfWantedRef = useRef(hfWanted); hfWantedRef.current = hfWanted;
   const [hfLive, setHfLive] = useState(false);       // şu an sürekli dinliyor mu
-  const hfStoppedByVoice = useRef(false);             // "sus" / "dinlemeyi durdur" ile kapandı → herhangi bir tuş tekrar açar
+  const hfStoppedByVoice = useRef(false);
+  const wakeUntil = useRef(0); // "Dünya" tek başına söylenince kısa süre komut beklenir             // "sus" / "dinlemeyi durdur" ile kapandı → herhangi bir tuş tekrar açar
   const hfApi = useRef({ start: (_say: boolean) => {}, stop: (_byVoice: boolean) => {}, unavailable: () => {} });
   const welcome = useCallback(() => {
     if (welcomed.current) return; welcomed.current = true;
@@ -292,8 +297,8 @@ export default function App() {
     const en = langRef.current === 'en';
     const canListen = listener.supported && hfWantedRef.current;
     const msg = canListen
-      ? (en ? 'Hello, I am EarthEar. I am listening to you. We recommend wearing headphones. Say a city name, for example Sivas. Say "help" for help.'
-        : 'Merhaba, ben EarthEar. Sizi dinliyorum. Kulaklık takmanızı öneririz. Bir şehir adı söyleyin, örneğin Sivas. Yardım için "yardım" deyin.')
+      ? (en ? 'Hello, I am EarthEar. I am listening to you. We recommend wearing headphones. Start each command with "Earth", for example: Earth, go to Tokyo. For help say "Earth, help".'
+        : 'Merhaba, ben EarthEar. Sizi dinliyorum. Kulaklık takmanızı öneririz. Komut vermek için cümleye "Dünya" diye başlayın, örneğin: Dünya, Sivas\'ı aç. Yardım için "Dünya, yardım" deyin.')
       : (en ? 'Hello, I am EarthEar. We recommend wearing headphones. Voice commands are not available right now. You can type commands: type a city name in the command box, for example Sivas.'
         : 'Merhaba, ben EarthEar. Kulaklık takmanızı öneririz. Sesli komut şu an kullanılamıyor. Yazarak komut verebilirsiniz: komut kutusuna bir şehir adı yazın, örneğin Sivas.');
     setLive(''); requestAnimationFrame(() => setLive(msg)); // ekran okuyucu her zaman duyar
@@ -539,8 +544,10 @@ export default function App() {
   const findCity = (raw: string) => {
     const C = live2.current.cities; if (!C) return undefined;
     const STOP = new Set(['git', 'gidelim', 'gotur', 'goturur', 'musun', 'yer', 'sec', 'sehir', 'sehri', 'sehrine', 'lutfen', 'bana', 'beni', 'oraya', 'karsilastir', 'kiyasla', 'ile', 've', 'icin', 'dinle', 'dinlemek', 'istiyorum', 'ac',
-      'go', 'to', 'take', 'me', 'choose', 'select', 'place', 'city', 'please', 'compare', 'with', 'the', 'listen', 'i', 'want']);
-    const words = raw.replace(/[’'`]\S*/g, ' ').replace(/[.,!?]/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(fold(w)));
+      'go', 'to', 'take', 'me', 'choose', 'select', 'place', 'city', 'please', 'compare', 'with', 'the', 'listen', 'i', 'want', 'open']);
+    // şehir listesi İngilizce adları kullanır; sık kullanılan Türkçe adlar (eş ad)
+    const ALIAS: Record<string, string> = { roma: 'Rome', londra: 'London', moskova: 'Moscow', atina: 'Athens', viyana: 'Vienna', kahire: 'Cairo', pekin: 'Beijing', tahran: 'Tehran', bagdat: 'Baghdad', bruksel: 'Brussels', lizbon: 'Lisbon', varsova: 'Warsaw', prag: 'Prague', kudus: 'Jerusalem', munih: 'Munich', napoli: 'Naples', venedik: 'Venice', kopenhag: 'Copenhagen', lefkosa: 'Nicosia', tiflis: 'Tbilisi', erivan: 'Yerevan', selanik: 'Thessaloniki', cenevre: 'Geneva', floransa: 'Florence', belgrad: 'Belgrade', budapeste: 'Budapest', sofya: 'Sofia', bukres: 'Bucharest' };
+    const words = raw.replace(/[’'`]\S*/g, ' ').replace(/[.,!?]/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(fold(w))).map((w) => ALIAS[fold(w)] ?? w);
     const exact = (cand: string) => {
       for (let cut = 0; cut <= 4 && cand.length - cut >= 3; cut++) { // Türkçe ekler: "ankaraya", "sivasa", "izmire"
         const c = cand.slice(0, cand.length - cut), row = C.find(c);
@@ -647,7 +654,7 @@ export default function App() {
     if (word('dur', 'durdur', 'stop', 'pause', 'duraklat', 'yeter')) { R.stop(); stopStory(); return true; }
     if (word('cal', 'baslat', 'basla', 'oynat', 'play', 'start', 'devam', 'dinle', 'muzik')) { if (needPlace() && !R.playing) R.play(); return true; }
 
-    const goWords = has(' git ', 'gidelim', 'gotur', 'yer sec', ' go to ', 'take me', ' sehir');
+    const goWords = has(' git ', 'gidelim', 'gotur', 'yer sec', ' go to ', 'take me', ' sehir', ' ac ', ' sec ', ' open ');
     const row = findCity(text);
     if (row && (goWords || fold(row[0]) === fold(text.replace(/[’'`]\S*/g, '').trim()))) {
       setPlace(rowToPlace(row, 'arama')); setPickOpen(false);
@@ -720,12 +727,24 @@ export default function App() {
       hfStoppedByVoice.current = false;
       if (!listener.supported) { hfApi.current.unavailable(); return; }
       handsFree.start(langRef.current, {
-        onText: (alts) => execRef.current(alts, 'voice'),
+        onText: (alts) => {
+          // Eller serbest: yalnız "Dünya" / "EarthEar" (EN "Earth") ile başlayan cümle komuttur; diğer konuşmalar SESSİZCE yok sayılır.
+          // Yalnız "Dünya" denirse 8 sn boyunca bir sonraki cümle uyandırma kelimesi olmadan komut sayılır.
+          const WAKE = /^\s*(dünya|dunya|earth\s?ear|earth|örtır|ört ır)\b[\s,.!:;-]*/i;
+          const woke = alts.map((a) => (WAKE.test(a) ? a.replace(WAKE, '').trim() : null)).filter((x): x is string => x !== null);
+          if (woke.length) {
+            const rest = woke.filter(Boolean);
+            if (!rest.length) { wakeUntil.current = Date.now() + 8000; engine.beep(); setGuideStatus({ kind: 'listening', text: langRef.current === 'en' ? 'Yes? Say the command.' : 'Evet? Komutu söyleyin.' }); return; }
+            wakeUntil.current = 0; execRef.current(rest, 'voice'); return;
+          }
+          if (Date.now() < wakeUntil.current) { wakeUntil.current = 0; execRef.current(alts, 'voice'); return; }
+          // uyandırma kelimesi yok → oda konuşması: hiçbir şey yapma (geçmişe de yazma)
+        },
         onSpeech: (talking) => { if (!listener.active) engine.setMaster(talking ? mixRef.current.master * 0.25 : mixRef.current.master); }, // konuşurken müziği kıs
         onError: (err) => { setHfLive(false); engine.setMaster(mixRef.current.master); toTextBox(err === 'denied' ? (langRef.current === 'en' ? 'Microphone permission was not given.' : 'Mikrofon izni verilmedi.') : ''); },
       });
       setHfLive(true); setGuideStatus({ kind: 'idle' }); // durum satırı: "Sizi dinliyorum"
-      if (say) { engine.unlock(); engine.beep(); announce(langRef.current === 'en' ? 'I am listening. Say a command.' : 'Sizi dinliyorum. Bir komut söyleyin.'); }
+      if (say) { engine.unlock(); engine.beep(); announce(langRef.current === 'en' ? 'I am listening. Start commands with "Earth", for example: Earth, play.' : 'Sizi dinliyorum. Komutlara "Dünya" diye başlayın, örneğin: Dünya, çal.'); }
     },
     stop: (byVoice: boolean) => { handsFree.stop(); setHfLive(false); if (!byVoice) setGuideStatus({ kind: 'idle' }); hfStoppedByVoice.current = byVoice; engine.setMaster(mixRef.current.master); },
     unavailable: () => toTextBox(''),
@@ -786,35 +805,50 @@ export default function App() {
   }, [welcome]);
 
   // ---------- görsel: küre dokusu ve 2D boyama (görünen katman)
+  // Yalnız GÖRSEL: yumuşak (çift doğrusal, yüksek çözünürlüklü doku, Natural Earth kıyısıyla kırpılmış) ya da ham veri hücreleri.
+  // Ses ve radar bunlardan etkilenmez: onlar katmanların 'sound' örneklemesini (gerçek hücre değerleri) kullanır.
+  const [showCells, setShowCellsS] = useState(() => store.get('cells') === '1');
+  const setShowCells = (v: boolean) => { setShowCellsS(v); store.set('cells', v ? '1' : '0'); announce(v ? (lang === 'en' ? 'Showing raw data cells.' : 'Ham veri hücreleri gösteriliyor.') : (lang === 'en' ? 'Smooth view.' : 'Yumuşak görünüm.')); };
+  const [landRaster, setLandRaster] = useState<LandRaster | null>(null);
+  useEffect(() => { loadLandRaster(BASE).then(setLandRaster).catch(() => { /* kırpmasız da çalışır */ }); }, []);
+  const vmode: 'smooth' | 'cells' = showCells ? 'cells' : 'smooth';
   const m24Idx = m24 && m24Visual && m24On[m24Visual] ? m24.meta.layers.findIndex((l) => l.id === m24Visual) : -1;
   const paintLL = useCallback((p: LatLon): [number, number, number] | null => {
-    if (m24 && m24Idx >= 0) { const v = m24.value(m24Idx, month, p); if (Number.isNaN(v)) return null; const r = m24.monthRange(m24Idx, month); return co2Color((v - r.min) / (r.max - r.min || 1)); }
-    if (visual === 'co2' && co2) return co2.color(co2.grid.bilinear(p, month), month);
-    if (visual === 'temp' && temp) { const v = temp.layer.sample(tFrame, p); return Number.isNaN(v) ? null : colorFor(temp.cs, v); }
-    if (visual === 'sst' && sst) { const v = sst.layer.sample(sstFrame, p); return Number.isNaN(v) ? null : colorFor(sst.cs, v); }
+    if (m24 && m24Idx >= 0) { const v = m24.visual(m24Idx, month, p, vmode); if (Number.isNaN(v)) return null; const r = m24.monthRange(m24Idx, month); return co2Color((v - r.min) / (r.max - r.min || 1)); }
+    if (visual === 'co2' && co2) return co2.color(vmode === 'cells' ? co2.grid.nearest(p, month).ppm : co2.grid.bilinear(p, month), month);
+    if (visual === 'temp' && temp) { const v = temp.layer.sample(tFrame, p, vmode); return Number.isNaN(v) ? null : colorFor(temp.cs, v); }
+    if (visual === 'sst' && sst) { const v = sst.layer.sample(sstFrame, p, vmode); return Number.isNaN(v) ? null : colorFor(sst.cs, v); }
     if (visual === 'aerosol' && aer) {
-      let best = -1, bv = 0.04; aer.file.categories.forEach((c, i) => { const v = aer.layers[c.id].sample(0, p); if (v > bv) { bv = v; best = i; } });
+      let best = -1, bv = 0.04; aer.file.categories.forEach((c, i) => { const v = aer.layers[c.id].sample(0, p, vmode); if (v > bv) { bv = v; best = i; } });
       if (best < 0) return null;
       const rgb = aer.file.categories[best].rgb, k = Math.min(1, 0.35 + bv * 1.6);
       return [rgb[0] * k, rgb[1] * k, rgb[2] * k];
     }
     return null;
-  }, [visual, co2, temp, sst, aer, month, tFrame, sstFrame, m24, m24Idx]);
-  const paintKey = `${m24Idx >= 0 ? 'm24' + m24Idx + '-' + month + '-' + m24Rev + '-' : ''}${visual}-${visual === 'co2' ? month : visual === 'temp' ? tFrame : visual === 'sst' ? sstFrame : 0}-${!!co2}-${!!temp}-${!!sst}-${!!aer}`;
+  }, [visual, co2, temp, sst, aer, month, tFrame, sstFrame, m24, m24Idx, vmode]);
+  // yalnız karada / yalnız denizde tanımlı katman → Natural Earth kara poligonlarıyla kırp (yumuşak görünümde; ham hücrelerde kırpma yok)
+  const domain: 'land' | 'sea' | 'all' = m24 && m24Idx >= 0 ? (m24.meta.layers[m24Idx].domain ?? 'all') : visual === 'sst' ? 'sea' : 'all';
+  const keep = !showCells && landRaster && domain !== 'all' ? (lat: number, lon: number) => landRaster.isLand(lat, lon) === (domain === 'land') : undefined;
+  const paintVis = useCallback((p: LatLon) => (keep && !keep(p.lat, p.lon) ? null : paintLL(p)), [paintLL, keep]); // 2D harita ve radar görünümü için
+  /** Görünen katmanın veri çözünürlüğü (dürüstlük etiketi). */
+  const dataRes = m24 && m24Idx >= 0 ? { km: 220, cell: m24.meta.grid.cell } : visual === 'co2' && on.co2 ? { km: 330, cell: '3° × 3.75°' } : (visual === 'temp' && on.temp) || (visual === 'sst' && on.sst) || (visual === 'aerosol' && on.aerosol) ? { km: 110, cell: '1° × 1°' } : null;
+  const paintKey = `${vmode}-${domain}-${!!keep}-${m24Idx >= 0 ? 'm24' + m24Idx + '-' + month + '-' + m24Rev + '-' : ''}${visual}-${visual === 'co2' ? month : visual === 'temp' ? tFrame : visual === 'sst' ? sstFrame : 0}-${!!co2}-${!!temp}-${!!sst}-${!!aer}`;
   // boyanmış dokular saklanır: aynı ay/kare ikinci kez istenince yeniden hesaplanmaz (akıcı geçiş)
   const texCache = useRef(new Map<string, HTMLCanvasElement>());
   const cachedTex = (key: string) => {
     const m = texCache.current; let c = m.get(key);
-    if (!c) { c = paintEquirect(paintLL); m.set(key, c); if (m.size > 48) m.delete(m.keys().next().value as string); }
+    if (!c) { c = showCells ? paintEquirect(paintLL, 720, 360) : paintEquirect(paintLL, 1440, 720, keep); m.set(key, c); if (m.size > 48) m.delete(m.keys().next().value as string); }
     return c;
   };
   const globeSource: GlobeSource | null = useMemo(() => {
     if (!view3d) return null;
-    if (m24Idx >= 0) return { key: `m24-${m24Idx}-${month}`, el: cachedTex(`m24-${m24Idx}-${month}`) };
+    const op = showCells ? 0.92 : 0.65;
+    const tk = (k: string) => `${k}-${vmode}-${!!keep}`;
+    if (m24Idx >= 0) return { key: tk(`m24-${m24Idx}-${month}-${m24Rev}`), el: cachedTex(tk(`m24-${m24Idx}-${month}-${m24Rev}`)), opacity: op };
     if (visual === 'sst' && on.sst) return { key: 'sst-video', el: video };
     if (visual === 'aerosol' && on.aerosol) return aerImg ? { key: 'aer-img', el: aerImg } : null;
-    if (visual === 'co2' && co2) return { key: `co2-${month}`, el: cachedTex(`co2-${month}`) };
-    if (visual === 'temp' && temp) return { key: `temp-${tFrame}`, el: cachedTex(`temp-${tFrame}`) };
+    if (visual === 'co2' && co2) return { key: tk(`co2-${month}`), el: cachedTex(tk(`co2-${month}`)), opacity: op };
+    if (visual === 'temp' && temp) return { key: tk(`temp-${tFrame}`), el: cachedTex(tk(`temp-${tFrame}`)), opacity: op };
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view3d, visual, on.sst, on.aerosol, aerImg, co2 && month, temp && tFrame, video, paintKey]);
@@ -839,6 +873,8 @@ export default function App() {
     { title: lang === 'tr' ? 'Dünya olayları' : 'Earth events', text: lang === 'tr' ? 'NASA EONET (Earth Observatory Natural Event Tracker), canlı; son 30 günün açık olayları' : 'NASA EONET (Earth Observatory Natural Event Tracker), live; open events of the last 30 days', href: 'https://eonet.gsfc.nasa.gov/' },
     { title: lang === 'tr' ? 'Aylık katmanlar (paket sürüm 3)' : 'Monthly layers (package v3)', text: lang === 'tr' ? 'NASA GES DISC: MERRA-2 (M2TMNXAER SO2SMASS, TOTEXTTAU; M2TMNXSLV T2M, TS, TO3; M2TMNXRAD ALBEDO; M2TMNXOCN TSKINWTR, FRSEAICE; M2TMNXLND PRECTOTLAND, TWLAND, LAI) ve OCO-2 GEOS L3 CO₂ (OCO2_GEOS_L3CO2_DAY) 2021; MERRA-2 2024; 2° × 2.5°. Ekibimizden Ceyhun hazırladı; yalnız veri denetiminden geçen katmanlar.' : 'NASA GES DISC: MERRA-2 (M2TMNXAER SO2SMASS, TOTEXTTAU; M2TMNXSLV T2M, TS, TO3; M2TMNXRAD ALBEDO; M2TMNXOCN TSKINWTR, FRSEAICE; M2TMNXLND PRECTOTLAND, TWLAND, LAI) and OCO-2 GEOS L3 CO₂ (OCO2_GEOS_L3CO2_DAY) 2021; MERRA-2 2024; 2° × 2.5°. Prepared by our team member Ceyhun; only layers that passed our data audit.', href: 'https://disc.gsfc.nasa.gov/' },
     { title: lang === 'tr' ? 'Şehirler' : 'Cities', text: 'GeoNames (geonames.org), CC BY 4.0' },
+    { title: lang === 'tr' ? 'Taban Dünya görüntüsü (3B küre)' : 'Base Earth image (3D globe)', text: lang === 'tr' ? 'NASA Earth Observatory, Blue Marble: Next Generation (Reto Stöckli, NASA GSFC), Aralık 2004; 5400×2700 görüntüden 4096×2048 / 2048×1024. Yalnız altlık; veri değildir.' : 'NASA Earth Observatory, Blue Marble: Next Generation (Reto Stöckli, NASA GSFC), December 2004; resized from 5400×2700 to 4096×2048 / 2048×1024. Base map only, not data.', href: 'https://earthobservatory.nasa.gov/features/BlueMarble' },
+    { title: lang === 'tr' ? 'Kara poligonları (görsel kırpma)' : 'Land polygons (visual clipping)', text: lang === 'tr' ? 'Natural Earth 1:50m Land, kamu malı — yalnız karada / yalnız denizde tanımlı katmanların görüntüsünü kıyıdan kırpmak için; ses gerçek veri hücrelerini kullanır.' : 'Natural Earth 1:50m Land, public domain — only to clip land-only / sea-only layers at the coast in the display; sound uses the real data cells.', href: 'https://www.naturalearthdata.com/' },
     { title: lang === 'tr' ? 'Kıyı çizgileri (3B küre)' : 'Coastlines (3D globe)', text: lang === 'tr' ? 'Natural Earth 1:50m Coastline, kamu malı (naturalearthdata.com). Yalnız altlık; veri katmanlarının çözünürlüğü değişmez.' : 'Natural Earth 1:50m Coastline, public domain (naturalearthdata.com). Base map only; data layer resolution is unchanged.', href: 'https://www.naturalearthdata.com/' },
   ];
 
@@ -857,7 +893,7 @@ export default function App() {
         </div>
       )}
       {view3d && (
-        <Globe3D source={globeSource} landCanvas={landCanvas} center={active} rangeKm={rangeKm} angle={radar.angle} level={() => engine.level()}
+        <Globe3D source={globeSource} landCanvas={landCanvas} baseUrl={`${BASE}media/bluemarble_${isTouchDevice ? 2048 : 4096}.jpg`} center={active} rangeKm={rangeKm} angle={radar.angle} level={() => engine.level()}
           reducedMotion={reduced} onPick={(p) => pickPoint(p, 'harita')} onHover={onHover}
           onSlow={() => { if (forced !== '3d') { setView3dS(false); setSlowNote(true); } }} />
       )}
@@ -871,12 +907,18 @@ export default function App() {
 
         {!place && <div className="right-col">{guidePanel}</div>}
         {!place && <Intro lang={lang} onPick={() => { setPickFor('A'); setPickOpen(true); }} onTalk={listener.supported ? () => talk() : undefined} />}
+        {place && dataRes && (
+          <div className="glass data-res" role="group" aria-label={lang === 'en' ? 'Data resolution' : 'Veri çözünürlüğü'}>
+            <span>{lang === 'en' ? 'Data resolution' : 'Veri çözünürlüğü'}: <b>~{dataRes.km} km</b> <small className="muted">({dataRes.cell}{showCells ? '' : lang === 'en' ? ', smoothed for display; sound uses the real cells' : ', görüntüde yumuşatıldı; ses gerçek hücreleri kullanır'})</small></span>
+            <label className="switch small"><input type="checkbox" checked={showCells} onChange={(e) => setShowCells(e.target.checked)} /> <span>{lang === 'en' ? 'Show data cells' : 'Veri hücrelerini göster'}</span></label>
+          </div>
+        )}
         {(listening || heard) && <p role="status" className="glass note heard">{listening ? tr(lang, 'listening') : `“${heard}”`}</p>}
 
         {!view3d && (
           <section className={`flat${place ? '' : ' empty'}`} aria-label={lang === 'tr' ? '2D harita ve radar' : '2D map and radar'}>
-            {active && <div className="flat-radar"><RadarView center={active} rangeKm={rangeKm} paint={paintLL} paintKey={paintKey} angle={radar.angle} land={land} /></div>}
-            <div className="flat-map"><WorldMap paint={paintLL} paintKey={paintKey} land={land} center={active} rangeKm={rangeKm} onPick={(p) => pickPoint(p, 'harita')} onHover={onHover} /></div>
+            {active && <div className="flat-radar"><RadarView center={active} rangeKm={rangeKm} paint={paintVis} paintKey={paintKey} angle={radar.angle} land={land} /></div>}
+            <div className="flat-map"><WorldMap paint={paintVis} paintKey={paintKey} land={land} center={active} rangeKm={rangeKm} onPick={(p) => pickPoint(p, 'harita')} onHover={onHover} /></div>
           </section>
         )}
 
@@ -893,7 +935,7 @@ export default function App() {
                 narrator={narrator} setNarrator={setNarrator} story={story} onStopStory={stopStory} showNarrator={false} />
             </NowCard>
             <div className="right-col">
-            <LayerPills lang={lang} top={<M24Panel part="themes" lang={lang} m24={m24} loading={m24Loading} onOpen={openM24} on={m24On} visualId={null} month={month} place={active} announce={announce} setOn={setM24Layer} onPreset={applyM24Preset} onShow={() => {}} />} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }}>
+            <LayerPills lang={lang} top={<M24Panel part="themes" activeTheme={activeTheme} lang={lang} m24={m24} loading={m24Loading} onOpen={openM24} on={m24On} visualId={null} month={month} place={active} announce={announce} setOn={setM24Layer} onPreset={applyM24Preset} onShow={() => {}} />} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }}>
               {on.temp && temp && (
                 <div className="sub-time">
                   <label htmlFor="t-date" className="small">{lang === 'tr' ? 'Sıcaklık tarihi' : 'Temperature date'}</label>

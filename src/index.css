@@ -291,7 +291,7 @@ html.hc .guide-status.ok, html.hc .guide-status.fail, html.hc .guide-status.erro
 .right-col .panel { flex: 1 1 0; min-height: 210px; }
 .right-col .guide { max-height: 58%; overflow: auto; }
 .guide-hist ol { max-height: 96px; }
-@media (min-width: 981px) { .timeline { width: min(760px, max(420px, calc(100vw - 2 * 340px))); } }
+@media (min-width: 981px) { .timeline { width: clamp(420px, calc(100vw - 680px), 760px); } }
 @media (max-width: 980px) {
   .right-col .panel, .right-col .guide { min-height: 0; max-height: none; flex: none; }
   .foot { position: static; padding: 12px 16px 100px; }
@@ -317,3 +317,51 @@ html.hc .start-gate { background: #fff; } html.hc .gate-btn { background: #0033c
 .guide details:not([open]) .guide-sum::before { content: '▸'; }
 .guide details[open] > :not(summary) { margin-top: 8px; }
 .guide details[open] { display: grid; gap: 8px; }
+/* veri çözünürlüğü etiketi + ham hücre anahtarı (küre/harita üstünde, ortada) */
+.data-res { position: fixed; z-index: 4; top: 74px; left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 14px; font-size: 13.5px; max-width: 640px; }
+@media (max-width: 980px) { .data-res { position: static; transform: none; margin: 12px; max-width: none; } }
+
+/* ===== Düğme tasarım dili (tüm uygulama) =====
+   Birincil: .btn.primary, .speak-btn, .gate-btn (dolgulu vurgu rengi)
+   İkincil : .btn, .chip, tema çipleri, katman satırları, .mini (dolgulu koyu zemin + belirgin kenar)
+   Öneri   : .suggest-chip (ikonlu, ikincilden bir ton açık)
+   Hepsi en az 44 px, hover / basılı / klavye odağı belirgin; seçili olan vurgu rengiyle dolu. */
+:root { --btn-bg: rgba(255,255,255,.10); --btn-bg-hover: rgba(255,255,255,.18); --btn-line: rgba(255,255,255,.38); --btn-line-hover: rgba(255,255,255,.7); }
+.btn, .chip, .small-chip, .mini, .m24-info > summary, .icon-btn {
+  min-height: 44px; border: 1.5px solid var(--btn-line); background: var(--btn-bg); color: var(--ink);
+  cursor: pointer; transition: background .15s ease, border-color .15s ease, transform .08s ease, box-shadow .15s ease;
+}
+.btn:hover, .chip:hover, .small-chip:hover, .mini:hover, .m24-info > summary:hover, .icon-btn:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); }
+.btn:active, .chip:active, .small-chip:active, .mini:active, .icon-btn:active, .speak-btn:active, .gate-btn:active, .pill:active { transform: translateY(1px) scale(.98); }
+.btn:focus-visible, .chip:focus-visible, .small-chip:focus-visible, .mini:focus-visible, .pill:focus-visible, .m24-info > summary:focus-visible { box-shadow: 0 0 0 5px rgba(255,210,63,.25); }
+/* birincil */
+.btn.primary, .speak-btn { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; box-shadow: 0 6px 22px rgba(94,228,242,.28); }
+.btn.primary:hover, .speak-btn:hover { background: #8af1fb; border-color: #8af1fb; }
+/* çipler (tema, öneri, üst çubuk) */
+.small-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 12px; font: 600 14px var(--font-b); line-height: 1.2; text-align: left; }
+.small-chip svg { width: 18px; height: 18px; flex: none; opacity: .9; }
+.suggest-chip { background: rgba(94,228,242,.10); border-color: rgba(94,228,242,.45); }
+.suggest-chip:hover { background: rgba(94,228,242,.2); border-color: var(--accent); }
+.chip[aria-pressed="true"], .theme-chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.theme-chip[aria-pressed="true"]::before { content: '✓'; font-weight: 800; }
+/* ikincil küçük eylemler: "Küre üstünde göster", "Dinle", "365 günü dinle" */
+.mini { display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 0; padding: 8px 12px; border-radius: 10px; font: 600 13.5px var(--font-b); color: var(--ink); text-decoration: none; }
+/* aylık katman satırları: açılıp kapanan düğme gibi */
+.m24-list > li { display: grid; gap: 4px; }
+.m24-list .switch { min-height: 48px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--btn-line); background: var(--btn-bg); transition: background .15s ease, border-color .15s ease; }
+.m24-list .switch:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); }
+.m24-list .switch:has(input:checked) { background: color-mix(in srgb, var(--accent) 22%, transparent); border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+.m24-list .switch:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.m24-info > summary { display: inline-flex; align-items: center; min-height: 36px; padding: 4px 10px; border-radius: 8px; font-size: 12.5px; color: var(--ink); list-style: none; width: fit-content; }
+.m24-info > summary::before { content: 'ⓘ'; margin-right: 6px; color: var(--accent); }
+.m24-info > summary::-webkit-details-marker { display: none; }
+.seg label { min-height: 44px; border-width: 1.5px; border-color: var(--btn-line); background: var(--btn-bg); }
+.seg label:hover { border-color: var(--btn-line-hover); }
+.pill { border-width: 1.5px; border-color: var(--btn-line); }
+.pill:hover { border-color: var(--btn-line-hover); }
+/* yüksek kontrast: beyaz zemin, siyah kalın kenar; seçili = siyah dolu */
+html.hc { --btn-bg: #fff; --btn-bg-hover: #e8e8e8; --btn-line: #000; --btn-line-hover: #000; }
+html.hc .btn, html.hc .chip, html.hc .small-chip, html.hc .mini, html.hc .m24-info > summary, html.hc .m24-list .switch, html.hc .seg label { border: 2px solid #000; color: #000; background: #fff; }
+html.hc .suggest-chip { background: #fff; }
+html.hc .chip[aria-pressed="true"], html.hc .theme-chip[aria-pressed="true"], html.hc .m24-list .switch:has(input:checked), html.hc .seg label.on { background: #000; color: #fff; box-shadow: none; }
+html.hc .btn.primary, html.hc .speak-btn { background: #0033cc; color: #fff; border: 2px solid #000; }

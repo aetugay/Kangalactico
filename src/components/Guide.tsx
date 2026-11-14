@@ -3,7 +3,7 @@
 // Not: "AI" adı arayüz adıdır; çözümleyici kural tabanlıdır (yapay zekâ modeli yok, veri uydurmaz).
 import { useId, useState } from 'react';
 import type { Lang } from '../i18n.ts';
-import { IconMic } from './icons.tsx';
+import { IconGlobe, IconMic, IconPin, IconPlay, IconSpeak, IconWave } from './icons.tsx';
 
 export interface CmdEntry { text: string; ok: boolean; source: 'voice' | 'text'; reply: string }
 export type GuideStatus = { kind: 'idle' | 'listening' | 'ok' | 'fail' | 'error'; text?: string };
@@ -23,6 +23,7 @@ interface Props {
   open?: boolean; setOpen?: (v: boolean) => void;
 }
 
+const CHIP_ICONS = [IconPin, IconPlay, IconWave, IconSpeak, IconGlobe];
 const CHIPS: Record<Lang, string[]> = {
   tr: ['Ankara\'ya git', 'Çal', 'Deniz sıcaklığını aç', 'Özet', 'Switch to English'],
   en: ['Go to Tokyo', 'Play', 'Precipitation on', 'Summary', 'Türkçeye geç'],
@@ -34,7 +35,7 @@ export function Guide({ lang, micSupported, listening, status, history, onTalk, 
   const [q, setQ] = useState('');
   const send = (t: string) => { const s = t.trim(); if (!s) return; onCommand(s); setQ(''); };
   const statusText = status.kind === 'listening' || listening ? (en ? 'Listening… speak now.' : 'Dinliyorum… şimdi konuş.')
-    : status.text ?? (handsFree ? (en ? 'Listening hands-free: just speak a command.' : 'Sizi dinliyorum: bir komut söyleyin.') : (en ? 'Ready. Type or speak a command.' : 'Hazır. Bir komut yaz ya da söyle.'));
+    : status.text ?? (handsFree ? (en ? 'Listening hands-free: start with "Earth", e.g. "Earth, go to Tokyo". Typed commands and the Speak button need no wake word.' : 'Sizi dinliyorum: "Dünya" ile başlayın, ör. "Dünya, Sivas\'ı aç". Yazılı komut ve Konuş düğmesinde gerekmez.') : (en ? 'Ready. Type or speak a command.' : 'Hazır. Bir komut yaz ya da söyle.'));
   return (
     <section className="glass guide" aria-labelledby={`${id}-h`}>
       {/* katlanabilir: kapalıyken de başlık + durum görünür (eller serbest dinleme sürer) */}
@@ -53,7 +54,7 @@ export function Guide({ lang, micSupported, listening, status, history, onTalk, 
       </form>
       <p className={`guide-status ${status.kind}`} role="status" aria-live="polite">{statusText}</p>
       <div className="guide-chips" role="group" aria-label={en ? 'Suggested commands' : 'Önerilen komutlar'}>
-        {CHIPS[lang].map((c) => <button key={c} type="button" className="chip small-chip" onClick={() => send(c)}>{c}</button>)}
+        {CHIPS[lang].map((c, i) => { const Ico = CHIP_ICONS[i] ?? IconSpeak; return <button key={c} type="button" className="chip small-chip suggest-chip" onClick={() => send(c)}><Ico /> {c}</button>; })}
       </div>
       {micSupported && setHandsFreeWanted && <label className="switch small"><input type="checkbox" checked={!!handsFreeWanted} onChange={(e) => setHandsFreeWanted(e.target.checked)} /> <span>{en ? `Hands-free listening${handsFree ? ' (on)' : ''}` : `Eller serbest dinleme${handsFree ? ' (açık)' : ''}`}</span></label>}
       <label className="switch small"><input type="checkbox" checked={narrator} onChange={(e) => setNarrator(e.target.checked)} /> <span>{en ? 'Narrator: a short fact every sweep (N)' : 'Anlatıcı: her turda kısa bir bilgi (N)'}</span></label>

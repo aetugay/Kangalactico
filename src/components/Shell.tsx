@@ -57,14 +57,18 @@ export function Dialog({ open, onClose, title, children, className = '', lang }:
 }
 
 // ---------------- Üst çubuk
-export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean; setHc: (v: boolean) => void; view3d: boolean; can3d: boolean; setView3d: (v: boolean) => void; onPick: () => void; onAbout: () => void; hasPlace: boolean; guide: boolean; setGuide: (v: boolean) => void; listening: boolean; onTalk: () => void }) {
+export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean; setHc: (v: boolean) => void; view3d: boolean; can3d: boolean; setView3d: (v: boolean) => void; onPick: () => void; onAbout: () => void; hasPlace: boolean; guide: boolean; setGuide: (v: boolean) => void; listening: boolean; onTalk: () => void; micSupported?: boolean }) {
   const { lang } = p;
+  const en = lang === 'en';
   return (
     <header className="topbar">
+      {/* Adım 3: sekme sırasında İLK öğe — büyük Konuş düğmesi (Alt+T her yerde). Mobilde ekranın altında sabit. Web Speech yoksa komut kutusuna götürür. */}
+      <button type="button" className={`speak-btn${p.listening ? ' live' : ''}`} onClick={p.onTalk} aria-pressed={p.listening} aria-keyshortcuts="Alt+T">
+        <IconMic /> <span>{p.listening ? (en ? 'Listening…' : 'Dinliyorum…') : p.micSupported === false ? (en ? 'Speak / type' : 'Konuş / yaz') : (en ? 'Speak' : 'Konuş')}</span> <kbd aria-hidden="true">Alt+T</kbd>
+      </button>
       <div className="brand" aria-label="EarthEar">Earth<span>Ear</span></div>
       <nav className="top-actions" aria-label={lang === 'tr' ? 'Genel ayarlar' : 'General settings'}>
         {p.hasPlace && <button type="button" className="chip" onClick={p.onPick}><IconPin /> {tr(lang, 'change')}</button>}
-        <button type="button" className={`chip mic${p.listening ? ' live' : ''}`} aria-pressed={p.listening} aria-keyshortcuts="T" onClick={p.onTalk}><IconMic /> {p.listening ? tr(lang, 'listening') : tr(lang, 'talk')}</button>
         <button type="button" className="chip" aria-pressed={p.guide} aria-keyshortcuts="G" onClick={() => p.setGuide(!p.guide)}><IconSpeak /> {tr(lang, 'guide')}</button>
         <button type="button" className="chip" aria-pressed={p.hc} onClick={() => p.setHc(!p.hc)}><IconContrast /> {tr(lang, 'highContrast')}</button>
         {p.can3d && <button type="button" className="chip" aria-pressed={p.view3d} onClick={() => p.setView3d(!p.view3d)}><IconGlobe /> {p.view3d ? tr(lang, 'view3d') : tr(lang, 'view2d')}</button>}
@@ -82,7 +86,7 @@ export function Intro({ lang, onPick, onTalk }: { lang: Lang; onPick: () => void
       <h1 id="intro-h">EarthEar</h1>
       <p className="tagline">{tr(lang, 'tagline')}</p>
       <p className="intro-sub">{tr(lang, 'intro')}</p>
-      <button type="button" className="cta" onClick={onPick} autoFocus aria-keyshortcuts="C"><IconPin /> {tr(lang, 'pick')}</button>
+      <button type="button" className="cta" onClick={onPick} aria-keyshortcuts="C"><IconPin /> {tr(lang, 'pick')}</button>
       {onTalk && <button type="button" className="btn talk-cta" onClick={onTalk} aria-keyshortcuts="T"><IconMic /> {tr(lang, 'talkLong')}</button>}
       <p className="intro-hint">{tr(lang, 'orTap')}</p>
     </section>
@@ -200,13 +204,13 @@ export function LayerPills({ lang, pills, onToggle, onShow, children }: { lang: 
 // ---------------- Zaman çizelgesi (CO₂ ayları)
 const MONTHS = { tr: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'], en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] };
 const MONTHS_LONG = { tr: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'], en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] };
-export function Timeline({ lang, month, setMonth, label, advance, setAdvance }: { lang: Lang; month: number; setMonth: (m: number) => void; label: string; advance: boolean; setAdvance: (v: boolean) => void }) {
+export function Timeline({ lang, month, setMonth, label, advance, setAdvance, year = 2021, title }: { lang: Lang; month: number; setMonth: (m: number) => void; label: string; advance: boolean; setAdvance: (v: boolean) => void; year?: number; title?: string }) {
   return (
     <section className="glass timeline" aria-labelledby="tl-h">
       <div className="tl-head">
-        <h2 id="tl-h" className="eyebrow">{tr(lang, 'timeline')}: <b>{label}</b></h2>
+        <h2 id="tl-h" className="eyebrow">{title ?? tr(lang, 'timeline')}: <b>{label}</b></h2>
         <label className="lbl-inline">{lang === 'tr' ? 'Ay seç' : 'Pick month'}
-          <select value={month} onChange={(e) => setMonth(+e.target.value)}>{MONTHS_LONG[lang].map((m, i) => <option key={m} value={i}>{m} 2021</option>)}</select>
+          <select value={month} onChange={(e) => setMonth(+e.target.value)}>{MONTHS_LONG[lang].map((m, i) => <option key={m} value={i}>{m} {year}</option>)}</select>
         </label>
         <label className="switch small"><input type="checkbox" checked={advance} onChange={(e) => setAdvance(e.target.checked)} /> <span>{tr(lang, 'advance')}</span></label>
       </div>

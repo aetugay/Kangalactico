@@ -12,7 +12,7 @@ export interface ExploreProps {
   compare: boolean; setCompare: (v: boolean) => void;
   onPickB: () => void; onClearB: () => void; onDiff: () => void;
   onStories: () => void; onEvents: () => void; onSound: () => void;
-  narrator: boolean; setNarrator: (v: boolean) => void;
+  narrator: boolean; setNarrator: (v: boolean) => void; showNarrator?: boolean;
   story: string | null; onStopStory: () => void;
 }
 export function Explore(p: ExploreProps) {
@@ -31,7 +31,7 @@ export function Explore(p: ExploreProps) {
         <button type="button" className="btn" onClick={p.onEvents} aria-keyshortcuts="E">{T(lang, 'Dünya olayları (E)', 'Earth events (E)')}</button>
         <button type="button" className="btn" onClick={p.onSound} aria-keyshortcuts="V">{T(lang, 'Ses sahnem (V)', 'My soundscape (V)')}</button>
       </div>
-      <label className="switch"><input type="checkbox" checked={p.narrator} onChange={(e) => p.setNarrator(e.target.checked)} /> <span>{T(lang, 'Anlatıcı: her turda kısa bir bilgi söyle (N)', 'Narrator: say a short fact every turn (N)')}</span></label>
+      {p.showNarrator !== false && <label className="switch"><input type="checkbox" checked={p.narrator} onChange={(e) => p.setNarrator(e.target.checked)} /> <span>{T(lang, 'Anlatıcı: her turda kısa bir bilgi söyle (N)', 'Narrator: say a short fact every turn (N)')}</span></label>}
 
       <fieldset className="fs compare">
         <legend>{T(lang, 'İki yeri karşılaştır', 'Compare two places')}</legend>

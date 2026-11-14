@@ -7,6 +7,7 @@ interface Props {
   onPick: (p: Place) => void;
   announce: (t: string) => void;
   autoFocus?: boolean;
+  lang?: 'tr' | 'en';
 }
 
 function AutoFocus({ target }: { target: React.RefObject<HTMLInputElement | null> }) {
@@ -18,7 +19,9 @@ function AutoFocus({ target }: { target: React.RefObject<HTMLInputElement | null
  * Şehir arama: WAI-ARIA 1.2 combobox (liste kutusu açılır, ↑/↓ seçenek, Enter seç, Esc kapat).
  * + "Konumumu kullan" (geolocation). Haritaya dokunma WorldMap bileşeninde.
  */
-export function PlacePicker({ cities, place, onPick, announce, autoFocus }: Props) {
+export function PlacePicker({ cities, place, onPick, announce, autoFocus, lang = 'tr' }: Props) {
+  const en = lang === 'en';
+  const T = (t: string, e: string) => (en ? e : t);
   const id = useId();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -35,7 +38,8 @@ export function PlacePicker({ cities, place, onPick, announce, autoFocus }: Prop
     setHits(h);
     setActive(h.length ? 0 : -1);
     setOpen(q.trim().length >= 2);
-    if (q.trim().length >= 2) announce(h.length ? `${h.length} sonuç. İlki: ${h[0][0]}, ${countryName(h[0][1])}. Enter ile seç ya da aşağı okla gez.` : 'Sonuç yok.');
+    if (q.trim().length >= 2) announce(h.length ? T(`${h.length} sonuç. İlki: ${h[0][0]}, ${countryName(h[0][1])}. Enter ile seç ya da aşağı okla gez.`, `${h.length} results. First: ${h[0][0]}, ${countryName(h[0][1])}. Press Enter to choose or use the down arrow.`) : T('Sonuç yok.', 'No results.'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, cities, announce]);
 
   const choose = (row: CityRow) => {
@@ -58,11 +62,11 @@ export function PlacePicker({ cities, place, onPick, announce, autoFocus }: Prop
    */
   const useMyLocation = () => {
     if (!window.isSecureContext) {
-      setGeoMsg('Konum yalnızca güvenli bağlantıda (https ya da localhost) çalışır. Bu sayfa http ile açıldı. Şehir aramayı ya da küreye dokunmayı kullan.');
+      setGeoMsg(T('Konum yalnızca güvenli bağlantıda (https ya da localhost) çalışır. Bu sayfa http ile açıldı. Şehir aramayı ya da küreye dokunmayı kullan.', 'Location only works on a secure connection (https or localhost). This page was opened over http. Search for a city or tap the globe.'));
       return;
     }
-    if (!('geolocation' in navigator)) { setGeoMsg('Bu tarayıcı konum vermiyor. Şehir aramayı kullan.'); return; }
-    setBusy(true); setGeoMsg('Konum isteniyor… (en fazla 20 saniye)');
+    if (!('geolocation' in navigator)) { setGeoMsg(T('Bu tarayıcı konum vermiyor. Şehir aramayı kullan.', 'This browser does not provide location. Search for a city.')); return; }
+    setBusy(true); setGeoMsg(T('Konum isteniyor… (en fazla 20 saniye)', 'Asking for location… (up to 20 seconds)'));
     const ok = (pos: GeolocationPosition) => {
       setBusy(false);
       const p = { lat: pos.coords.latitude, lon: pos.coords.longitude };
@@ -73,11 +77,11 @@ export function PlacePicker({ cities, place, onPick, announce, autoFocus }: Prop
     const fail = (err: GeolocationPositionError) => {
       setBusy(false);
       const why = err.code === err.PERMISSION_DENIED
-        ? 'Konum izni verilmedi (tarayıcı adres çubuğundaki konum simgesinden izin verebilirsin).'
+        ? T('Konum izni verilmedi (tarayıcı adres çubuğundaki konum simgesinden izin verebilirsin).', 'Location permission was not given (allow it from the location icon in the address bar).')
         : err.code === err.TIMEOUT
-          ? 'Cihaz 20 saniyede konumunu bulamadı (masaüstünde Wi-Fi ya da GPS yoksa sık olur).'
-          : 'Cihaz konumunu belirleyemedi (işletim sisteminde konum hizmetleri kapalı olabilir).';
-      setGeoMsg(`${why} Şehir aramayı ya da küreye dokunmayı kullan.`);
+          ? T('Cihaz 20 saniyede konumunu bulamadı (masaüstünde Wi-Fi ya da GPS yoksa sık olur).', 'The device could not find its location in 20 seconds (common on desktops without Wi-Fi or GPS).')
+          : T('Cihaz konumunu belirleyemedi (işletim sisteminde konum hizmetleri kapalı olabilir).', 'The device could not determine its location (location services may be off).');
+      setGeoMsg(`${why} ${T('Şehir aramayı ya da küreye dokunmayı kullan.', 'Search for a city or tap the globe.')}`);
     };
     // önce önbellekteki konum (hızlı), olmazsa taze konum
     navigator.geolocation.getCurrentPosition(ok, () => navigator.geolocation.getCurrentPosition(ok, fail, { enableHighAccuracy: false, timeout: 20000, maximumAge: 0 }),
@@ -87,26 +91,26 @@ export function PlacePicker({ cities, place, onPick, announce, autoFocus }: Prop
   return (
     <div className="picker">
       <div className="combo">
-        <label htmlFor={`${id}-in`} className="lbl">Şehir ara</label>
+        <label htmlFor={`${id}-in`} className="lbl">{T('Şehir ara', 'Search for a city')}</label>
         <input
           id={`${id}-in`} ref={input} type="text" className="field" autoComplete="off" spellCheck={false}
-          placeholder={cities ? 'Örn. şehir adı yaz…' : 'Şehir listesi yükleniyor…'} disabled={!cities}
+          placeholder={cities ? T('Örn. şehir adı yaz…', 'e.g. type a city name…') : T('Şehir listesi yükleniyor…', 'Loading city list…')} disabled={!cities}
           role="combobox" aria-autocomplete="list" aria-expanded={open && hits.length > 0} aria-controls={listId}
           aria-activedescendant={open && active >= 0 ? `${id}-opt-${active}` : undefined}
           value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey} onBlur={() => setTimeout(() => setOpen(false), 150)}
         />
-        <ul id={listId} role="listbox" aria-label="Şehir sonuçları" className="listbox" hidden={!(open && hits.length > 0)}>
+        <ul id={listId} role="listbox" aria-label={T('Şehir sonuçları', 'City results')} className="listbox" hidden={!(open && hits.length > 0)}>
           {hits.map((c, i) => (
             <li key={`${c[0]}-${c[1]}-${c[2]}`} id={`${id}-opt-${i}`} role="option" aria-selected={i === active}
               className={i === active ? 'opt active' : 'opt'} onMouseDown={(e) => { e.preventDefault(); choose(c); }}>
-              <b>{c[0]}</b>, {countryName(c[1])} <small>nüfus {c[4].toLocaleString('tr-TR')}</small>
+              <b>{c[0]}</b>, {countryName(c[1])} <small>{T('nüfus', 'population')} {c[4].toLocaleString(en ? 'en-US' : 'tr-TR')}</small>
             </li>
           ))}
         </ul>
       </div>
-      <button type="button" className="btn" onClick={useMyLocation} disabled={busy}>📍 Konumumu kullan</button>
+      <button type="button" className="btn" onClick={useMyLocation} disabled={busy}>📍 {T('Konumumu kullan', 'Use my location')}</button>
       {geoMsg && <p className="hint" role="status">{geoMsg}</p>}
-      {place && <p className="chosen">Seçili yer: <b>{placeLabel(place)}</b></p>}
+      {place && <p className="chosen">{T('Seçili yer:', 'Selected:')} <b>{placeLabel(place)}</b></p>}
       {autoFocus && <AutoFocus target={input} />}
     </div>
   );

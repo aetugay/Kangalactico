@@ -399,6 +399,19 @@ class AudioEngine {
   }
   wavesOff() { if (this.ac && this.waveGain) this.waveGain.gain.setTargetAtTime(0, this.ac.currentTime, 0.25); }
 
+  /** Komut onay sesi (arayüz geri bildirimi; veri değil): anlaşıldı → kısa yükselen iki nota, anlaşılmadı → alçalan iki nota. */
+  confirm(ok: boolean) {
+    const ac = this.ctx(), when = ac.currentTime + 0.02;
+    const notes = ok ? [880, 1318.5] : [440, 330];
+    notes.forEach((f, i) => {
+      const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+      const g = ac.createGain(); o.connect(g).connect(this.master);
+      const t = when + i * 0.09;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      o.start(t); o.stop(t + 0.2);
+    });
+  }
+
   /** Kuzey işareti: her tur başında hafif bir üçgen (zil) vuruşu. */
   northTick(when: number) {
     const ac = this.ctx();

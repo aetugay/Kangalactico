@@ -6,17 +6,18 @@ import { IconBars, IconBreath, IconStrings, IconWave } from './components/icons.
 import { DEFAULT_MIX, EventsDialog, Explore, instrumentName, SoundDialog, StoriesDialog, type EarthEvent, type Mix, type StoryInfo } from './components/Extras.tsx';
 import { PlacePicker } from './components/PlacePicker.tsx';
 import { shortcutAllowed } from './lib/keys.ts';
+import { Guide, type CmdEntry, type GuideStatus } from './components/Guide.tsx';
+import { monthName } from './lib/co2.ts';
 import { RadarView } from './components/RadarView.tsx';
 import { About, Dialog, Intro, LayerPills, NowCard, Timeline, TopBar, type Pill } from './components/Shell.tsx';
 import { WorldMap } from './components/WorldMap.tsx';
 import { useRadar } from './hooks/useRadar.ts';
 import { tr, type Lang } from './i18n.ts';
 import { bearing as bearingTo, compass8, destination, formatKm, formatLatLon, haversineKm, type LatLon } from './lib/geo.ts';
-import { monthName } from './lib/co2.ts';
 import { colorFor } from './lib/grid.ts';
 import { LandMask, type LandFile } from './lib/land.ts';
 import { co2Color, loadAerosols, loadCo2, loadJson, loadSst, loadTemperature, type AerosolSource, type Co2Source, type SstSource, type TemperatureSource } from './lib/layers.ts';
-import { M24 } from './lib/m24.ts';
+import { INSTRUMENT_LABEL, M24 } from './lib/m24.ts';
 import { M24Panel } from './components/M24Panel.tsx';
 import { Cities, countryName, fold, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
 import { noteHz, PARTS, type Mode, type RadarLayer, type Scale } from './lib/radar.ts';
@@ -49,7 +50,8 @@ export default function App() {
   const guideRef = useRef(guide); guideRef.current = guide;
   const langRef = useRef(lang); langRef.current = lang;
   speech.setLang(lang);
-  const setLang = (l: Lang) => { setLangS(l); store.set('lang', l); speech.setLang(l); if (guideRef.current) void speech.say(l === 'en' ? 'Language: English.' : 'Dil: Türkçe.'); };
+  const setLang = (l: Lang) => { langRef.current = l; setLangS(l); store.set('lang', l); speech.setLang(l); announceRef.current(l === 'en' ? 'Language: English. Voice commands, the voice guide and the screen are now in English.' : 'Dil: Türkçe. Sesli komut, sesli rehber ve ekran artık Türkçe.'); };
+  const announceRef = useRef<(t: string) => void>(() => {});
   const setGuide = (v: boolean) => {
     setGuideS(v); store.set('guide', v ? '1' : '0');
     if (v) void speech.say(langRef.current === 'en' ? 'Voice guide on.' : 'Sesli rehber açık.');
@@ -91,6 +93,22 @@ export default function App() {
   const [m24Loading, setM24Loading] = useState(false);
   const [m24On, setM24On] = useState<Record<string, boolean>>({});
   const [m24Visual, setM24Visual] = useState<string | null>(null);
+  /** 2024 katmanını aç/kapat (panel ve sesli/yazılı komut ortak). Veri yüklü değilse yükler. */
+  const M24_NAMES: Record<string, { tr: string; en: string }> = {
+    co2_24: { tr: 'Atmosferik CO₂ 2024', en: 'Atmospheric CO₂ 2024' }, so2_24: { tr: 'Yüzey SO₂ 2024', en: 'Surface SO₂ 2024' },
+    aod_24: { tr: 'Aerosol optik derinliği 2024', en: 'Aerosol optical depth 2024' }, t2m_24: { tr: '2 m hava sıcaklığı 2024', en: '2 m air temperature 2024' },
+    ts_24: { tr: 'Yüzey deri sıcaklığı 2024', en: 'Surface skin temperature 2024' }, albedo_24: { tr: 'Yüzey albedosu 2024', en: 'Surface albedo 2024' },
+    sst_24: { tr: 'Deniz yüzeyi sıcaklığı 2024', en: 'Sea surface temperature 2024' }, precip_24: { tr: 'Kara üstü yağış 2024', en: 'Precipitation over land 2024' },
+    seaice_24: { tr: 'Deniz buzu oranı 2024', en: 'Sea-ice fraction 2024' },
+  };
+  const setM24Layer = (id: string, v: boolean) => {
+    if (!m24 && !m24Loading) openM24();
+    setM24On((o) => ({ ...o, [id]: v }));
+    if (v) setM24Visual(id); else setM24Visual((cur) => (cur === id ? null : cur));
+    const en = langRef.current === 'en', n = M24_NAMES[id]?.[en ? 'en' : 'tr'] ?? id, inst = INSTRUMENT_LABEL[id]?.[en ? 'en' : 'tr'];
+    announce(v ? (en ? `${n} on: ${inst}.` : `${n} açıldı: ${inst}.`) : (en ? `${n} off.` : `${n} kapandı.`));
+  };
+  const anyM24On = Object.values(m24On).some(Boolean);
   const openM24 = () => { if (m24 || m24Loading) return; setM24Loading(true); M24.load(import.meta.env.BASE_URL).then(setM24).catch((e) => setErr(String(e))).finally(() => setM24Loading(false)); };
   const [pickOpen, setPickOpen] = useState(false);
   // iki yeri karşılaştırma: B yeri, sırayla dinleme ve tur sayacı
@@ -117,10 +135,13 @@ export default function App() {
   const [live, setLive] = useState('');
   const [audioOk, setAudioOk] = useState(true);
   // Duyuru: sesli rehber açıksa tarayıcı konuşur; kapalıysa ekran okuyucuya (aria-live) bırakılır — ikisi üst üste binmez.
+  const capture = useRef<string[] | null>(null);
   const announce = useCallback((t: string) => {
+    if (capture.current) { capture.current.push(t); return; }
     if (guideRef.current && speech.supported) { void speech.say(t); return; }
     setLive(''); requestAnimationFrame(() => setLive(t));
   }, []);
+  announceRef.current = announce;
   useEffect(() => engine.onStatus(setAudioOk) as unknown as void, []);
 
   // katmanlar açılınca yükle
@@ -174,6 +195,7 @@ export default function App() {
   }, [on, co2, temp, sst, aer, month, tFrame, sstFrame, lang, mix.inst, m24, m24On]);
 
   const advanceRef = useRef(advance); advanceRef.current = advance;
+  const anyM24RefOn = useRef(false); anyM24RefOn.current = anyM24On;
   // zaman uyumsuz akışların (hikâye, anlatıcı, tur geri çağrısı) güncel durumu okuması için
   const live2 = useRef({ compare: false, story: null as string | null, narrator: false, place: null as Place | null, placeB: null as Place | null, co2, temp, aer, cities, rangeKm, month, tFrame, lang });
   live2.current = { compare: compare && !!placeB, story, narrator, place, placeB, co2, temp, aer, cities, rangeKm, month, tFrame, lang };
@@ -201,7 +223,7 @@ export default function App() {
     },
     onRevolution: () => {
       if (live2.current.compare) { setCmpTurn((t) => t + 1); return; }          // karşılaştırmada zaman sabit kalır, yer değişir
-      if (advanceRef.current && on.co2 && !live2.current.story) setMonth((m) => (m + 1) % 12);
+      if (advanceRef.current && (on.co2 || anyM24RefOn.current) && !live2.current.story) setMonth((m) => (m + 1) % 12);
       narrate();
     },
   });
@@ -245,10 +267,11 @@ export default function App() {
   const welcomed = useRef(false);
   const welcome = useCallback(() => {
     if (welcomed.current) return; welcomed.current = true;
-    if (!guideRef.current) return;
-    void speech.say(langRef.current === 'en'
-      ? 'Welcome to EarthEar. Here you listen to NASA Earth data as music. To begin, press C and type a city name, or press T and say, for example: go to Ankara. Press H for help at any time. If you use a screen reader, press G to turn this voice guide off.'
-      : 'EarthEar\'a hoş geldin. Burada NASA\'nın Dünya verilerini müzik olarak dinlersin. Başlamak için C tuşuna bas ve bir şehir adı yaz; ya da T tuşuna basıp konuş, örneğin: Ankara\'ya git. Yardım için istediğin zaman H tuşuna bas. Ekran okuyucu kullanıyorsan G tuşu bu sesli rehberi kapatır.');
+    const msg = langRef.current === 'en'
+      ? 'Welcome to EarthEar. For voice commands press Alt+T or use the first button. For help, press the question mark.'
+      : 'EarthEar\'e hoş geldiniz. Sesli komut için Alt+T\'ye basın ya da ilk butonu kullanın. Yardım için soru işareti.';
+    setLive(''); requestAnimationFrame(() => setLive(msg)); // ekran okuyucu her zaman duyar
+    if (guideRef.current) void speech.say(msg);
   }, []);
 
   // düğmenin, bağlantının, kaydırıcının adını oku (fare üstüne gelince ya da klavyeyle odaklanınca)
@@ -503,8 +526,8 @@ export default function App() {
   };
   const MONTH_WORDS = [['ocak', 'january'], ['subat', 'february'], ['mart', 'march'], ['nisan', 'april'], ['mayis', 'may'], ['haziran', 'june'], ['temmuz', 'july'], ['agustos', 'august'], ['eylul', 'september'], ['ekim', 'october'], ['kasim', 'november'], ['aralik', 'december']];
   const commandHelp = () => (lang === 'en'
-    ? 'You can say: go to Ankara. Play. Stop. Temperature on. Ocean off. Summary. Legend. Go north. Range two thousand. July. Compare with Tokyo. Tell the breath story. Events. Help.'
-    : 'Şunları söyleyebilirsin: Ankara\'ya git. Çal. Dur. Sıcaklığı aç. Okyanusu kapat. Özet. Lejant. Kuzeye git. Menzil iki bin. Temmuz. Tokyo ile karşılaştır. Nefes hikâyesini anlat. Olaylar. Yardım.');
+    ? 'You can say or type: go to Ankara. Play. Stop. Temperature on. Ocean off. Sea temperature on. Precipitation on. Sea ice on. Summary. Legend. Go north. Range two thousand. July. Compare with Tokyo. Local scale. Tell the breath story. Events. Switch to Turkish. Help.'
+    : 'Şunları söyleyebilir ya da yazabilirsin: Ankara\'ya git. Çal. Dur. Sıcaklığı aç. Okyanusu kapat. Deniz sıcaklığını aç. Yağışı aç. Deniz buzunu aç. Özet. Lejant. Kuzeye git. Menzil iki bin. Temmuz. Tokyo ile karşılaştır. Yerel ölçek. Nefes hikâyesini anlat. Olaylar. İngilizceye geç. Yardım.');
   /** Söylenen cümleyi komuta çevir ve uygula. Anlaşıldıysa true. */
   const runCommand = (text: string): boolean => {
     const en = lang === 'en', R = radarRef.current;
@@ -513,8 +536,9 @@ export default function App() {
     const word = (...w: string[]) => w.some((x) => t.includes(` ${x} `));
     const needPlace = () => { if (place) return true; announce(en ? 'Choose a place first. Say, for example: go to Ankara.' : 'Önce bir yer seç. Örneğin şöyle söyle: Ankara\'ya git.'); return false; };
 
-    if (has('ingilizce', 'english')) { setLang('en'); return true; }
-    if (has('turkce', 'turkish')) { setLang('tr'); return true; }
+    // dil (Adım 4): "Switch to English", "English", "İngilizceye geç" / "Türkçeye geç", "Turkish", "Türkçe" — iki dilde de çalışır
+    if (has('ingilizce', 'english', 'ingilizceye')) { setLang('en'); return true; }
+    if (has('turkce', 'turkish', 'turkceye')) { setLang('tr'); return true; }
     if (word('yardim', 'help', 'komutlar', 'commands') || has('ne soyleyebilirim', 'what can i say')) { announce(commandHelp()); return true; }
     if (word('sus', 'sessiz', 'sessizlik', 'quiet', 'silence')) { R.hush(); stopStory(); return true; }
 
@@ -543,6 +567,21 @@ export default function App() {
     if (has('lejant', 'legend', 'enstrumanlari tanit')) { if (needPlace()) void R.runLegend(); return true; }
     if (has('anlatici', 'narrator')) { setNarrator(!has('kapat', ' off ', 'kapa ')); return true; }
 
+    // 2024 aylık NASA katmanları (önce: daha özgül ifadeler). "deniz sıcaklığı" → 2024 MERRA-2; "okyanus" → ECCO2 katmanı
+    const m24id = has('deniz yuzeyi sicakl', 'deniz sicakl', 'sea surface temp', 'sea temperature', 'sea surface') ? 'sst_24'
+      : has('yagis', 'yagmur', 'precip', ' rain') ? 'precip_24'
+        : has('deniz buzu', ' buz', 'sea ice', ' ice ') ? 'seaice_24'
+          : has('kukurt', 'so2', 's o 2', 'sulfur', 'sulphur') ? 'so2_24'
+            : has('optik derinlik', ' aod', 'optical depth') ? 'aod_24'
+              : has('albedo', 'yansitma', 'reflectiv') ? 'albedo_24'
+                : has('deri sicakl', 'skin temp') ? 'ts_24'
+                  : has('hava sicakl', 'air temp', 'iki metre', '2 metre') || (has('2024') && has('sicakl', 'temperature')) ? 't2m_24'
+                    : has('2024') && has('karbon', 'co2', 'carbon') ? 'co2_24' : null;
+    if (m24id) {
+      const want = has('kapat', 'kapa ', 'kaldir', ' off ', 'remove') ? false : has(' ac ', 'ekle', 'goster', ' on ', ' add ', 'dinle', 'listen') ? true : !m24On[m24id];
+      setM24Layer(m24id, want);
+      return true;
+    }
     const layer: LayerId | null = has('okyanus', 'deniz', 'ocean', ' sea ') ? 'sst' : has('karbon', 'co2', 'c o 2', 'carbon') ? 'co2' : has('sicakl', 'temperature', ' isi ') ? 'temp' : has('aerosol', 'toz', 'duman', 'dust', 'smoke') ? 'aerosol' : null;
     if (layer) {
       const want = has('kapat', 'kapa ', 'kaldir', ' off ', 'remove') ? false : has(' ac ', 'ekle', 'goster', ' on ', ' add ', 'dinle', 'listen') ? true : !on[layer];
@@ -581,37 +620,70 @@ export default function App() {
     return false;
   };
   const cmdRef = useRef(runCommand); cmdRef.current = runCommand;
+  const [cmdHistory, setCmdHistory] = useState<CmdEntry[]>([]);
+  const [guideStatus, setGuideStatus] = useState<GuideStatus>({ kind: 'idle' });
+  const guideInput = useRef<HTMLInputElement>(null);
+  const EXAMPLES = { tr: 'Ankara\'ya git; çal; sıcaklığı aç', en: 'go to Tokyo; play; temperature on' };
+  /** Sesli ya da yazılı komut: aynı çözümleyici. Anlaşılırsa onay sesi + "Anlaşıldı: …" + komutun kendi duyurusu; anlaşılmazsa 3 örnek. */
+  const execCommand = (alts: string[], source: 'voice' | 'text') => {
+    capture.current = [];
+    let hit: string | null = null;
+    try { for (const a of alts) if (cmdRef.current(a)) { hit = a; break; } } finally { /* duyurular aşağıda */ }
+    const msgs = capture.current ?? []; capture.current = null;
+    const en = langRef.current === 'en'; // dil komutu langRef'i hemen değiştirir → onay yeni dilde
+    const text = hit ?? alts[0];
+    let reply: string;
+    if (hit) {
+      engine.unlock(); engine.confirm(true);
+      reply = [en ? `Understood: ${text}.` : `Anlaşıldı: ${text}.`, ...msgs].join(' ');
+    } else {
+      engine.unlock(); engine.confirm(false);
+      reply = en ? `I did not understand: ${text}. Try for example: ${EXAMPLES.en}.` : `Anlamadım: ${text}. Örneğin şunları deneyebilirsin: ${EXAMPLES.tr}.`;
+    }
+    announce(reply);
+    setGuideStatus({ kind: hit ? 'ok' : 'fail', text: reply });
+    setCmdHistory((h) => [{ text, ok: !!hit, source, reply }, ...h].slice(0, 6));
+    return !!hit;
+  };
+  /** Sesli komut kullanılamıyorsa yazılı kutuya yönlendir. */
+  const toTextBox = (why: string) => {
+    const en = langRef.current === 'en';
+    const msg = `${why} ${en ? 'You can type the command in the command box instead.' : 'Komutu bunun yerine komut kutusuna yazabilirsin.'}`;
+    announce(msg); setGuideStatus({ kind: 'error', text: msg });
+    setTimeout(() => guideInput.current?.focus(), 50);
+  };
   const talk = () => {
     const en = langRef.current === 'en';
     if (listener.active) { listener.cancel(); setListening(false); engine.setMaster(mix.master); return; }
-    if (!listener.supported) { announce(en ? 'Voice commands are not supported in this browser. Please use Chrome or Edge.' : 'Bu tarayıcı sesli komutu desteklemiyor. Chrome ya da Edge kullan.'); return; }
+    if (!listener.supported) { toTextBox(en ? 'Voice commands are not supported in this browser.' : 'Bu tarayıcı sesli komutu desteklemiyor.'); return; }
     welcomed.current = true;
     radarRef.current.hush();                      // rehber sussun ki mikrofon kendi sesimizi duymasın
     engine.unlock(); engine.northTick(engine.now + 0.02);
     engine.setMaster(mix.master * 0.2);           // dinlerken müziği kıs
-    setListening(true); setHeard(null);
+    setListening(true); setHeard(null); setGuideStatus({ kind: 'listening' });
     listener.once(langRef.current, (alts) => {
       setHeard(alts[0]);
-      if (!alts.some((a) => cmdRef.current(a))) announce(en ? `I heard: ${alts[0]}. I did not understand. Say "help" to hear the commands.` : `Şunu duydum: ${alts[0]}. Anlamadım. Komutları duymak için "yardım" de.`);
+      execCommand(alts, 'voice');
     }, (err) => {
-      announce(err === 'denied' ? (en ? 'Microphone permission was not given. Allow the microphone from the address bar.' : 'Mikrofon izni verilmedi. Adres çubuğundan mikrofona izin ver.')
+      if (err === 'nospeech') { const m = en ? 'I did not hear anything. Press Alt+T and speak, or type the command.' : 'Bir şey duymadım. Alt+T\'ye basıp konuş ya da komutu yaz.'; announce(m); setGuideStatus({ kind: 'error', text: m }); return; }
+      toTextBox(err === 'denied' ? (en ? 'Microphone permission was not given.' : 'Mikrofon izni verilmedi.')
         : err === 'network' ? (en ? 'Voice commands need an internet connection.' : 'Sesli komut için internet bağlantısı gerekli.')
-          : err === 'nospeech' ? (en ? 'I did not hear anything. Press T and speak.' : 'Bir şey duymadım. T tuşuna basıp konuş.')
-            : (en ? 'Voice command failed. Try again.' : 'Sesli komut çalışmadı. Tekrar dene.'));
-    }, () => { setListening(false); engine.setMaster(mix.master); });
+          : (en ? 'Voice command failed.' : 'Sesli komut çalışmadı.'));
+    }, () => { setListening(false); engine.setMaster(mix.master); setGuideStatus((s) => (s.kind === 'listening' ? { kind: 'idle' } : s)); });
   };
   // geliştirme: mikrofon olmadan komutları sınamak için
-  if (import.meta.env.DEV) (window as unknown as { __cmd?: (t: string) => boolean }).__cmd = (t) => cmdRef.current(t);
+  if (import.meta.env.DEV) (window as unknown as { __cmd?: (t: string) => boolean }).__cmd = (t) => execCommand([t], 'text');
 
   // genel kısayollar: C yer seç · H yardım · G sesli rehber · Esc sustur · 1-4 katman · I/J/K/M gez
   const globalKeys = useRef<(e: KeyboardEvent) => void>(() => {});
   globalKeys.current = (e) => {
+    if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyT' || e.key.toLowerCase() === 't')) { e.preventDefault(); talk(); return; } // Alt+T: her yerde
     // yazı alanında ya da açık diyalogda hiçbir kısayol çalışmaz (Esc'yi diyalog işler: yalnız pencereyi kapatır)
     if (!shortcutAllowed(e)) return;
     if (e.key === 'Escape') { radar.hush(); stopStory(); return; }
     const k = e.key.toLowerCase();
     if (k === 'c') { e.preventDefault(); setPickFor('A'); setPickOpen(true); }
-    else if (k === 'h') { e.preventDefault(); welcomed.current = true; radar.hush(); if (guideRef.current) void speech.say(helpText()); else announce(helpText()); }
+    else if (k === 'h' || e.key === '?') { e.preventDefault(); welcomed.current = true; radar.hush(); if (guideRef.current) void speech.say(helpText()); else announce(helpText()); }
     else if (k === 'g') { e.preventDefault(); setGuide(!guideRef.current); }
     else if (k === 'b' && place) { e.preventDefault(); setPickFor('B'); setPickOpen(true); }
     else if (k === 'y') { e.preventDefault(); setStoriesOpen(true); }
@@ -690,6 +762,9 @@ export default function App() {
     { title: lang === 'tr' ? 'Şehirler' : 'Cities', text: 'GeoNames (geonames.org), CC BY 4.0' },
   ];
 
+  const guidePanel = <Guide lang={lang} micSupported={listener.supported} listening={listening} status={guideStatus} history={cmdHistory} onTalk={talk}
+    onCommand={(t) => execCommand([t], 'text')} narrator={narrator} setNarrator={setNarrator} inputRef={guideInput} />;
+
   return (
     <div className={`app${view3d ? ' is3d' : ' is2d'}`}>
       {view3d && (
@@ -698,13 +773,14 @@ export default function App() {
           onSlow={() => { if (forced !== '3d') { setView3dS(false); setSlowNote(true); } }} />
       )}
 
-      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => { setPickFor('A'); setPickOpen(true); }} onAbout={() => setAboutOpen(true)} hasPlace={!!place} guide={guide} setGuide={setGuide} listening={listening} onTalk={talk} />
+      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => { setPickFor('A'); setPickOpen(true); }} onAbout={() => setAboutOpen(true)} hasPlace={!!place} guide={guide} setGuide={setGuide} listening={listening} onTalk={talk} micSupported={listener.supported} />
 
       <main className="stage">
         {!audioOk && <p role="alert" className="glass alert">{lang === 'tr' ? 'Ses başlatılamadı. Sessiz modu kapat, sesi aç ve bir düğmeye tekrar dokun.' : 'Audio could not start. Turn off silent mode, raise the volume and tap a button again.'}</p>}
         {err && <p role="alert" className="glass alert">{err}</p>}
         {slowNote && <p role="status" className="glass note">{tr(lang, 'fallback')}</p>}
 
+        {!place && <div className="right-col">{guidePanel}</div>}
         {!place && <Intro lang={lang} onPick={() => { setPickFor('A'); setPickOpen(true); }} onTalk={listener.supported ? talk : undefined} />}
         {(listening || heard) && <p role="status" className="glass note heard">{listening ? tr(lang, 'listening') : `“${heard}”`}</p>}
 
@@ -725,8 +801,9 @@ export default function App() {
                 setCompare={(v) => { setCompare(v); setCmpTurn(0); announce(v ? (lang === 'en' ? 'Listening in turns: one sweep for A, one sweep for B. Time stays fixed.' : 'Sırayla dinleme açık: bir tur A, bir tur B. Zaman sabit kalır.') : (lang === 'en' ? 'Listening in turns off.' : 'Sırayla dinleme kapalı.')); }}
                 onPickB={() => { setPickFor('B'); setPickOpen(true); }} onClearB={() => { setPlaceB(null); setCompare(false); setCmpTurn(0); }} onDiff={sayDiff}
                 onStories={() => setStoriesOpen(true)} onEvents={openEvents} onSound={() => setSoundOpen(true)}
-                narrator={narrator} setNarrator={setNarrator} story={story} onStopStory={stopStory} />
+                narrator={narrator} setNarrator={setNarrator} story={story} onStopStory={stopStory} showNarrator={false} />
             </NowCard>
+            <div className="right-col">
             <LayerPills lang={lang} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }}>
               {on.temp && temp && (
                 <div className="sub-time">
@@ -748,16 +825,29 @@ export default function App() {
               )}
               {on.aerosol && <p className="small muted">{lang === 'tr' ? 'Aerosoller: 19 Ağu 2025 20:00 UTC; yoğunluk göreli.' : 'Aerosols: 19 Aug 2025 20:00 UTC; relative density.'}</p>}
               <M24Panel lang={lang} m24={m24} loading={m24Loading} onOpen={openM24} on={m24On} visualId={m24Idx >= 0 ? m24Visual : null} month={month} place={active} announce={announce}
-                setOn={(id, v) => { setM24On((o) => ({ ...o, [id]: v })); if (v) setM24Visual(id); else if (m24Visual === id) setM24Visual(null); const l = m24?.meta.layers.find((x) => x.id === id); if (l) announce(`${lang === 'en' ? l.en : l.tr} ${v ? (lang === 'en' ? 'on' : 'açıldı') : (lang === 'en' ? 'off' : 'kapandı')}.`); }}
+                setOn={setM24Layer}
                 onShow={(id) => setM24Visual(id)} />
             </LayerPills>
-            {on.co2 && co2 && <Timeline lang={lang} month={month} setMonth={(m) => { setMonth(m); announce(lang === 'en' ? `${co2.monthLabel(m, 'en')}: ${co2.grid.bilinear(place, m).toFixed(1)} ppm at the center.` : `${co2.monthLabel(m)}: merkezde ${co2.grid.bilinear(place, m).toFixed(1)} ppm.`); }} label={co2.monthLabel(month, lang)} advance={advance} setAdvance={setAdvance} />}
+            {guidePanel}
+            </div>
+            {((on.co2 && co2) || anyM24On) && (() => {
+              // etiket görünen/seçili katmanın yılını gösterir: 2024 katmanı görünüyorsa (ya da CO₂ 2021 kapalıysa) 2024, yoksa 2021 CO₂ paketi
+              const use24 = !!m24 && (m24Idx >= 0 || !(on.co2 && co2));
+              const idx24 = m24Idx >= 0 ? m24Idx : m24 ? m24.meta.layers.findIndex((l) => m24On[l.id]) : -1;
+              const label24 = (m: number) => `${monthName(m, lang)} 2024 · ${lang === 'en' ? 'monthly mean' : 'aylık ortalama'}`;
+              const lbl = use24 || !co2 ? label24(month) : co2.monthLabel(month, lang);
+              return <Timeline lang={lang} month={month} label={lbl} year={use24 || !co2 ? 2024 : 2021} title={use24 || !co2 ? (lang === 'en' ? 'Date (2024 layers)' : 'Tarih (2024 katmanları)') : undefined} advance={advance} setAdvance={setAdvance} setMonth={(m) => {
+                setMonth(m);
+                if ((use24 || !co2) && m24 && idx24 >= 0) { const L = m24.radarLayer(idx24, m, lang), v = L.sample(place); announce(`${label24(m)}: ${L.label}, ${Number.isNaN(v) ? (lang === 'en' ? 'no data at the center' : 'merkezde veri yok') : (lang === 'en' ? L.fmt(v) + ' at the center' : 'merkezde ' + L.fmt(v))}.`); }
+                else if (co2) announce(lang === 'en' ? `${co2.monthLabel(m, 'en')}: ${co2.grid.bilinear(place, m).toFixed(1)} ppm at the center.` : `${co2.monthLabel(m)}: merkezde ${co2.grid.bilinear(place, m).toFixed(1)} ppm.`);
+              }} />;
+            })()}
           </>
         )}
       </main>
 
       <Dialog open={pickOpen} onClose={() => setPickOpen(false)} title={pickFor === 'B' ? (lang === 'en' ? 'Choose the second place' : 'İkinci yeri seç') : tr(lang, 'searchTitle')} lang={lang}>
-        <PlacePicker cities={cities} place={pickFor === 'B' ? placeB : place} onPick={(p) => { if (pickFor === 'B') { setPlaceB(p); setCompare(true); setCmpTurn(0); announce(lang === 'en' ? `Second place: ${placeLabel(p)}. The radar now plays one sweep here and one sweep there. Press Space to listen.` : `İkinci yer: ${placeLabel(p)}. Radar artık bir tur birinci yeri, bir tur ikinci yeri çalar. Dinlemek için Boşluk.`); } else setPlace(p); setPickOpen(false); }} announce={announce} autoFocus />
+        <PlacePicker cities={cities} place={pickFor === 'B' ? placeB : place} onPick={(p) => { if (pickFor === 'B') { setPlaceB(p); setCompare(true); setCmpTurn(0); announce(lang === 'en' ? `Second place: ${placeLabel(p)}. The radar now plays one sweep here and one sweep there. Press Space to listen.` : `İkinci yer: ${placeLabel(p)}. Radar artık bir tur birinci yeri, bir tur ikinci yeri çalar. Dinlemek için Boşluk.`); } else setPlace(p); setPickOpen(false); }} announce={announce} autoFocus lang={lang} />
         <p className="small muted">{tr(lang, 'orTap')}</p>
       </Dialog>
       <StoriesDialog open={storiesOpen} onClose={() => setStoriesOpen(false)} lang={lang} stories={storyList} hasPlace={!!place} onRun={(id) => { setStoriesOpen(false); void runStory(id); }} />

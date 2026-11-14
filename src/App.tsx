@@ -204,7 +204,7 @@ export default function App() {
         {!place && <Intro lang={lang} onPick={() => setPickOpen(true)} />}
 
         {!view3d && (
-          <section className="flat" aria-label={lang === 'tr' ? '2D harita ve radar' : '2D map and radar'}>
+          <section className={`flat${place ? '' : ' empty'}`} aria-label={lang === 'tr' ? '2D harita ve radar' : '2D map and radar'}>
             {place && <div className="flat-radar"><RadarView center={place} rangeKm={rangeKm} paint={paintLL} paintKey={paintKey} angle={radar.angle} land={land} /></div>}
             <div className="flat-map"><WorldMap paint={paintLL} paintKey={paintKey} land={land} center={place} rangeKm={rangeKm} onPick={(p) => pickPoint(p, 'harita')} /></div>
           </section>

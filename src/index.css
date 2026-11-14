@@ -154,6 +154,10 @@ html.hc .listbox { background: #fff; border: 2px solid #000; }
 .flat { position: fixed; z-index: 1; left: 392px; right: 322px; top: 74px; bottom: 140px; display: grid; grid-template-rows: 1fr auto; gap: 12px; justify-items: center; align-items: center; pointer-events: auto; }
 .flat-radar { width: min(100%, 52vh); }
 .flat-map { width: min(100%, 640px); }
+/* 2D + yer seçilmemiş: açılış metni üstte, harita altında akar (üst üste binmez) */
+.is2d .intro { position: static; min-height: auto; padding: 132px 24px 20px; }
+.flat.empty { position: static; display: flex; justify-content: center; padding: 0 24px 72px; }
+.flat.empty .flat-map { width: min(100%, 720px); }
 .radarview { width: 100%; aspect-ratio: 1; display: block; }
 .worldmap { width: 100%; display: block; border-radius: 12px; border: 1px solid var(--line); cursor: crosshair; }
 html.hc .worldmap { border: 3px solid #000; }

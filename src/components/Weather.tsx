@@ -1,0 +1,63 @@
+// "Meteorolog": NASA GEOS-FP tahmini (statik dosya, internetsiz). Bugünün kartı + gün düğmeleri; her düğme o günün SES SAHNESİNİ çalar ve anlatır.
+// Her zaman: kaynak + çalıştırma saati + "model tahmini, resmi uyarı değildir"; dosya 24 saatten eskiyse tarih uyarısı.
+import { engine } from '../audio/engine.ts';
+import type { LatLon } from '../lib/geo.ts';
+import { COND_ICON, condText, dayName, localDate, nowCond, sourceLine, spokenDetail, spokenSummary, staleLine, weatherScene, windText, type Forecast } from '../lib/forecast.ts';
+import { seedOf } from '../lib/worlds.ts';
+import { Dialog } from './Shell.tsx';
+
+interface Props {
+  open: boolean; onClose: () => void; lang: 'tr' | 'en';
+  forecast: Forecast | null; error: string | null;
+  target: (LatLon & { name: string }) | null;
+  announce: (t: string) => void;
+}
+
+export function Weather({ open, onClose, lang, forecast: F, error, target, announce }: Props) {
+  const en = lang === 'en';
+  const now = Date.now(), todayIso = localDate(now);
+  const play = (sc: ReturnType<typeof weatherScene>, key: string) => { engine.unlock(); engine.weather(sc, engine.now + 0.1, 7, seedOf('weather', key)); };
+  let body: React.ReactNode;
+  if (error) body = <p role="alert">{en ? 'The forecast file could not be loaded. The rest of the app keeps working.' : 'Tahmin dosyası yüklenemedi. Uygulamanın geri kalanı çalışmaya devam eder.'} <small className="muted">({error})</small></p>;
+  else if (!F) body = <p role="status">{en ? 'Loading forecast…' : 'Tahmin yükleniyor…'}</p>;
+  else if (!target) body = <p>{en ? 'Choose a place first (for example say "Earth, go to Ankara").' : 'Önce bir yer seç (örneğin "Dünya, Ankara\'ya git" de).'}</p>;
+  else {
+    const s = F.sample(F.nowStep(now), target), days = F.days(target).filter((d) => d.date >= todayIso), c = nowCond(s), stale = staleLine(F.meta, F.ageHours(now), lang);
+    const nowScene = weatherScene({ tMean: s.t, precipMm: s.precip * 24, snowMm: s.snow * 24, convMm: s.conv * 24, wind: s.wind, thunderChance: s.conv * 24 >= 5 && s.conv >= 0.5 * s.precip, cloud: s.cloud });
+    body = (
+      <>
+        <section className="wx-today" aria-labelledby="wx-today-h">
+          <h3 id="wx-today-h" className="eyebrow">{en ? 'Now' : 'Şu an'} · {target.name}</h3>
+          <p className="wx-big"><span aria-hidden="true">{COND_ICON[c]}</span> {Number.isNaN(s.t) ? '—' : `${Math.round(s.t)} °C`}</p>
+          <p>{condText(c, lang)}, {windText(s.wind, lang)} ({Math.round(s.wind)} m/s)</p>
+          <div className="btn-row">
+            <button type="button" className="btn primary" onClick={() => { play(nowScene, `now-${target.lat}-${target.lon}`); announce(spokenSummary(F, target.name, target, lang, now)); }}>{en ? 'Listen: now + week' : 'Dinle: şu an + hafta'}</button>
+            <button type="button" className="btn" onClick={() => announce(spokenDetail(F, target, lang, now))}>{en ? 'More detail' : 'Daha fazla'}</button>
+          </div>
+        </section>
+        <h3 className="eyebrow" id="wx-days-h">{en ? `${days.length}-day forecast` : `${days.length} günlük tahmin`}{days.length < 7 ? (en ? ` (from today; the run covers ${days.length} more days)` : ` (bugünden itibaren; çalıştırma ${days.length} günü kapsıyor)`) : ''}</h3>
+        <ul className="wx-days" aria-labelledby="wx-days-h">
+          {days.map((d) => {
+            const name = dayName(d.date, todayIso, lang);
+            const txt = `${name}: ${Math.round(d.tMin)}–${Math.round(d.tMax)} °C, ${condText(d.cond, lang)}${d.thunderChance ? (en ? ', chance of thunderstorms' : ', gök gürültülü sağanak olasılığı') : ''}, ${en ? 'precipitation' : 'yağış'} ${d.precipMm.toFixed(1)} mm, ${windText(d.wind, lang)}.`;
+            return (
+              <li key={d.date}>
+                <button type="button" className="wx-day" aria-label={txt} onClick={() => { play(weatherScene(d), `${d.date}-${target.lat}-${target.lon}`); announce(txt); }}>
+                  <b>{name}</b><span aria-hidden="true" className="wx-ico">{COND_ICON[d.cond]}</span><span>{Math.round(d.tMax)}° / {Math.round(d.tMin)}°</span>
+                  {d.thunderChance && <small>{en ? 'thunder?' : 'gök gürültüsü olasılığı'}</small>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        {stale && <p className="wx-stale" role="note">{stale}</p>}
+      </>
+    );
+  }
+  return (
+    <Dialog open={open} onClose={onClose} title={en ? `Meteorologist${target ? ' — ' + target.name : ''}` : `Meteorolog${target ? ' — ' + target.name : ''}`} lang={lang}>
+      {body}
+      {F && <p className="small wx-src">{sourceLine(F.meta, lang)} <span className="muted">{en ? `Grid 2° × 2.5°; daily precipitation estimated from 4 samples.` : `Izgara 2° × 2.5°; günlük yağış 4 örnekten tahmini.`}</span></p>}
+    </Dialog>
+  );
+}

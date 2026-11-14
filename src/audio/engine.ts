@@ -1,5 +1,5 @@
 import { INSTRUMENT_OF } from '../lib/radar.ts';
-import type { WorldParams } from '../lib/worlds.ts';
+import { worldParams, type WorldParams } from '../lib/worlds.ts';
 // Web Audio motoru (demo/index.html'den taşındı). Tek örnek: `engine`.
 // Ses yalnızca kullanıcı dokunuşu içinde unlock() çağrılınca başlar.
 
@@ -453,6 +453,41 @@ class AudioEngine {
         break;
       }
     }
+  }
+
+  /**
+   * Meteorolog: bir günün hava sahnesi (dur sn). sc = lib/forecast.ts weatherScene (veriden; 0..1 şiddetler).
+   * yağmur: çiseleme → sağanak (damla sıklığı + hışırtı) · kar: boğuk yumuşak sessizlik + hafif rüzgâr · rüzgâr: hıza göre uğultu ve esinti
+   * sıcak ve güneşli: ağustos böcekleri · soğuk: buzlu rüzgâr (ses dünyası 'heat') · gök gürültüsü yalnız OLASILIK varsa (dünya 'thunder').
+   */
+  weather(sc: { rain: number; snow: number; wind: number; thunder: number; sunnyHot: number; cold: number; tMean: number }, when: number, dur: number, seed: number) {
+    const ac = this.ctx(), rnd = seeded(seed), out = this.out(), end = when + dur;
+    const layer = (type: BiquadFilterType, f: number, q: number, peak: number, atk = 0.8, rel = 1.2) => {
+      const s = ac.createBufferSource(); s.buffer = this.noise(); s.loop = true;
+      const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+      const g = ac.createGain(); s.connect(fl).connect(g).connect(out);
+      g.gain.setValueAtTime(0.0001, when); g.gain.linearRampToValueAtTime(peak, when + atk); g.gain.setValueAtTime(peak, end - rel); g.gain.linearRampToValueAtTime(0.0001, end);
+      s.start(when, rnd() * 1.5); s.stop(end + 0.05); return g;
+    };
+    if (sc.rain > 0.01) { // yağmur: sürekli hışırtı + damlalar (stereo dağınık)
+      layer('highpass', 1200 + 1800 * sc.rain, 0.5, 0.05 + 0.18 * sc.rain);
+      const n = Math.round(dur * (6 + 70 * sc.rain));
+      for (let k = 0; k < n; k++) {
+        const t = when + 0.3 + rnd() * (dur - 0.6), p = ac.createStereoPanner(); p.pan.value = rnd() * 2 - 1; p.connect(out);
+        const s = ac.createBufferSource(); s.buffer = this.noise(); const fl = ac.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = 2500 + 3000 * rnd(); fl.Q.value = 2;
+        const g = ac.createGain(); s.connect(fl).connect(g).connect(p);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05 + 0.08 * rnd(), t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+        s.start(t, rnd() * 1.8); s.stop(t + 0.05);
+      }
+    }
+    if (sc.snow > 0.01) { layer('lowpass', 380, 0.4, 0.05 + 0.05 * sc.snow, 1.2, 1.5); layer('bandpass', 900, 3, 0.02 + 0.03 * sc.snow, 1.5, 1.5); } // boğuk yumuşak sessizlik + ıslıklı hafif rüzgâr
+    if (sc.wind > 0.05) { // rüzgâr: hıza göre uğultu; esinti dalgalanması
+      const g = layer('bandpass', 350 + 700 * sc.wind, 0.8, 0.04 + 0.16 * sc.wind);
+      const lfo = ac.createOscillator(); lfo.frequency.value = 0.2 + 0.3 * rnd(); const d = ac.createGain(); d.gain.value = 0.03 + 0.08 * sc.wind; lfo.connect(d).connect(g.gain); lfo.start(when); lfo.stop(end + 0.05);
+    }
+    if (sc.sunnyHot > 0.05) this.world(worldParams('heat', sc.tMean, 1, 0), when, dur, 0, seed + 1, 0.4 + 0.6 * sc.sunnyHot);
+    if (sc.cold > 0.05) this.world(worldParams('heat', sc.tMean, 0, 0.2), when, dur, 0, seed + 2, 0.4 + 0.6 * sc.cold);
+    if (sc.thunder > 0.01) this.world(worldParams('thunder', 0, 0.3 + 0.7 * sc.thunder, 0.5), when + 0.5, dur - 1, (rnd() * 2 - 1) * 0.6, seed + 3, 1);
   }
 
   /** Kuzey işareti: her tur başında hafif bir üçgen (zil) vuruşu. */

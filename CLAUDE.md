@@ -25,6 +25,11 @@ Hedef ödüller: Local Impact, Best Use of Science, Most Inspirational, Art & Te
 - Ölçek KÜRESEL. Radar: yön → stereo; her ışında yakın/orta/uzak bant ayrı doku (uzak = kısık + alçak geçiren + gürlemede gecikme); tur başında merkezin sesi en net. Gösterge ve ekran okuyucu her yön için sözlü özet ("Kuzeydoğu: yoğun kum fırtınası (toz) · yakın"). Lejant her dünyayı anlatıp az/çok örneği çalar. Temalar: Çöl ve Toz, Fırtına, Okyanus, Şehirler ve Ormanlar, Sıcak ve Soğuk.
 - CO₂ (OCO-2) ve MERRA-2 ana deneyimden çıktı; dosyalar duruyor, Hakkında → "Veri doğrulaması". Sınama: npm run test:worlds (data/ses_dunyalari_test.md).
 
+## Meteorolog (hava asistanı)
+- Veri: NASA GMAO GEOS-FP tahmini, NCCS OPeNDAP (herkese açık, giriş yok, CORS yok → tarayıcıdan değil). `npm run forecast` (scripts/forecast.mjs) en yeni 00Z çalıştırmasından 7 gün × 00/06/12/18 UTC × t2m, u10m, v10m, prectot, precsno, preccon, cldtot; 2° × 2.5° → public/data/forecast.bin (~5 MB) + forecast_meta.json. Sunucu çok adımlı istekte 504 verir → adım başına istek (~84 istek, ~3 dk). GitHub Actions .github/workflows/forecast.yml her gün 06:00 UTC tazeler.
+- src/lib/forecast.ts (günlük özet, durum, anlatım, ses sahnesi), src/components/Weather.tsx (bugün kartı + gün düğmeleri), engine.weather() (yağmur/kar/rüzgâr + ses dünyaları). Komut: "Dünya, Ankara'da hava nasıl", "burada hava nasıl", "daha fazla"; W kısayolu. Gök gürültüsü yalnız OLASILIK (konvektif yağış). Her zaman kaynak + çalıştırma saati + "model tahmini, resmi uyarı değildir"; 24 saatten eskiyse tarih uyarısı. "Bugün" yerel takvime göre; gün özetleri UTC günü.
+- Not: Vite dev, .bin dosyalarını izlemez; YENİ bir .bin yolu eklenirse dev sunucusu yeniden başlatılmalı (var olan dosyanın güncellenmesi sorun değil).
+
 ## Ana deneyim: Radar (EVRENSEL)
 - NASA SVS düz 2:1 harita görselleri/videoları piksel analiziyle değere, değer sese çevrilir.
 - **Radar kullanıcının seçtiği herhangi bir yerde döner. Hiçbir şehir sabit kodlanmaz** (kod, varsayılan, örnek veri dahil). Açılışta varsayılan konum YOK; kullanıcıdan yer seçmesi istenir, seçmezse "Konumumu kullan" önerilir.

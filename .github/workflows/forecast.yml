@@ -1,0 +1,31 @@
+# Meteorolog: NASA GMAO GEOS-FP tahminini her gün 06:00 UTC'de tazeler (en yeni 00Z çalıştırması) ve dosyaları commit eder.
+# Elle çalıştırma: GitHub → Actions → "Tahmini tazele (GEOS-FP)" → Run workflow.
+name: Tahmini tazele (GEOS-FP)
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: forecast
+  cancel-in-progress: false
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: GEOS-FP tahminini çek
+        run: node scripts/forecast.mjs
+      - name: Değiştiyse commit + push
+        run: |
+          if git diff --quiet -- public/data/forecast.bin public/data/forecast_meta.json; then echo "değişiklik yok"; exit 0; fi
+          git config user.name "earthear-forecast-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/forecast.bin public/data/forecast_meta.json
+          git commit -m "Tahmin tazelendi: $(node -p "require('./public/data/forecast_meta.json').runLabel")"
+          git push

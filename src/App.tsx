@@ -5,6 +5,8 @@ import { handsFree, listener } from './audio/listen.ts';
 import { IconBars, IconBolt, IconBreath, IconGlobe, IconStrings, IconWave } from './components/icons.tsx';
 import { DataInventory } from './components/DataInventory.tsx';
 import { WorldThemes } from './components/WorldThemes.tsx';
+import { Weather } from './components/Weather.tsx';
+import { Forecast, spokenDetail, spokenSummary } from './lib/forecast.ts';
 import { WORLD_OF, describeWorld } from './lib/worlds.ts';
 import { DEFAULT_MIX, EventsDialog, Explore, instrumentName, SoundDialog, StoriesDialog, type EarthEvent, type Mix, type StoryInfo } from './components/Extras.tsx';
 import { PlacePicker } from './components/PlacePicker.tsx';
@@ -92,6 +94,19 @@ export default function App() {
   const [ndviFrame, setNdviFrame] = useState(0);
   const [lightsYear, setLightsYear] = useState(11);
   const [scanOpen, setScanOpen] = useState(false);
+  // ---------- Meteorolog (NASA GEOS-FP tahmini; statik dosya, internetsiz)
+  const [wxOpen, setWxOpen] = useState(false);
+  const [wx, setWx] = useState<Forecast | null>(null);
+  const [wxErr, setWxErr] = useState<string | null>(null);
+  const [wxTarget, setWxTarget] = useState<(LatLon & { name: string }) | null>(null);
+  const wxLoad = useRef<Promise<Forecast> | null>(null);
+  const loadWx = () => { if (!wxLoad.current) wxLoad.current = Forecast.load(BASE).then((f) => { setWx(f); return f; }).catch((e) => { setWxErr(String(e)); wxLoad.current = null; throw e; }); return wxLoad.current; };
+  /** Hava durumunu aç ve kısa anlatımı söyle (yer: verilen ya da seçili). */
+  const openWeather = (t: (LatLon & { name: string }) | null) => {
+    setWxTarget(t); setWxOpen(true);
+    if (!t) return;
+    loadWx().then((f) => { announce(spokenSummary(f, t.name, t, langRef.current)); }).catch(() => announce(langRef.current === 'en' ? 'The forecast file could not be loaded.' : 'Tahmin dosyası yüklenemedi.'));
+  };
   const [land, setLand] = useState<LandMask | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
@@ -630,6 +645,13 @@ export default function App() {
       announce(en ? 'Three stories: the planet breathes, journey toward the equator, travelers in the air. Say, for example: tell the breath story.' : 'Üç hikâye var: Gezegenin nefesi, Ekvatora yolculuk, Havadaki yolcular. Örneğin şöyle söyle: nefes hikâyesini anlat.');
       return true;
     }
+    if (has(' hava', 'weather', 'meteorolog', 'forecast')) {
+      const row = findCity(text.replace(/hava( durumu)?|nas[ıi]l|haftal[ıi]k|burada|buras[ıi]|bug[üu]n|yar[ıi]n|weather|forecast|what'?s|here|today|tomorrow|the|in|like|meteorolog/gi, ' '));
+      const t = row ? { ...rowToPlace(row, 'arama'), name: row[0] } : place ? { ...place, name: placeLabel(place).split(',')[0] } : null;
+      if (!t) { announce(en ? 'Which place? Say for example: Earth, what is the weather in Ankara?' : 'Hangi yer? Örneğin: Dünya, Ankara\'da hava nasıl?'); return true; }
+      openWeather(t); return true;
+    }
+    if (has('daha fazla', 'more detail', ' more ') && wxTarget) { loadWx().then((f) => announce(spokenDetail(f, wxTarget, langRef.current))).catch(() => {}); return true; }
     if (has('olay', 'event')) { if (needPlace()) openEvents(); return true; }
     if (has('karsilastir', 'kiyasla', 'compare')) {
       if (!needPlace()) return true;
@@ -815,6 +837,7 @@ export default function App() {
     else if (k === 'y') { e.preventDefault(); setStoriesOpen(true); }
     else if (k === 'e' && place) { e.preventDefault(); openEvents(); }
     else if (k === 'v') { e.preventDefault(); setSoundOpen(true); }
+    else if (k === 'w') { e.preventDefault(); openWeather(place ? { ...place, name: placeLabel(place).split(',')[0] } : null); }
     else if (k === 'n') { e.preventDefault(); setNarrator(!live2.current.narrator); }
     else if (k === 't') { e.preventDefault(); talk(); }
     else if (['1', '2', '3', '4'].includes(k)) { e.preventDefault(); toggleLayer((['co2', 'temp', 'sst', 'aerosol'] as LayerId[])[+k - 1]); }
@@ -942,7 +965,7 @@ export default function App() {
           onSlow={() => { if (forced !== '3d') { setView3dS(false); setSlowNote(true); } }} />
       )}
 
-      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => { setPickFor('A'); setPickOpen(true); }} onAbout={() => setAboutOpen(true)} hasPlace={!!place} guide={guide} setGuide={setGuide} listening={listening} onTalk={() => talk()} micSupported={listener.supported} />
+      <TopBar lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d} onPick={() => { setPickFor('A'); setPickOpen(true); }} onAbout={() => setAboutOpen(true)} hasPlace={!!place} guide={guide} setGuide={setGuide} listening={listening} onTalk={() => talk()} micSupported={listener.supported} onWeather={() => openWeather(place ? { ...place, name: placeLabel(place).split(',')[0] } : null)} />
 
       <main className="stage">
         {!audioOk && <p role="alert" className="glass alert">{lang === 'tr' ? 'Ses başlatılamadı. Sessiz modu kapat, sesi aç ve bir düğmeye tekrar dokun.' : 'Audio could not start. Turn off silent mode, raise the volume and tap a button again.'}</p>}
@@ -1043,6 +1066,7 @@ export default function App() {
         layerNames={{ co2: LAYER_UI.co2.label[lang], temp: LAYER_UI.temp.label[lang], sst: LAYER_UI.sst.label[lang], aerosol: LAYER_UI.aerosol.label[lang] }}
         onTest={(id) => { engine.unlock(); const ids = id === 'aerosol' ? ['black_carbon', 'dust', 'sea_salt', 'sulfate'] : [id]; ids.forEach((t, i) => [0.2, 0.5, 0.8].forEach((v, j) => engine.voice(t, noteHz(v, PARTS[t as keyof typeof PARTS]), engine.now + 0.05 + i * 1.1 + j * 0.3, 0.5, 0.8, 0))); }} />
       <About open={aboutOpen} onClose={() => setAboutOpen(false)} lang={lang} credits={credits} extra={<DataInventory lang={lang} />} />
+      <Weather open={wxOpen} onClose={() => setWxOpen(false)} lang={lang} forecast={wx} error={wxErr} target={wxTarget} announce={announce} />
       <ImageScan open={scanOpen} onClose={() => setScanOpen(false)} lang={lang} announce={announce} />
 
       <div className="sr" aria-live="polite" aria-atomic="true">{live}</div>

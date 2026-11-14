@@ -11,7 +11,8 @@
     "test:radar": "node scripts/test-radar.mjs Tokyo Lagos Sivas",
     "data:co2": "node scripts/co2.mjs",
     "test:sound": "node scripts/test-sound.mjs",
-    "test:worlds": "node scripts/test-worlds.mjs"
+    "test:worlds": "node scripts/test-worlds.mjs",
+    "forecast": "node scripts/forecast.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

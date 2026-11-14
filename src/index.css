@@ -373,3 +373,14 @@ html.hc .btn.primary, html.hc .speak-btn { background: #0033cc; color: #fff; bor
 .scan-canvas { width: 100%; aspect-ratio: 16 / 9; image-rendering: pixelated; border-radius: 10px; border: 1px solid var(--line); margin: 8px 0; display: block; }
 .inv-wrap { overflow-x: auto; } .inv { width: 100%; border-collapse: collapse; font-size: 13px; }
 .inv th, .inv td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+/* Meteorolog */
+.wx-today { border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; }
+.wx-today .eyebrow { margin: 0; }
+.wx-big { font: 700 34px var(--font-h); margin: 4px 0; }
+.wx-days { list-style: none; margin: 6px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.wx-day { width: 100%; min-height: 96px; display: grid; justify-items: center; gap: 2px; padding: 8px; border-radius: 12px; border: 1.5px solid var(--btn-line); background: var(--btn-bg); color: var(--ink); font: 600 14px var(--font-b); cursor: pointer; }
+.wx-day:hover { background: var(--btn-bg-hover); border-color: var(--btn-line-hover); }
+.wx-day .wx-ico { font-size: 26px; } .wx-day small { font-size: 11px; color: var(--warm); text-align: center; }
+.wx-stale { color: var(--warm); font-weight: 700; }
+.wx-src { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; }
+html.hc .wx-day { background: #fff; border: 2px solid #000; color: #000; } html.hc .wx-day small, html.hc .wx-stale { color: #000; }

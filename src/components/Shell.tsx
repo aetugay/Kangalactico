@@ -57,7 +57,7 @@ export function Dialog({ open, onClose, title, children, className = '', lang }:
 }
 
 // ---------------- Üst çubuk
-export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean; setHc: (v: boolean) => void; view3d: boolean; can3d: boolean; setView3d: (v: boolean) => void; onPick: () => void; onAbout: () => void; hasPlace: boolean; guide: boolean; setGuide: (v: boolean) => void; listening: boolean; onTalk: () => void; micSupported?: boolean }) {
+export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean; setHc: (v: boolean) => void; view3d: boolean; can3d: boolean; setView3d: (v: boolean) => void; onPick: () => void; onAbout: () => void; hasPlace: boolean; guide: boolean; setGuide: (v: boolean) => void; listening: boolean; onTalk: () => void; micSupported?: boolean; onWeather?: () => void }) {
   const { lang } = p;
   const en = lang === 'en';
   return (
@@ -69,6 +69,7 @@ export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean;
       <div className="brand" aria-label="EarthEar">Earth<span>Ear</span></div>
       <nav className="top-actions" aria-label={lang === 'tr' ? 'Genel ayarlar' : 'General settings'}>
         {p.hasPlace && <button type="button" className="chip" onClick={p.onPick}><IconPin /> {tr(lang, 'change')}</button>}
+        {p.onWeather && <button type="button" className="chip" onClick={p.onWeather} aria-keyshortcuts="W"><span aria-hidden="true">⛅</span> {en ? 'Weather' : 'Hava durumu'}</button>}
         <button type="button" className="chip" aria-pressed={p.guide} aria-keyshortcuts="G" onClick={() => p.setGuide(!p.guide)}><IconSpeak /> {tr(lang, 'guide')}</button>
         <button type="button" className="chip" aria-pressed={p.hc} onClick={() => p.setHc(!p.hc)}><IconContrast /> {tr(lang, 'highContrast')}</button>
         {p.can3d && <button type="button" className="chip" aria-pressed={p.view3d} onClick={() => p.setView3d(!p.view3d)}><IconGlobe /> {p.view3d ? tr(lang, 'view3d') : tr(lang, 'view2d')}</button>}

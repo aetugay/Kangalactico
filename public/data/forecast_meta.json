@@ -1,0 +1,100 @@
+{
+ "source": "NASA GMAO GEOS-FP (Goddard Earth Observing System — Forward Processing), NCCS OPeNDAP",
+ "url": "https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/",
+ "run": "2026-11-14T00:00:00Z",
+ "runLabel": "20261114_00Z",
+ "fetchedAt": "2026-11-14T22:08:54.295Z",
+ "daysAvailable": 7,
+ "daysRequested": 7,
+ "hoursUtc": [
+  0,
+  6,
+  12,
+  18
+ ],
+ "steps": [
+  "2026-11-14T00:00:00.000Z",
+  "2026-11-14T06:00:00.000Z",
+  "2026-11-14T12:00:00.000Z",
+  "2026-11-14T18:00:00.000Z",
+  "2026-11-15T00:00:00.000Z",
+  "2026-11-15T06:00:00.000Z",
+  "2026-11-15T12:00:00.000Z",
+  "2026-11-15T18:00:00.000Z",
+  "2026-11-16T00:00:00.000Z",
+  "2026-11-16T06:00:00.000Z",
+  "2026-11-16T12:00:00.000Z",
+  "2026-11-16T18:00:00.000Z",
+  "2026-11-17T00:00:00.000Z",
+  "2026-11-17T06:00:00.000Z",
+  "2026-11-17T12:00:00.000Z",
+  "2026-11-17T18:00:00.000Z",
+  "2026-11-18T00:00:00.000Z",
+  "2026-11-18T06:00:00.000Z",
+  "2026-11-18T12:00:00.000Z",
+  "2026-11-18T18:00:00.000Z",
+  "2026-11-19T00:00:00.000Z",
+  "2026-11-19T06:00:00.000Z",
+  "2026-11-19T12:00:00.000Z",
+  "2026-11-19T18:00:00.000Z",
+  "2026-11-20T00:00:00.000Z",
+  "2026-11-20T06:00:00.000Z",
+  "2026-11-20T12:00:00.000Z",
+  "2026-11-20T18:00:00.000Z"
+ ],
+ "note": "Saatlik ortalamalar (tavg1): her adım o saatten başlayan 1 saatin ortalaması. Günlük yağış = 4 örneğin ortalama hızı × 24 saat (tahmini). Model tahmini; resmi uyarı değildir.",
+ "grid": {
+  "nLat": 91,
+  "nLon": 144,
+  "lat0": -90,
+  "dLat": 2,
+  "lon0": -180,
+  "dLon": 2.5,
+  "order": "[adım][değişken][enlem(güneyden) × 144 + boylam]"
+ },
+ "encoding": "int16 little-endian; değer = q / scale; -32768 = veri yok",
+ "vars": [
+  {
+   "id": "t2m",
+   "unit": "°C",
+   "scale": 100,
+   "long": "2 m hava sıcaklığı"
+  },
+  {
+   "id": "u10m",
+   "unit": "m/s",
+   "scale": 100,
+   "long": "10 m rüzgâr (doğu bileşeni)"
+  },
+  {
+   "id": "v10m",
+   "unit": "m/s",
+   "scale": 100,
+   "long": "10 m rüzgâr (kuzey bileşeni)"
+  },
+  {
+   "id": "prectot",
+   "unit": "mm/saat",
+   "scale": 100,
+   "long": "toplam yağış (saatlik ortalama)"
+  },
+  {
+   "id": "precsno",
+   "unit": "mm/saat",
+   "scale": 100,
+   "long": "kar yağışı (su eşdeğeri)"
+  },
+  {
+   "id": "preccon",
+   "unit": "mm/saat",
+   "scale": 100,
+   "long": "konvektif (sağanak) yağış"
+  },
+  {
+   "id": "cldtot",
+   "unit": "0–1",
+   "scale": 10000,
+   "long": "toplam bulutluluk"
+  }
+ ]
+}

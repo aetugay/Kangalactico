@@ -52,7 +52,7 @@ const EARTH_FS = /* glsl */ `
   uniform float uHasA; uniform float uHasB; uniform float uMix; uniform float uHasLand;
   uniform vec3 uCenter; uniform vec3 uNorth; uniform vec3 uEast; uniform float uRange;
   uniform float uHasCenter; uniform float uSweep; uniform float uHasSweep; uniform float uLevel;
-  uniform vec3 uLightDir;
+  uniform vec3 uLightDir; uniform float uCoastW;
   varying vec2 vUv; varying vec3 vPos; varying vec3 vNormalW;
   const float TAU = 6.2831853;
   void main() {
@@ -62,7 +62,7 @@ const EARTH_FS = /* glsl */ `
     vec3 ca = mix(base, a.rgb, a.a * uHasA), cb = mix(base, b.rgb, b.a * uHasB);
     vec3 col = mix(ca, cb, uMix);
     col *= 0.62 + 0.45 * max(dot(normalize(vNormalW), uLightDir), 0.0);
-    col = mix(col, vec3(0.95), L.r * 0.55);                       // kıyı çizgisi
+    col = mix(col, vec3(0.95), L.r * uCoastW);                       // kıyı çizgisi
     if (uHasCenter > 0.5) {
       vec3 p = normalize(vPos);
       float d = acos(clamp(dot(p, uCenter), -1.0, 1.0));           // merkeze açısal uzaklık
@@ -122,12 +122,29 @@ export function Globe3D(props: Props) {
       uCenter: { value: new THREE.Vector3(1, 0, 0) }, uNorth: { value: new THREE.Vector3(0, 1, 0) }, uEast: { value: new THREE.Vector3(0, 0, 1) },
       uRange: { value: 0.3 }, uHasCenter: { value: 0 }, uSweep: { value: 0 }, uHasSweep: { value: 0 }, uLevel: { value: 0 },
       uLightDir: { value: new THREE.Vector3(0.6, 0.5, 0.8).normalize() },
+      uCoastW: { value: 0.55 }, // raster kıyı (kara maskesinden); vektör kıyı yüklenince kapanır
     };
     const earthMat = new THREE.ShaderMaterial({ uniforms, vertexShader: EARTH_VS, fragmentShader: EARTH_FS });
     const earth = new THREE.Mesh(new THREE.SphereGeometry(1, 160, 96), earthMat);
     scene.add(earth);
     const atmo = new THREE.Mesh(new THREE.SphereGeometry(1.07, 96, 64), new THREE.ShaderMaterial({ vertexShader: ATMO_VS, fragmentShader: ATMO_FS, side: THREE.BackSide, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
     scene.add(atmo);
+
+    // Adım 5 (hızlı kısım): keskin doku — en yüksek anizotropik süzme (mipmap'ler three.js varsayılanıyla açık); piksel oranı yukarıda (en fazla 2)
+    const maxAniso = Math.max(1, renderer.capabilities.getMaxAnisotropy());
+    // vektör kıyı çizgileri: Natural Earth 1:50m (kamu malı) — yaklaşınca bulanıklaşmaz. Veri katmanlarının çözünürlüğü DEĞİŞMEZ (yalnız altlık).
+    let disposed = false;
+    fetch(`${import.meta.env.BASE_URL}data/coastline_50m.json`).then((r) => (r.ok ? r.json() : null)).then((c: { points: number; starts: number[]; data: string } | null) => {
+      if (!c || disposed) return;
+      const bin = atob(c.data), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      const q = new Int16Array(u8.buffer), ends = [...c.starts.slice(1), c.points];
+      const pos: number[] = []; const v = new THREE.Vector3();
+      const put = (i: number) => { v.copy(llToVec({ lon: q[2 * i] / 100, lat: q[2 * i + 1] / 100 })).multiplyScalar(1.0012); pos.push(v.x, v.y, v.z); };
+      c.starts.forEach((s0, li) => { for (let i = s0; i < ends[li] - 1; i++) { put(i); put(i + 1); } });
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      const coast = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0xf2f6ff, transparent: true, opacity: 0.6, depthWrite: false }));
+      coast.renderOrder = 2; scene.add(coast); uniforms.uCoastW.value = 0;
+    }).catch(() => { /* raster kıyı kalır */ });
 
     // iğne
     const pin = new THREE.Group();
@@ -147,7 +164,7 @@ export function Globe3D(props: Props) {
     // --- doku geçişi
     const texOf = (s: GlobeSource) => {
       const t = s.el instanceof HTMLVideoElement ? new THREE.VideoTexture(s.el) : s.el instanceof HTMLCanvasElement ? new THREE.CanvasTexture(s.el) : new THREE.Texture(s.el);
-      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.needsUpdate = true;
+      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso; t.needsUpdate = true;
       return t;
     };
     let fade: { t0: number; dur: number } | null = null;
@@ -163,7 +180,7 @@ export function Globe3D(props: Props) {
     const setLand = (c: HTMLCanvasElement | null) => {
       if (uniforms.uLand.value !== empty) uniforms.uLand.value.dispose();
       if (!c) { uniforms.uLand.value = empty; uniforms.uHasLand.value = 0; return; }
-      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; t.needsUpdate = true;
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; t.anisotropy = maxAniso; t.needsUpdate = true;
       uniforms.uLand.value = t; uniforms.uHasLand.value = 1;
     };
 
@@ -253,6 +270,7 @@ export function Globe3D(props: Props) {
     raf = requestAnimationFrame(loop);
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(raf); ro.disconnect(); controls.dispose();
       renderer.domElement.removeEventListener('pointerdown', onDown); renderer.domElement.removeEventListener('pointerup', onUp);
       renderer.domElement.removeEventListener('pointermove', onMove); renderer.domElement.removeEventListener('pointerleave', onLeave);

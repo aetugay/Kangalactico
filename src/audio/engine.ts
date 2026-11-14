@@ -1,3 +1,4 @@
+import { INSTRUMENT_OF } from '../lib/radar.ts';
 // Web Audio motoru (demo/index.html'den taşındı). Tek örnek: `engine`.
 // Ses yalnızca kullanıcı dokunuşu içinde unlock() çağrılınca başlar.
 
@@ -271,7 +272,7 @@ class AudioEngine {
     if (gain <= 0.001) return;
     const vol = this.mix.vol[timbre] ?? 1;
     if (vol <= 0.01) return;
-    const kind = this.mix.inst[timbre] ?? timbre; // kullanıcı bu katmana başka enstrüman atamış olabilir
+    const kind = this.mix.inst[timbre] ?? INSTRUMENT_OF[timbre as keyof typeof INSTRUMENT_OF] ?? timbre; // kullanıcı ataması ya da 2024 katmanının enstrümanı
     const ac = this.ctx();
     const out = this.panNode(pan);
     const g = ac.createGain();

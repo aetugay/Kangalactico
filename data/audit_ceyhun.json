@@ -1,0 +1,721 @@
+{
+ "grid": {
+  "n_lat": 90,
+  "n_lon": 144,
+  "n_points": 12960,
+  "nlat": 90,
+  "nlon": 144,
+  "nokta_sayisi": 12960,
+  "lat0": -89,
+  "dlat": 2,
+  "lon0": -178.75,
+  "dlon": 2.5,
+  "nokta_id": "i_lat*144 + i_lon",
+  "eksik_deger": -1
+ },
+ "layers": {
+  "CO2": {
+   "ad": "Atmosferik Karbondioksit",
+   "birim": "ppm",
+   "kaynak": "OCO2_GEOS_L3CO2_DAY (365 gün)",
+   "transform": "linear",
+   "vmin": 416.3177,
+   "vmax": 425.6574,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 420.79
+   },
+   "aylikOrtQ": [
+    443.8,
+    494.1,
+    529.2,
+    564.2,
+    569.9,
+    486.2,
+    361,
+    306.7,
+    338.8,
+    446.4,
+    562.4,
+    644.5
+   ],
+   "ayArasiOrtFarkQ": 86,
+   "neredeyseSabitNoktaOran": 0,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "CH4": {
+   "ad": "Atmosferik Metan",
+   "birim": "ppb",
+   "kaynak": "NASA Fiziksel/Klimatolojik Model (CH4)",
+   "transform": "linear",
+   "vmin": 1831.8213,
+   "vmax": 1934.2602,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 1877.3
+   },
+   "aylikOrtQ": [
+    370.4,
+    370.6,
+    389,
+    423.9,
+    463.6,
+    497.2,
+    517,
+    517.2,
+    497,
+    463.4,
+    423.7,
+    389.1
+   ],
+   "ayArasiOrtFarkQ": 34.77,
+   "neredeyseSabitNoktaOran": 0.004,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "CO": {
+   "ad": "Karbonmonoksit (Yangın ve Yanma)",
+   "birim": "ppb",
+   "kaynak": "NASA Fiziksel/Klimatolojik Model (CO)",
+   "transform": "log",
+   "vmin": 44.5148,
+   "vmax": 82.5836,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "log": 75.316,
+    "log1p": 75.336
+   },
+   "aylikOrtQ": [
+    823.2,
+    823.3,
+    838.6,
+    858,
+    858,
+    838.3,
+    823.3,
+    823.3,
+    838.1,
+    858.1,
+    858.1,
+    838.5
+   ],
+   "ayArasiOrtFarkQ": 40.37,
+   "neredeyseSabitNoktaOran": 0,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "SIF": {
+   "ad": "Klorofil Floresansı (Fotosentez)",
+   "birim": "mW/m²/sr/nm",
+   "kaynak": "NASA M2TMNXLND (LAI)",
+   "transform": "linear",
+   "vmin": 0,
+   "vmax": 2.5352,
+   "eksikOran": 0.655,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 0.47551
+   },
+   "aylikOrtQ": [
+    133.1,
+    129.4,
+    135.6,
+    153.2,
+    182.7,
+    230.1,
+    285.2,
+    289.5,
+    231.3,
+    181.8,
+    156.4,
+    142.5
+   ],
+   "ayArasiOrtFarkQ": 43.08,
+   "neredeyseSabitNoktaOran": 0.169,
+   "karaKapsam": 0.688,
+   "denizKapsam": 0.16
+  },
+  "NO2": {
+   "ad": "Azot Dioksit (Sanayi ve Trafik)",
+   "birim": "10¹⁵ molekül/cm²",
+   "kaynak": "NASA Fiziksel/Klimatolojik Model (NO2)",
+   "transform": "log",
+   "vmin": 0.3021,
+   "vmax": 12.0726,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "log": 0.68163,
+    "log1p": 0.83406
+   },
+   "aylikOrtQ": [
+    90.7,
+    90.6,
+    88.8,
+    85.3,
+    81.1,
+    76.7,
+    74,
+    74,
+    76.6,
+    80.9,
+    85.6,
+    88.7
+   ],
+   "ayArasiOrtFarkQ": 15.58,
+   "neredeyseSabitNoktaOran": 0,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "SO2": {
+   "ad": "Kükürt Dioksit (Volkan ve Santral)",
+   "birim": "µg/m³",
+   "kaynak": "NASA M2TMNXAER (SO2SMASS)",
+   "transform": "log",
+   "vmin": 0.0053,
+   "vmax": 50.5024,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "log": 0.22194,
+    "log1p": 0.93581
+   },
+   "aylikOrtQ": [
+    99.8,
+    93.3,
+    82.2,
+    76.7,
+    76.4,
+    78.8,
+    84.8,
+    86,
+    80.1,
+    81.1,
+    87.6,
+    96.8
+   ],
+   "ayArasiOrtFarkQ": 17.39,
+   "neredeyseSabitNoktaOran": 0.041,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "AOD": {
+   "ad": "Aerosol Optik Derinliği (Toz/Duman)",
+   "birim": "AOD",
+   "kaynak": "NASA M2TMNXAER (TOTEXTTAU)",
+   "transform": "log",
+   "vmin": 0.0157,
+   "vmax": 0.7684,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "log": 0.046169,
+    "log1p": 0.13383
+   },
+   "aylikOrtQ": [
+    163.7,
+    179.2,
+    185.4,
+    196.1,
+    197.7,
+    191,
+    221.9,
+    231.9,
+    211.1,
+    186.4,
+    163.8,
+    162.3
+   ],
+   "ayArasiOrtFarkQ": 51.08,
+   "neredeyseSabitNoktaOran": 0,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "O3": {
+   "ad": "Toplam Ozon Tabakası",
+   "birim": "Dobson (DU)",
+   "kaynak": "NASA Fiziksel/Klimatolojik Model (O3)",
+   "transform": "linear",
+   "vmin": 44.5321,
+   "vmax": 81.5247,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 69.13
+   },
+   "aylikOrtQ": [
+    666.3,
+    666,
+    664.4,
+    664.2,
+    663.9,
+    664.3,
+    666.2,
+    666.1,
+    664.9,
+    664.2,
+    664.1,
+    664.8
+   ],
+   "ayArasiOrtFarkQ": 59.9,
+   "neredeyseSabitNoktaOran": 0,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "TEMP": {
+   "ad": "Yüzey Hava Sıcaklığı (2m)",
+   "birim": "°C",
+   "kaynak": "NASA M2TMNXSLV (T2M)",
+   "transform": "linear",
+   "vmin": -54.3641,
+   "vmax": 29.696,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 5.8765
+   },
+   "aylikOrtQ": [
+    696.6,
+    696.5,
+    692.4,
+    703.3,
+    723.2,
+    739.5,
+    743.8,
+    742.8,
+    729.9,
+    719.1,
+    707.3,
+    705.3
+   ],
+   "ayArasiOrtFarkQ": 31.13,
+   "neredeyseSabitNoktaOran": 0.001,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "LST": {
+   "ad": "Kara Yüzeyi Sıcaklığı",
+   "birim": "°C",
+   "kaynak": "NASA M2TMNXSLV (TS)",
+   "transform": "linear",
+   "vmin": -57.4495,
+   "vmax": 30.7702,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 6.2412
+   },
+   "aylikOrtQ": [
+    703.8,
+    702.7,
+    698.9,
+    708.9,
+    728,
+    743.4,
+    746.8,
+    745.9,
+    733.9,
+    724.4,
+    714.4,
+    712.4
+   ],
+   "ayArasiOrtFarkQ": 29.87,
+   "neredeyseSabitNoktaOran": 0,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "ALBEDO": {
+   "ad": "Yeryüzü Albedo (Yansıma Oranı)",
+   "birim": "0-1",
+   "kaynak": "NASA M2TMNXRAD (ALBEDO)",
+   "transform": "linear",
+   "vmin": 0.071,
+   "vmax": 0.8071,
+   "eksikOran": 0.0231,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 0.24977
+   },
+   "aylikOrtQ": [
+    202.9,
+    222.9,
+    293.2,
+    286.5,
+    268.5,
+    242.2,
+    207.9,
+    211.5,
+    226.3,
+    243.9,
+    250.3,
+    249.6
+   ],
+   "ayArasiOrtFarkQ": 25.53,
+   "neredeyseSabitNoktaOran": 0.041,
+   "karaKapsam": 0.824,
+   "denizKapsam": 0.84
+  },
+  "SST": {
+   "ad": "Deniz Yüzeyi Sıcaklığı (El Niño)",
+   "birim": "°C",
+   "kaynak": "NASA M2TMNXOCN (TSKINWTR)",
+   "transform": "linear",
+   "vmin": -1.8001,
+   "vmax": 30.2983,
+   "eksikOran": 0.254,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 13.757
+   },
+   "aylikOrtQ": [
+    477.9,
+    480.1,
+    479.2,
+    478.5,
+    479.9,
+    486.5,
+    497.7,
+    506.4,
+    499.6,
+    485.2,
+    474.5,
+    470.7
+   ],
+   "ayArasiOrtFarkQ": 24.58,
+   "neredeyseSabitNoktaOran": 0.07,
+   "karaKapsam": 0.276,
+   "denizKapsam": 0.999
+  },
+  "IMERG": {
+   "ad": "Küresel Yağış ve Fırtına Şiddeti",
+   "birim": "mm/gün",
+   "kaynak": "NASA M2TMNXLND (PRECTOTLAND)",
+   "transform": "log",
+   "vmin": 0.0005,
+   "vmax": 35.2823,
+   "eksikOran": 0.655,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "log": 0.31014,
+    "log1p": 3.2414
+   },
+   "aylikOrtQ": [
+    283.9,
+    281.3,
+    297.2,
+    314.9,
+    323.5,
+    351.8,
+    356.1,
+    355.7,
+    350.7,
+    327.6,
+    311.1,
+    284.4
+   ],
+   "ayArasiOrtFarkQ": 106.97,
+   "neredeyseSabitNoktaOran": 0,
+   "karaKapsam": 0.688,
+   "denizKapsam": 0.16
+  },
+  "CHL": {
+   "ad": "Okyanus Klorofil-a (Fitoplankton)",
+   "birim": "mg/m³",
+   "kaynak": "NASA Fiziksel/Klimatolojik Model (CHL)",
+   "transform": "log",
+   "vmin": 0,
+   "vmax": 1,
+   "eksikOran": 1,
+   "qmin": 1000000000,
+   "qmax": -1000000000,
+   "ortalama": {
+    "log": null,
+    "log1p": null
+   },
+   "aylikOrtQ": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "ayArasiOrtFarkQ": null,
+   "neredeyseSabitNoktaOran": null,
+   "karaKapsam": 0,
+   "denizKapsam": 0
+  },
+  "SMAP": {
+   "ad": "Toprak Nemi ve Kuraklık",
+   "birim": "0-1 (Doygunluk)",
+   "kaynak": "NASA M2TMNXLND (GWETTOP)",
+   "transform": "linear",
+   "vmin": 0.1684,
+   "vmax": 1,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 0.89247
+   },
+   "aylikOrtQ": [
+    873.4,
+    872.9,
+    873.7,
+    876,
+    875.8,
+    872.5,
+    866.9,
+    863.2,
+    863.6,
+    866.9,
+    871.3,
+    872.1
+   ],
+   "ayArasiOrtFarkQ": 13.18,
+   "neredeyseSabitNoktaOran": 0.676,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "SEAICE": {
+   "ad": "Kutup Deniz Buzu Konsantrasyonu",
+   "birim": "%",
+   "kaynak": "NASA M2TMNXOCN (FRSEAICE)",
+   "transform": "linear",
+   "vmin": 0,
+   "vmax": 99.0299,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 10.115
+   },
+   "aylikOrtQ": [
+    99.3,
+    96.5,
+    101.8,
+    110.4,
+    113.8,
+    108.3,
+    95.2,
+    87.4,
+    92,
+    103.4,
+    111,
+    106.9
+   ],
+   "ayArasiOrtFarkQ": 17.55,
+   "neredeyseSabitNoktaOran": 0.79,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "GRACE": {
+   "ad": "Karasal Su Kütle Değişimi (Anomali)",
+   "birim": "kg/m²",
+   "kaynak": "NASA M2TMNXLND (TWLAND_ANOM)",
+   "transform": "linear",
+   "vmin": -181.1316,
+   "vmax": 181.1316,
+   "eksikOran": 0.655,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": -0.22447
+   },
+   "aylikOrtQ": [
+    546,
+    574.4,
+    593.3,
+    600.3,
+    561.3,
+    477.3,
+    423.7,
+    399.7,
+    403.2,
+    430.8,
+    471.1,
+    511.3
+   ],
+   "ayArasiOrtFarkQ": 79.8,
+   "neredeyseSabitNoktaOran": 0.004,
+   "karaKapsam": 0.688,
+   "denizKapsam": 0.16
+  },
+  "NDVI": {
+   "ad": "Bitki Örtüsü Yeşillik İndeksi",
+   "birim": "NDVI (0-1)",
+   "kaynak": "NASA M2TMNXLND (LAI)",
+   "transform": "linear",
+   "vmin": 0,
+   "vmax": 0.9014,
+   "eksikOran": 0.655,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "lin": 0.16907
+   },
+   "aylikOrtQ": [
+    133.1,
+    129.4,
+    135.6,
+    153.2,
+    182.7,
+    230.1,
+    285.2,
+    289.5,
+    231.3,
+    181.8,
+    156.4,
+    142.5
+   ],
+   "ayArasiOrtFarkQ": 43.08,
+   "neredeyseSabitNoktaOran": 0.169,
+   "karaKapsam": 0.688,
+   "denizKapsam": 0.16
+  },
+  "FIRE": {
+   "ad": "Aktif Orman Yangınları ve Emisyon",
+   "birim": "MW / Karbon İndeksi",
+   "kaynak": "NASA M2TMNXAER (BCCMASS)",
+   "transform": "log",
+   "vmin": 61.3474,
+   "vmax": 13266.8629,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "log": 1789.1,
+    "log1p": 1797.7
+   },
+   "aylikOrtQ": [
+    568.8,
+    557.4,
+    562.8,
+    546.2,
+    521,
+    519.4,
+    547.2,
+    623.1,
+    642.7,
+    639.3,
+    603.6,
+    579
+   ],
+   "ayArasiOrtFarkQ": 48.54,
+   "neredeyseSabitNoktaOran": 0,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  },
+  "NIGHTLIGHTS": {
+   "ad": "Gece Işıkları (Black Marble)",
+   "birim": "nW/cm²/sr",
+   "kaynak": "NASA Fiziksel/Klimatolojik Model (NIGHTLIGHTS)",
+   "transform": "log",
+   "vmin": 3.4593,
+   "vmax": 86.0391,
+   "eksikOran": 0,
+   "qmin": 0,
+   "qmax": 1000,
+   "ortalama": {
+    "log": 7.0007,
+    "log1p": 7.1849
+   },
+   "aylikOrtQ": [
+    86.7,
+    86.6,
+    86.6,
+    86.7,
+    86.6,
+    86.6,
+    86.5,
+    86.6,
+    86.6,
+    86.6,
+    86.5,
+    86.6
+   ],
+   "ayArasiOrtFarkQ": 4.61,
+   "neredeyseSabitNoktaOran": 0.035,
+   "karaKapsam": 1,
+   "denizKapsam": 1
+  }
+ },
+ "kopyalar": [
+  {
+   "a": "SIF",
+   "b": "NDVI",
+   "birebirEsitOran": 1,
+   "r": 1,
+   "ortakNokta": 53652
+  },
+  {
+   "a": "NO2",
+   "b": "NIGHTLIGHTS",
+   "birebirEsitOran": 0.0289,
+   "r": 0.9889,
+   "ortakNokta": 155520
+  },
+  {
+   "a": "TEMP",
+   "b": "LST",
+   "birebirEsitOran": 0.0754,
+   "r": 0.9989,
+   "ortakNokta": 155520
+  }
+ ],
+ "gunluk": {
+  "CO2": {
+   "ikinciFarkSifiraYakinOran": 0.064,
+   "ikinciFarkTamSifirOran": 0.037,
+   "gunlukAyOrt_vs_aylik_ortMutlakFarkQ": null
+  },
+  "FIRE": {
+   "ikinciFarkSifiraYakinOran": 0.98,
+   "ikinciFarkTamSifirOran": 0.499,
+   "gunlukAyOrt_vs_aylik_ortMutlakFarkQ": null
+  }
+ },
+ "karsilastirma": {
+  "NIGHTLIGHTS_vs_SVS5313_2023": {
+   "r": 0.166,
+   "n": 12936
+  },
+  "NIGHTLIGHTS_karanlikHucrelerdeOrtQ": 46.7,
+  "NIGHTLIGHTS_isikliHucrelerdeOrtQ": 156.1,
+  "CO2_2024Ocak_vs_OCO2_2021Ocak": {
+   "r": 0.976,
+   "n": 12960
+  },
+  "SST_vs_SVS3912": {
+   "r": 0.978,
+   "n": 5693
+  },
+  "TEMP_Kasim_vs_SVS5147": {
+   "r": 0.966,
+   "n": 12536
+  }
+ }
+}

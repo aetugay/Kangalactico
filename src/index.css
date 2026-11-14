@@ -212,3 +212,12 @@ html.hc .chip.mic.live { background: #000; color: #fff; }
 .nowline .eyebrow { margin: 0 0 2px; }
 .nowline-item { font-size: 13px; line-height: 1.35; }
 html.hc .nowline { background: #fff; border: 2px solid #000; }
+
+/* 2024 aylık NASA katmanları paneli */
+.m24 { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+.m24 > summary { cursor: pointer; font-weight: 700; font-size: 14px; min-height: 36px; display: flex; align-items: center; }
+.m24-list { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 8px; }
+.m24-info summary { cursor: pointer; font-size: 12.5px; color: var(--accent); margin-top: 2px; }
+.m24-info dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; font-size: 12.5px; margin: 4px 0 0; }
+.m24-info dt { color: var(--muted); } .m24-info dd { margin: 0; }
+html.hc .m24 { border-top: 2px solid #000; }

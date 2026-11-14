@@ -6,7 +6,9 @@
 //   uzaklık             → ışını elle çevirirken (←/→) yakın-orta-uzak üç nota
 import { destination, compass8, formatKm, type LatLon } from './geo.ts';
 
-export type Timbre = 'co2' | 'temp' | 'sst' | 'black_carbon' | 'dust' | 'sea_salt' | 'sulfate' | 'lightning';
+export type Timbre = 'co2' | 'temp' | 'sst' | 'black_carbon' | 'dust' | 'sea_salt' | 'sulfate' | 'lightning'
+  // 2024 aylık NASA katmanları (MERRA-2 / OCO-2; public/data/m24)
+  | 'co2_24' | 'so2_24' | 'aod_24' | 't2m_24' | 'ts_24' | 'albedo_24' | 'sst_24' | 'precip_24' | 'seaice_24';
 export type Mode = 'bilim' | 'hikaye';
 
 export interface RadarLayer {
@@ -100,6 +102,20 @@ export const PARTS: Record<Timbre, Part> = {
   sea_salt: { start: 15, span: 7, every: 4, offset: 2, gate: 0.07 },    // flüt (C5…)
   sulfate: { start: 10, span: 8, every: 2, offset: 0, gate: 0.07 },     // marimba (C4…)
   lightning: { start: 20, span: 5, every: 1, offset: 0, gate: 0.07 },
+  co2_24: { start: 12, span: 9, every: 4, offset: 2, gate: -1 },      // keman
+  so2_24: { start: 10, span: 8, every: 2, offset: 1, gate: -1 },      // marimba
+  aod_24: { start: 18, span: 7, every: 2, offset: 0, gate: -1 },      // çelesta
+  t2m_24: { start: 5, span: 10, every: 2, offset: 0, gate: -1 },      // gitar
+  ts_24: { start: 3, span: 10, every: 2, offset: 1, gate: -1 },       // gitar (pes)
+  albedo_24: { start: 15, span: 7, every: 4, offset: 2, gate: -1 },   // flüt
+  sst_24: { start: 13, span: 9, every: 1, offset: 0, gate: -1 },      // arp
+  precip_24: { start: 0, span: 7, every: 2, offset: 1, gate: -1 },    // çello
+  seaice_24: { start: 19, span: 6, every: 4, offset: 0, gate: -1 },   // flüt (tiz)
+};
+
+/** Katman kimliği → ses motorundaki enstrüman (2024 katmanları var olan enstrümanları kullanır). */
+export const INSTRUMENT_OF: Partial<Record<Timbre, string>> = {
+  co2_24: 'co2', so2_24: 'sulfate', aod_24: 'dust', t2m_24: 'temp', ts_24: 'temp', albedo_24: 'sea_salt', sst_24: 'sst', precip_24: 'black_carbon', seaice_24: 'sea_salt',
 };
 
 /** [b, b+count) ışınlarında, [k0, k1) halkalarında ortalama değer ve veri kapsamı (0..1). Veri yoksa mean = NaN. */

@@ -14,7 +14,9 @@ import { bearing as bearingTo, compass8, destination, formatKm, formatLatLon, ha
 import { monthName } from './lib/co2.ts';
 import { colorFor } from './lib/grid.ts';
 import { LandMask, type LandFile } from './lib/land.ts';
-import { loadAerosols, loadCo2, loadJson, loadSst, loadTemperature, type AerosolSource, type Co2Source, type SstSource, type TemperatureSource } from './lib/layers.ts';
+import { co2Color, loadAerosols, loadCo2, loadJson, loadSst, loadTemperature, type AerosolSource, type Co2Source, type SstSource, type TemperatureSource } from './lib/layers.ts';
+import { M24 } from './lib/m24.ts';
+import { M24Panel } from './components/M24Panel.tsx';
 import { Cities, countryName, fold, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
 import { noteHz, PARTS, type Mode, type RadarLayer } from './lib/radar.ts';
 import { landTexture, paintEquirect } from './lib/textures.ts';
@@ -82,6 +84,12 @@ export default function App() {
   const [sstFrame, setSstFrame] = useState(0);
   const [on, setOn] = useState<Record<LayerId, boolean>>({ co2: true, temp: false, sst: false, aerosol: false });
   const [visual, setVisual] = useState<LayerId>('co2');
+  // 2024 aylık NASA katmanları (MERRA-2 / OCO-2; denetimden geçenler) — ayrı durum, mevcut 4 katmana dokunmaz
+  const [m24, setM24] = useState<M24 | null>(null);
+  const [m24Loading, setM24Loading] = useState(false);
+  const [m24On, setM24On] = useState<Record<string, boolean>>({});
+  const [m24Visual, setM24Visual] = useState<string | null>(null);
+  const openM24 = () => { if (m24 || m24Loading) return; setM24Loading(true); M24.load(import.meta.env.BASE_URL).then(setM24).catch((e) => setErr(String(e))).finally(() => setM24Loading(false)); };
   const [pickOpen, setPickOpen] = useState(false);
   // iki yeri karşılaştırma: B yeri, sırayla dinleme ve tur sayacı
   const [pickFor, setPickFor] = useState<'A' | 'B'>('A');
@@ -159,8 +167,9 @@ export default function App() {
     if (on.temp && temp) L.push(named('temp', temp.radarLayer(tFrame, lang)));
     if (on.sst && sst) L.push(named('sst', sst.radarLayer(sstFrame, lang)));
     if (on.aerosol && aer) L.push(...aer.radarLayers(lang));
+    if (m24) m24.meta.layers.forEach((l, i) => { if (m24On[l.id]) L.push(m24.radarLayer(i, month, lang)); });
     return L;
-  }, [on, co2, temp, sst, aer, month, tFrame, sstFrame, lang, mix.inst]);
+  }, [on, co2, temp, sst, aer, month, tFrame, sstFrame, lang, mix.inst, m24, m24On]);
 
   const advanceRef = useRef(advance); advanceRef.current = advance;
   // zaman uyumsuz akışların (hikâye, anlatıcı, tur geri çağrısı) güncel durumu okuması için
@@ -197,6 +206,7 @@ export default function App() {
 
   const toggleLayer = (id: LayerId) => {
     const v = !on[id];
+    if (v) setM24Visual(null);
     setOn((o) => ({ ...o, [id]: v }));
     if (v) setVisual(id);
     else if (visual === id) { const rest = (Object.keys(on) as LayerId[]).find((k) => k !== id && on[k]); if (rest) setVisual(rest); }
@@ -616,7 +626,9 @@ export default function App() {
   }, [welcome]);
 
   // ---------- görsel: küre dokusu ve 2D boyama (görünen katman)
+  const m24Idx = m24 && m24Visual && m24On[m24Visual] ? m24.meta.layers.findIndex((l) => l.id === m24Visual) : -1;
   const paintLL = useCallback((p: LatLon): [number, number, number] | null => {
+    if (m24 && m24Idx >= 0) { const v = m24.value(m24Idx, month, p); if (Number.isNaN(v)) return null; const r = m24.monthRange(m24Idx, month); return co2Color((v - r.min) / (r.max - r.min || 1)); }
     if (visual === 'co2' && co2) return co2.color(co2.grid.bilinear(p, month), month);
     if (visual === 'temp' && temp) { const v = temp.layer.sample(tFrame, p); return Number.isNaN(v) ? null : colorFor(temp.cs, v); }
     if (visual === 'sst' && sst) { const v = sst.layer.sample(sstFrame, p); return Number.isNaN(v) ? null : colorFor(sst.cs, v); }
@@ -627,8 +639,8 @@ export default function App() {
       return [rgb[0] * k, rgb[1] * k, rgb[2] * k];
     }
     return null;
-  }, [visual, co2, temp, sst, aer, month, tFrame, sstFrame]);
-  const paintKey = `${visual}-${visual === 'co2' ? month : visual === 'temp' ? tFrame : visual === 'sst' ? sstFrame : 0}-${!!co2}-${!!temp}-${!!sst}-${!!aer}`;
+  }, [visual, co2, temp, sst, aer, month, tFrame, sstFrame, m24, m24Idx]);
+  const paintKey = `${m24Idx >= 0 ? 'm24' + m24Idx + '-' + month + '-' : ''}${visual}-${visual === 'co2' ? month : visual === 'temp' ? tFrame : visual === 'sst' ? sstFrame : 0}-${!!co2}-${!!temp}-${!!sst}-${!!aer}`;
   // boyanmış dokular saklanır: aynı ay/kare ikinci kez istenince yeniden hesaplanmaz (akıcı geçiş)
   const texCache = useRef(new Map<string, HTMLCanvasElement>());
   const cachedTex = (key: string) => {
@@ -638,6 +650,7 @@ export default function App() {
   };
   const globeSource: GlobeSource | null = useMemo(() => {
     if (!view3d) return null;
+    if (m24Idx >= 0) return { key: `m24-${m24Idx}-${month}`, el: cachedTex(`m24-${m24Idx}-${month}`) };
     if (visual === 'sst' && on.sst) return { key: 'sst-video', el: video };
     if (visual === 'aerosol' && on.aerosol) return aerImg ? { key: 'aer-img', el: aerImg } : null;
     if (visual === 'co2' && co2) return { key: `co2-${month}`, el: cachedTex(`co2-${month}`) };
@@ -664,6 +677,7 @@ export default function App() {
     { title: lang === 'tr' ? 'Aerosoller' : 'Aerosols', text: 'Visualization: NASA Scientific Visualization Studio, Joseph V. Ardizzone (NASA/GSFC), Helen-Nicole Kostis (STC); scientific consulting Lesley Ott (NASA/GSFC)', href: 'https://svs.gsfc.nasa.gov/5669/' },
     { title: lang === 'tr' ? 'Kıyı çizgileri' : 'Coastlines', text: lang === 'tr' ? 'NASA Scientific Visualization Studio NDVI görselinden (SVS 5544) türetilmiş kara maskesi' : 'Land mask derived from a NASA Scientific Visualization Studio NDVI visualization (SVS 5544)', href: 'https://svs.gsfc.nasa.gov/5544/' },
     { title: lang === 'tr' ? 'Dünya olayları' : 'Earth events', text: lang === 'tr' ? 'NASA EONET (Earth Observatory Natural Event Tracker), canlı; son 30 günün açık olayları' : 'NASA EONET (Earth Observatory Natural Event Tracker), live; open events of the last 30 days', href: 'https://eonet.gsfc.nasa.gov/' },
+    { title: lang === 'tr' ? '2024 aylık katmanlar' : '2024 monthly layers', text: lang === 'tr' ? 'NASA GES DISC: MERRA-2 (M2TMNXAER SO2SMASS, TOTEXTTAU; M2TMNXSLV T2M, TS; M2TMNXRAD ALBEDO; M2TMNXOCN TSKINWTR, FRSEAICE; M2TMNXLND PRECTOTLAND) ve OCO-2 GEOS L3 CO₂ (OCO2_GEOS_L3CO2_DAY), 2024, 2° × 2.5°. Ekibimizden Ceyhun hazırladı; yalnız veri denetiminden geçen katmanlar.' : 'NASA GES DISC: MERRA-2 (M2TMNXAER SO2SMASS, TOTEXTTAU; M2TMNXSLV T2M, TS; M2TMNXRAD ALBEDO; M2TMNXOCN TSKINWTR, FRSEAICE; M2TMNXLND PRECTOTLAND) and OCO-2 GEOS L3 CO₂ (OCO2_GEOS_L3CO2_DAY), 2024, 2° × 2.5°. Prepared by our team member Ceyhun; only layers that passed our data audit.', href: 'https://disc.gsfc.nasa.gov/' },
     { title: lang === 'tr' ? 'Şehirler' : 'Cities', text: 'GeoNames (geonames.org), CC BY 4.0' },
   ];
 
@@ -703,7 +717,7 @@ export default function App() {
                 onStories={() => setStoriesOpen(true)} onEvents={openEvents} onSound={() => setSoundOpen(true)}
                 narrator={narrator} setNarrator={setNarrator} story={story} onStopStory={stopStory} />
             </NowCard>
-            <LayerPills lang={lang} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => setVisual(id as LayerId)}>
+            <LayerPills lang={lang} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }}>
               {on.temp && temp && (
                 <div className="sub-time">
                   <label htmlFor="t-date" className="small">{lang === 'tr' ? 'Sıcaklık tarihi' : 'Temperature date'}</label>
@@ -723,6 +737,9 @@ export default function App() {
                 </div>
               )}
               {on.aerosol && <p className="small muted">{lang === 'tr' ? 'Aerosoller: 19 Ağu 2025 20:00 UTC; yoğunluk göreli.' : 'Aerosols: 19 Aug 2025 20:00 UTC; relative density.'}</p>}
+              <M24Panel lang={lang} m24={m24} loading={m24Loading} onOpen={openM24} on={m24On} visualId={m24Idx >= 0 ? m24Visual : null} month={month} place={active} announce={announce}
+                setOn={(id, v) => { setM24On((o) => ({ ...o, [id]: v })); if (v) setM24Visual(id); else if (m24Visual === id) setM24Visual(null); const l = m24?.meta.layers.find((x) => x.id === id); if (l) announce(`${lang === 'en' ? l.en : l.tr} ${v ? (lang === 'en' ? 'on' : 'açıldı') : (lang === 'en' ? 'off' : 'kapandı')}.`); }}
+                onShow={(id) => setM24Visual(id)} />
             </LayerPills>
             {on.co2 && co2 && <Timeline lang={lang} month={month} setMonth={(m) => { setMonth(m); announce(lang === 'en' ? `${co2.monthLabel(m, 'en')}: ${co2.grid.bilinear(place, m).toFixed(1)} ppm at the center.` : `${co2.monthLabel(m)}: merkezde ${co2.grid.bilinear(place, m).toFixed(1)} ppm.`); }} label={co2.monthLabel(month, lang)} advance={advance} setAdvance={setAdvance} />}
           </>

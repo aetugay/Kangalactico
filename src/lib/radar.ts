@@ -56,11 +56,29 @@ export function pitchFor(ring: number, rings: number, mode: Mode, baseHz: number
   return baseHz * Math.pow(2, (Math.floor(step / 5) * 12 + PENTA[step % 5]) / 12);
 }
 
-/** Değer → şiddet 0..1. Bilim: katmanın sabit aralığı. Hikâye: radar içindeki min..max'a yayılır. */
-export function gainFor(v: number, layer: RadarLayer, mode: Mode, local?: { min: number; max: number }): number {
+/**
+ * Ölçek (Adım 2): değerin 0..1'e nasıl yayıldığı.
+ *   local  (varsayılan): bu radar alanındaki en düşük → en pes, en yüksek → en ince nota. Küçük farklar da duyulur.
+ *   global: katmanın sabit aralığı. Aynı değer her yerde aynı nota (yerler arası karşılaştırma).
+ * Ekran okuyucu her zaman GERÇEK değeri okur; ölçek yalnız sesi etkiler.
+ */
+export type Scale = 'local' | 'global';
+/** Yerel ölçek en az katman aralığının bu kadarını kapsar: neredeyse düz alanda nicemleme gürültüsü 2 oktava şişirilmesin. */
+export const MIN_LOCAL_SPAN = 0.02;
+/** Ölçeğin gerçek birimdeki alt/üst sınırı. */
+export function scaleRange(layer: RadarLayer, scale: Scale, local?: { min: number; max: number }): { lo: number; hi: number } {
+  if (scale === 'local' && local && Number.isFinite(local.min) && Number.isFinite(local.max)) {
+    let lo = local.min, hi = local.max;
+    const minSpan = (layer.max - layer.min) * MIN_LOCAL_SPAN;
+    if (hi - lo < minSpan) { const c = (lo + hi) / 2; lo = c - minSpan / 2; hi = c + minSpan / 2; }
+    return { lo, hi };
+  }
+  return { lo: layer.min, hi: layer.max };
+}
+/** Değer → ölçekteki yeri 0..1 (perde, ritim yoğunluğu, parlaklık ve vurgu bundan). */
+export function gainFor(v: number, layer: RadarLayer, scale: Scale, local?: { min: number; max: number }): number {
   if (Number.isNaN(v)) return 0;
-  const lo = mode === 'hikaye' && local ? local.min : layer.min;
-  const hi = mode === 'hikaye' && local ? local.max : layer.max;
+  const { lo, hi } = scaleRange(layer, scale, local);
   const t = hi > lo ? (v - lo) / (hi - lo) : 0.5;
   return Math.max(0, Math.min(1, t));
 }
@@ -91,27 +109,50 @@ export function extremes(vals: Float32Array, P: RadarParams): { max: Extreme | n
 /** Do majör pentatonik dizinin i. notası (i = 0 → C2). */
 export const pentaHz = (i: number) => 65.406 * Math.pow(2, (12 * Math.floor(i / 5) + PENTA[((i % 5) + 5) % 5]) / 12);
 
-/** start: en pes nota (pentaHz indeksi) · span: nota aralığı · every: kaç ışında bir çalar · offset: ritim kayması · gate: bu eşiğin altı sessiz. */
-export interface Part { start: number; span: number; every: number; offset: number; gate: number }
+/**
+ * start: tercih edilen en pes nota (pentaHz indeksi; REG_MIN..REG_MAX'a sıkıştırılır) · every: kaç ışında bir çalar
+ * offset: ritim kayması · gate: (aerosol) küresel ölçekte bu eşiğin altı "yok denecek kadar az" → sessiz.
+ * Her katman 2 oktav kullanır (Adım 2): bilim = 12 tam ton adımı, hikâye = 10 pentatonik adım.
+ */
+export interface Part { start: number; every: number; offset: number; gate: number }
 export const PARTS: Record<Timbre, Part> = {
-  co2: { start: 12, span: 9, every: 4, offset: 0, gate: -1 },          // keman: uzun yaylı notalar (E4…)
-  temp: { start: 5, span: 10, every: 2, offset: 0, gate: -1 },          // gitar: sekizlikler (C3…)
-  sst: { start: 13, span: 9, every: 1, offset: 0, gate: -1 },           // arp: her adım (yalnız deniz üstünde)
-  black_carbon: { start: 0, span: 7, every: 2, offset: 1, gate: 0.07 }, // çello pizzicato (C2…)
-  dust: { start: 20, span: 7, every: 1, offset: 0, gate: 0.07 },        // çelesta (C6…)
-  sea_salt: { start: 15, span: 7, every: 4, offset: 2, gate: 0.07 },    // flüt (C5…)
-  sulfate: { start: 10, span: 8, every: 2, offset: 0, gate: 0.07 },     // marimba (C4…)
-  lightning: { start: 20, span: 5, every: 1, offset: 0, gate: 0.07 },
-  co2_24: { start: 12, span: 9, every: 4, offset: 2, gate: -1 },      // keman
-  so2_24: { start: 10, span: 8, every: 2, offset: 1, gate: -1 },      // marimba
-  aod_24: { start: 18, span: 7, every: 2, offset: 0, gate: -1 },      // çelesta
-  t2m_24: { start: 5, span: 10, every: 2, offset: 0, gate: -1 },      // gitar
-  ts_24: { start: 3, span: 10, every: 2, offset: 1, gate: -1 },       // gitar (pes)
-  albedo_24: { start: 15, span: 7, every: 4, offset: 2, gate: -1 },   // flüt
-  sst_24: { start: 13, span: 9, every: 1, offset: 0, gate: -1 },      // arp
-  precip_24: { start: 0, span: 7, every: 2, offset: 1, gate: -1 },    // çello
-  seaice_24: { start: 19, span: 6, every: 4, offset: 0, gate: -1 },   // flüt (tiz)
+  co2: { start: 12, every: 4, offset: 0, gate: -1 },          // keman: uzun yaylı notalar
+  temp: { start: 5, every: 2, offset: 0, gate: -1 },          // gitar: sekizlikler
+  sst: { start: 13, every: 1, offset: 0, gate: -1 },          // arp: her adım (yalnız deniz üstünde)
+  black_carbon: { start: 0, every: 2, offset: 1, gate: 0.07 }, // çello pizzicato
+  dust: { start: 20, every: 1, offset: 0, gate: 0.07 },       // çelesta
+  sea_salt: { start: 15, every: 4, offset: 2, gate: 0.07 },   // flüt
+  sulfate: { start: 10, every: 2, offset: 0, gate: 0.07 },    // marimba
+  lightning: { start: 20, every: 1, offset: 0, gate: 0.07 },
+  co2_24: { start: 12, every: 4, offset: 2, gate: -1 },      // keman
+  so2_24: { start: 10, every: 2, offset: 1, gate: -1 },      // marimba
+  aod_24: { start: 18, every: 2, offset: 0, gate: -1 },      // çelesta
+  t2m_24: { start: 5, every: 2, offset: 0, gate: -1 },       // gitar
+  ts_24: { start: 3, every: 2, offset: 1, gate: -1 },        // gitar (pes)
+  albedo_24: { start: 15, every: 4, offset: 2, gate: -1 },   // flüt
+  sst_24: { start: 13, every: 1, offset: 0, gate: -1 },      // arp
+  precip_24: { start: 0, every: 2, offset: 1, gate: -1 },    // çello
+  seaice_24: { start: 19, every: 4, offset: 0, gate: -1 },   // flüt (tiz)
 };
+/** Kayıt sınırları (pentaHz indeksi): 5 = C3 (131 Hz; dizüstü hoparlörde de duyulur) … 15 = C5; üstüne 2 oktav → en tiz C7 (2093 Hz). */
+export const REG_MIN = 5, REG_MAX = 15;
+/** 2 oktav: bilim modunda tam ton adımı sayısı, hikâye modunda pentatonik adım sayısı. */
+export const STEPS: Record<Mode, number> = { bilim: 12, hikaye: 10 };
+const clampReg = (s: number) => Math.max(REG_MIN, Math.min(REG_MAX, s));
+/**
+ * Açık katmanların kayıtları (en pes notanın pentaHz indeksi), F.layers sırasıyla.
+ * Tek katman (solo): kendi kaydı. Birden çok katman: pesten tize AYRI kayıtlara yayılır
+ * (2 katman: C3–C5 ve C5–C7), böylece hem tını hem perde bölgesi farklı olur.
+ */
+export function registers(ids: Timbre[]): number[] {
+  if (ids.length <= 1) return ids.map((id) => clampReg(PARTS[id].start));
+  const order = ids.map((id, i) => ({ i, s: PARTS[id].start })).sort((a, b) => a.s - b.s || a.i - b.i);
+  const out: number[] = new Array(ids.length);
+  order.forEach((o, r) => { out[o.i] = Math.round(REG_MIN + (r * (REG_MAX - REG_MIN)) / (ids.length - 1)); });
+  return out;
+}
+/** Değer → ritim yoğunluğu: düşük değer 1 vuruş, orta 2, yüksek 3 (aynı nota süresi içinde). */
+export const hitsFor = (t: number) => (t < 1 / 3 ? 1 : t < 2 / 3 ? 2 : 3);
 
 /** Katman kimliği → ses motorundaki enstrüman (2024 katmanları var olan enstrümanları kullanır). */
 export const INSTRUMENT_OF: Partial<Record<Timbre, string>> = {
@@ -128,8 +169,17 @@ export function groupMean(vals: Float32Array, P: RadarParams, b: number, count: 
   return { mean: n ? s / n : NaN, cover: total ? n / total : 0 };
 }
 
-/** Değer (0..1'e ölçeklenmiş) → enstrümanın notası (Hz). Değer yükseldikçe nota incelir. */
-export const noteHz = (t: number, part: Part) => pentaHz(part.start + Math.round(Math.max(0, Math.min(1, t)) * part.span));
+/**
+ * Değer (0..1) → nota (Hz), 2 oktav. Değer yükseldikçe nota incelir; kromatik değil, dizeye oturtulur:
+ *   bilim : tam ton dizisi (eşit 2 yarım tonluk adımlar → perde değerle doğrusal), 13 nota
+ *   hikâye: Do majör pentatonik, 11 nota
+ * start: kaydın en pes notası (pentaHz indeksi); verilmezse katmanın solo kaydı.
+ */
+export function noteHz(t: number, part: Part, mode: Mode = 'bilim', start = clampReg(part.start)): number {
+  const tt = Math.max(0, Math.min(1, t));
+  const step = Math.round(tt * STEPS[mode]);
+  return mode === 'bilim' ? pentaHz(start) * Math.pow(2, (2 * step) / 12) : pentaHz(start + step);
+}
 
 /** Sesli özet (S tuşu). */
 export function summarize(layer: RadarLayer, vals: Float32Array, P: RadarParams, placeName: string, lang: 'tr' | 'en' = 'tr'): string {
@@ -172,7 +222,11 @@ export function describeBeam(layer: RadarLayer, vals: Float32Array, P: RadarPara
 export interface FrameData {
   P: RadarParams;
   mode: Mode;
+  /** Ölçek (varsayılan yerel). Karşılaştırmada yerel ölçek iki yerin birleşik aralığıdır (A ve B aynı ölçekte). */
+  scale?: Scale;
   layers: { layer: RadarLayer; vals: Float32Array; local: { min: number; max: number } }[];
+  /** Tur başı referans tonları: merkez(ler). Karşılaştırmada önce A sonra B. Verilmezse radarın merkezi. */
+  refs?: { tag: string; name: string; center: LatLon }[];
 }
 /** Bir nota olayı ve onu üreten veri. Her alan veriden türetilir; veriden bağımsız ses olayı yoktur. */
 export interface SoundEvent {
@@ -183,7 +237,13 @@ export interface SoundEvent {
   valueText: string;                 // ekran okuyucu için gerçek değer metni
   t: number;                         // değerin ölçekteki yeri 0..1
   freq: number; gain: number; pan: number; durBeams: number;
+  hits: number;                      // ritim yoğunluğu: nota süresi içinde 1–3 vuruş (değer ↑ → sık)
+  bright: number;                    // tını parlaklığı 0..1 (değer ↑ → parlak; alçak geçiren süzgeç)
+  ref?: { tag: string; name: string }; // tur başı referans tonu (merkez değeri) ise
 }
+
+/** Katmanların kayıtları (F.layers sırasıyla). */
+const regsOf = (F: FrameData) => registers(F.layers.map((l) => l.layer.id));
 
 /**
  * b. ışın adımında çalınacak notalar. Kurallar:
@@ -194,18 +254,67 @@ export interface SoundEvent {
 export function beamEvents(F: FrameData, b: number): SoundEvent[] {
   const { P } = F;
   const out: SoundEvent[] = [];
-  for (const { layer, vals, local } of F.layers) {
+  const regs = regsOf(F), scale = F.scale ?? 'local';
+  F.layers.forEach(({ layer, vals, local }, li) => {
     const part = PARTS[layer.id];
-    if ((((b - part.offset) % part.every) + part.every) % part.every !== 0) continue; // bu katmanın ritim adımı değil
+    if ((((b - part.offset) % part.every) + part.every) % part.every !== 0) return; // bu katmanın ritim adımı değil
     const { mean } = groupMean(vals, P, b, part.every);
-    if (Number.isNaN(mean) || beamCover(vals, P, b, part.every) < 0.5) continue; // veri yok (ya da grubun çoğunda yok) → sessizlik
-    const t = gainFor(mean, layer, F.mode, local);
-    if (t < part.gate) continue;                      // (aerosol) yok denecek kadar az → sessizlik
+    if (Number.isNaN(mean) || beamCover(vals, P, b, part.every) < 0.5) return; // veri yok (ya da grubun çoğunda yok) → sessizlik
+    if (part.gate > 0 && gainFor(mean, layer, 'global') < part.gate) return; // (aerosol) yok denecek kadar az → sessizlik (ölçekten bağımsız)
+    const t = gainFor(mean, layer, scale, local);
     const bearing = bearingOf(b + (part.every - 1) / 2, P.beams);
     out.push({ layerId: layer.id, label: layer.label, unit: layer.unit, beam: b, bearing, kmFrom: 0, kmTo: P.rangeKm,
-      value: mean, valueText: layer.fmt(mean), t, freq: noteHz(t, part), gain: t, pan: panFor(bearing), durBeams: part.every * 0.92 });
+      value: mean, valueText: layer.fmt(mean), t, freq: noteHz(t, part, F.mode, regs[li]), gain: t, pan: panFor(bearing),
+      durBeams: part.every * 0.92, hits: hitsFor(t), bright: t });
+  });
+  return out;
+}
+
+/**
+ * Tur başı referans tonları (Adım 2): ilk katmanın MERKEZ değeri, aynı ölçek ve kayıtla, ortada (pan 0).
+ * Karşılaştırmada önce A sonra B — iki yerin farkı her turda yan yana duyulur. Merkezde veri yoksa ton yok.
+ */
+export function refEvents(F: FrameData): SoundEvent[] {
+  const first = F.layers[0];
+  if (!first) return [];
+  const { layer, local } = first, part = PARTS[layer.id], reg = regsOf(F)[0], scale = F.scale ?? 'local';
+  const refs = F.refs?.length ? F.refs : [{ tag: '', name: '', center: F.P.center }];
+  const out: SoundEvent[] = [];
+  for (const r of refs) {
+    const v = layer.sample(r.center);
+    if (Number.isNaN(v)) continue;
+    const t = gainFor(v, layer, scale, local);
+    out.push({ layerId: layer.id, label: layer.label, unit: layer.unit, beam: -1, bearing: 0, kmFrom: 0, kmTo: 0,
+      value: v, valueText: layer.fmt(v), t, freq: noteHz(t, part, F.mode, reg), gain: t, pan: 0, durBeams: 0, hits: 1, bright: t, ref: { tag: r.tag, name: r.name } });
   }
   return out;
+}
+
+/**
+ * Yerel ölçeğin aralığı: ÇALINAN değerlerin (katmanın ritim adımlarındaki ışın grubu ortalamaları) en düşüğü ve en yükseği.
+ * Hücre uçları değil — yoksa ortalamalar ölçeğin ortasına sıkışır ve 2 oktavın yarısı kullanılmaz.
+ * extra: ölçeğe katılacak başka değerler (referans tonlarının merkez değerleri), böylece referans da ölçeğin içinde kalır.
+ */
+export function playedRange(layer: RadarLayer, vals: Float32Array, P: RadarParams, extra: number[] = []): { min: number; max: number; coverage: number } {
+  const part = PARTS[layer.id];
+  let min = Infinity, max = -Infinity;
+  for (const v of extra) if (!Number.isNaN(v)) { if (v < min) min = v; if (v > max) max = v; }
+  for (let b = 0; b < P.beams; b++) {
+    if ((((b - part.offset) % part.every) + part.every) % part.every !== 0) continue;
+    const { mean } = groupMean(vals, P, b, part.every);
+    if (Number.isNaN(mean) || beamCover(vals, P, b, part.every) < 0.5) continue;
+    if (mean < min) min = mean; if (mean > max) max = mean;
+  }
+  return { min, max, coverage: localRange(vals).coverage };
+}
+
+/** Ölçek açıklaması (ekran + ekran okuyucu): "Karbondioksit: yerel ölçek 411.2 ppm (en pes) – 414.0 ppm (en ince)". */
+export function describeScale(layer: RadarLayer, scale: Scale, local: { min: number; max: number } | undefined, lang: 'tr' | 'en' = 'tr'): string {
+  const { lo, hi } = scaleRange(layer, scale, local);
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) return lang === 'en' ? `${layer.label}: no data in the radar area` : `${layer.label}: radar alanında veri yok`;
+  return lang === 'en'
+    ? `${layer.label}: ${scale === 'local' ? 'local scale' : 'global scale'} ${layer.fmt(lo)} (lowest note) – ${layer.fmt(hi)} (highest note)`
+    : `${layer.label}: ${scale === 'local' ? 'yerel ölçek' : 'küresel ölçek'} ${layer.fmt(lo)} (en pes) – ${layer.fmt(hi)} (en ince)`;
 }
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -217,9 +326,16 @@ export function noteName(hz: number): string {
 
 /** Canlı gösterge satırı: "Karbondioksit · kuzeydoğu 45° · 0–2000 km ort. → 414.2 ppm → E5 (659 Hz)". */
 export function formatEvent(e: SoundEvent, lang: 'tr' | 'en' = 'tr'): string {
+  const en = lang === 'en';
+  const note = `${noteName(e.freq)} (${Math.round(e.freq)} Hz)`;
+  if (e.ref) {
+    const who = e.ref.tag ? `${e.ref.tag}${e.ref.name ? ' · ' + e.ref.name : ''}` : (en ? 'center' : 'merkez');
+    return `${en ? 'Reference' : 'Referans'} (${who}) · ${e.label} → ${e.valueText} → ${note}`;
+  }
   const dir = `${compass8(e.bearing, lang)} ${Math.round(e.bearing)}°`;
-  const dist = lang === 'en' ? `${Math.round(e.kmFrom)}–${formatKm(e.kmTo)} avg.` : `${Math.round(e.kmFrom)}–${formatKm(e.kmTo)} ort.`;
-  return `${e.label} · ${dir} · ${dist} → ${e.valueText} → ${noteName(e.freq)} (${Math.round(e.freq)} Hz)`;
+  const dist = en ? `${Math.round(e.kmFrom)}–${formatKm(e.kmTo)} avg.` : `${Math.round(e.kmFrom)}–${formatKm(e.kmTo)} ort.`;
+  const hits = en ? `${e.hits} ${e.hits === 1 ? 'beat' : 'beats'}` : `${e.hits} vuruş`;
+  return `${e.label} · ${dir} · ${dist} → ${e.valueText} → ${note} · ${hits}`;
 }
 /** Veri olmayan ışın için: "kuzeydoğu 45°: veri yok → ses yok". */
 export function formatSilent(bearing: number, lang: 'tr' | 'en' = 'tr'): string {

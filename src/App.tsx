@@ -18,7 +18,7 @@ import { co2Color, loadAerosols, loadCo2, loadJson, loadSst, loadTemperature, ty
 import { M24 } from './lib/m24.ts';
 import { M24Panel } from './components/M24Panel.tsx';
 import { Cities, countryName, fold, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
-import { noteHz, PARTS, type Mode, type RadarLayer } from './lib/radar.ts';
+import { noteHz, PARTS, type Mode, type RadarLayer, type Scale } from './lib/radar.ts';
 import { landTexture, paintEquirect } from './lib/textures.ts';
 import { Globe3D, hasWebGL, type GlobeSource } from './three/Globe3D.tsx';
 
@@ -77,7 +77,8 @@ export default function App() {
   // ---------- durum
   const [place, setPlace] = useState<Place | null>(null);
   const [rangeKm, setRange] = useState(2000);
-  const [mode, setMode] = useState<Mode>('bilim'); // Adım 1: bilim modu varsayılan — aynı değer her yerde aynı nota; yalnız veri sesleri
+  const [mode, setMode] = useState<Mode>('bilim'); // Adım 1: bilim modu varsayılan — yalnız veri sesleri; tam ton dizisi
+  const [scale, setScaleS] = useState<Scale>('local'); // Adım 2: yerel ölçek varsayılan — bu alandaki farklar 2 oktava yayılır
   const [month, setMonth] = useState(0);
   const [advance, setAdvance] = useState(true);
   const [tFrame, setTFrame] = useState(0);
@@ -189,7 +190,8 @@ export default function App() {
       : `${layer.label}: ${Number.isNaN(c) ? 'merkezde veri yok' : 'merkezde ' + layer.fmt(c)}; en yüksek ${dir} yönünde, ${layer.fmt(bv)}.`);
   };
   const radar = useRadar({
-    placeName: active ? placeLabel(active) : '', center: active, layers, rangeKm, mode, lang, announce,
+    placeName: active ? placeLabel(active) : '', center: active, layers, rangeKm, mode, scale, lang, announce,
+    pair: compare && place && placeB ? [{ tag: 'A', name: placeLabel(place), center: place }, { tag: 'B', name: placeLabel(placeB), center: placeB }] : null,
     beamPlaces: (br) => {
       if (!cities || !active) return '';
       const hits = cities.inSector(active, br, 180 / 32 + 3, rangeKm, 2);
@@ -203,6 +205,14 @@ export default function App() {
     },
   });
   const radarRef = useRef(radar); radarRef.current = radar;
+  /** Ölçek anahtarı (Adım 2). Ses değişir; okunan değerler hep gerçek değerdir. */
+  const setScale = (s: Scale) => {
+    setScaleS(s);
+    const en = langRef.current === 'en';
+    announce(s === 'local'
+      ? (en ? 'Local scale: the lowest value in this area is the lowest note, the highest value the highest note. Small differences become audible. Spoken values are always the real values.' : 'Yerel ölçek: bu alandaki en düşük değer en pes, en yüksek değer en ince nota. Küçük farklar da duyulur. Okunan değerler her zaman gerçek değerdir.')
+      : (en ? 'Global scale: the same value is the same note everywhere. Use it to compare places.' : 'Küresel ölçek: aynı değer her yerde aynı nota. Yerleri karşılaştırmak için.'));
+  };
 
   const toggleLayer = (id: LayerId) => {
     const v = !on[id];
@@ -524,6 +534,8 @@ export default function App() {
       else { setPickFor('B'); setPickOpen(true); }
       return true;
     }
+    if (has('yerel olcek', 'local scale', 'yerel')) { setScale('local'); return true; }
+    if (has('kuresel olcek', 'global scale', 'kuresel', 'sabit olcek')) { setScale('global'); return true; }
     if (has('fark', 'difference')) { if (placeB) sayDiff(); else announce(en ? 'There is no second place yet. Say: compare with Tokyo.' : 'Henüz ikinci yer yok. Şöyle söyle: Tokyo ile karşılaştır.'); return true; }
     if (has('neredeyim', 'where am i', 'burasi neresi')) { if (needPlace()) announce(en ? `You are at ${placeLabel(active ?? place!)}.` : `${placeLabel(active ?? place!)} üzerindesin.`); return true; }
     if (has(' ozet', 'summary')) { if (needPlace()) R.summary(); return true; }
@@ -710,7 +722,8 @@ export default function App() {
           <>
             <NowCard lang={lang} placeLabel={(compare && placeB ? (active === placeB ? 'B · ' : 'A · ') : '') + placeLabel(active ?? place)} playing={radar.playing} onToggle={radar.toggle} onLegend={radar.runLegend} 
               onSummary={radar.summary} headline={headline} instruments={instruments} rangeKm={rangeKm} setRange={(km) => { setRange(km); announce(lang === 'en' ? `Range ${km} kilometers.` : `Menzil ${km} kilometre.`); }}
-              revSec={radar.revSec} setRevSec={radar.setRevSec} mode={mode} setMode={(m) => { setMode(m); announce(m === 'hikaye' ? (lang === 'en' ? 'Musical mode: notes spread across the differences around this place.' : 'Müzikal mod: notalar bu yerin çevresindeki farkı tüm aralığa yayar.') : (lang === 'en' ? 'Science mode: the same value is always the same note, everywhere.' : 'Bilim modu: aynı değer her yerde aynı notadır.')); }} legend={radar.legend} talking={radar.talking} nowLines={radar.nowLines} liveLine={radar.liveLine}>
+              revSec={radar.revSec} setRevSec={radar.setRevSec} mode={mode} setMode={(m) => { setMode(m); announce(m === 'hikaye' ? (lang === 'en' ? 'Musical mode: pentatonic notes, with a soft chord and waves.' : 'Müzikal mod: pentatonik notalar, yumuşak zemin akoru ve dalga sesi.') : (lang === 'en' ? 'Science mode: whole-tone steps, so equal differences sound as equal steps. Data sounds only.' : 'Bilim modu: tam ton adımları; eşit fark eşit adım duyulur. Yalnız veri sesleri.')); }}
+              scale={scale} setScale={setScale} scaleInfo={radar.scaleInfo} legend={radar.legend} talking={radar.talking} nowLines={radar.nowLines} liveLine={radar.liveLine}>
               <Explore lang={lang} placeA={placeLabel(place)} placeB={placeB ? placeLabel(placeB) : null} compare={compare}
                 setCompare={(v) => { setCompare(v); setCmpTurn(0); announce(v ? (lang === 'en' ? 'Listening in turns: one sweep for A, one sweep for B. Time stays fixed.' : 'Sırayla dinleme açık: bir tur A, bir tur B. Zaman sabit kalır.') : (lang === 'en' ? 'Listening in turns off.' : 'Sırayla dinleme kapalı.')); }}
                 onPickB={() => { setPickFor('B'); setPickOpen(true); }} onClearB={() => { setPlaceB(null); setCompare(false); setCmpTurn(0); }} onDiff={sayDiff}

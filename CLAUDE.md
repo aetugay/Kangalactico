@@ -32,7 +32,8 @@ Hedef ödüller: Local Impact, Best Use of Science, Most Inspirational, Art & Te
 - Görüntü sonifikasyonu (yüzey sıcaklığı, aerosoller, yıldırım) ana özellik olarak kalır; ek katmanlar.
 - **Radar sadece düz (eşdikdörtgen) haritalarla çalışır.** Küre/3B görseller (4950, 5196) radarda kullanılmaz.
 - "Dünya turu" hikâye modu: seçilen yerin enlemi boyunca 30 sn'lik tur, yol üstündeki büyük şehirler sesli anılır.
-- Bilim/Hikâye ayrımı ayrı mod değil, **tek basit anahtar** (doğrusal perde/şiddet ↔ pentatonik/normalize).
+- Bilim/Hikâye ayrımı ayrı mod değil, **tek basit anahtar**: bilim = tam ton dizisi, yalnız veri sesleri (varsayılan); hikâye = pentatonik + merkezden zemin akoru + dalga.
+- Ses eşlemesi (Adım 2, lib/radar.ts): değer → ölçekte yeri t → aynı anda perde (2 oktav, dizeye oturtulmuş), vuruş sayısı (1–3) ve parlaklık (süzgeç). Ölçek anahtarı: **yerel** (varsayılan; çalınan ışın ortalamalarının min–max'ı, en az katman aralığının %2'si) / küresel (sabit). Karşılaştırmada yerel ölçek A+B birleşik. Her tur 4 adımlık referans bölümüyle başlar (merkez değeri, "ref" tınısı; karşılaştırmada A sonra B), sonra kuzey zili. Tek katman kendi kaydında; birden çok katman C3–C7 arasında ayrı kayıtlara yayılır. Okunan değer hep gerçek değer. Sınama: npm run test:sound.
 - Tema: açık ve yüksek kontrastlı arayüz; harita/radar koyu olabilir.
 
 ## NASA kuralları (zorunlu)

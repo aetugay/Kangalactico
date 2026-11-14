@@ -34,22 +34,21 @@ export function M24Panel({ lang, m24, loading, onOpen, on, setOn, visualId, onSh
     const my = ++run.current;
     try {
       if (!m24.dailyLoaded) { announce(en ? 'Loading 365 days of carbon dioxide…' : '365 günlük karbondioksit yükleniyor…'); await m24.loadDaily(import.meta.env.BASE_URL); }
-      const L = m24.meta.layers.find((l) => l.daily)!;
       const s = m24.dailyCo2(place);
       const valid = s.map((v, d) => ({ v, d })).filter((x) => !Number.isNaN(x.v));
       if (!valid.length) { announce(en ? 'No daily data here.' : 'Burada günlük veri yok.'); return; }
       const hi = valid.reduce((a, b) => (b.v > a.v ? b : a)), lo = valid.reduce((a, b) => (b.v < a.v ? b : a));
       const day = (d: number) => new Date(Date.UTC(2024, 0, 1 + d)).toLocaleDateString(en ? 'en-GB' : 'tr-TR', { day: 'numeric', month: 'long', timeZone: 'UTC' });
-      announce(en ? `${place.name}, 2024: 365 days of carbon dioxide, one note per day. Highest ${hi.v.toFixed(1)} ppm on ${day(hi.d)}, lowest ${lo.v.toFixed(1)} ppm on ${day(lo.d)}.`
-        : `${place.name}, 2024: karbondioksitin 365 günü, her gün bir nota. En yüksek ${hi.v.toFixed(1)} ppm, ${day(hi.d)}; en düşük ${lo.v.toFixed(1)} ppm, ${day(lo.d)}.`);
+      announce(en ? `${place.name}, 2024: 365 days of carbon dioxide, one note per day; the lowest day is the lowest note, the highest day two octaves higher. Highest ${hi.v.toFixed(1)} ppm on ${day(hi.d)}, lowest ${lo.v.toFixed(1)} ppm on ${day(lo.d)}.`
+        : `${place.name}, 2024: karbondioksitin 365 günü, her gün bir nota; en düşük gün en pes, en yüksek gün iki oktav ince. En yüksek ${hi.v.toFixed(1)} ppm, ${day(hi.d)}; en düşük ${lo.v.toFixed(1)} ppm, ${day(lo.d)}.`);
       const step = 0.055; // 365 gün ≈ 20 sn
       for (let c = 0; c < s.length; c += 30) {
         if (my !== run.current) return;
         const t0 = engine.now + 0.1;
         for (let d = c; d < Math.min(s.length, c + 30); d++) {
           const v = s[d]; if (Number.isNaN(v)) continue; // veri yok → sessiz
-          const t = Math.max(0, Math.min(1, (v - L.vmin) / (L.vmax - L.vmin)));
-          engine.voice('co2_24', noteHz(t, PARTS.co2_24), t0 + (d - c) * step, step * 1.6, t, 0);
+          const t = hi.v > lo.v ? (v - lo.v) / (hi.v - lo.v) : 0.5; // yerel ölçek: bu yerin yılı (Adım 2)
+          engine.voice('co2_24', noteHz(t, PARTS.co2_24, 'bilim'), t0 + (d - c) * step, step * 1.6, 0.3 + 0.7 * t, 0, t);
         }
         await new Promise((r) => setTimeout(r, 30 * step * 1000));
       }

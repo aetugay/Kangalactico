@@ -5,7 +5,7 @@ import { RadarPlayer, type RadarFrame } from '../audio/radarPlayer.ts';
 import { speech } from '../audio/speech.ts';
 import type { Lang } from '../i18n.ts';
 import { compass8, type LatLon } from '../lib/geo.ts';
-import { beamSilences, DEFAULTS, describeBeam, extremes, formatEvent, formatSilent, localRange, noteHz, PARTS, sampleLayer, summarize, type Mode, type RadarLayer } from '../lib/radar.ts';
+import { beamSilences, DEFAULTS, describeBeam, describeScale, extremes, formatEvent, formatSilent, noteHz, playedRange, PARTS, sampleLayer, summarize, type Mode, type RadarLayer, type Scale } from '../lib/radar.ts';
 
 interface Opts {
   placeName: string;
@@ -13,6 +13,10 @@ interface Opts {
   layers: RadarLayer[];
   rangeKm: number;
   mode: Mode;
+  /** Ölçek (Adım 2): yerel (varsayılan) ya da küresel. */
+  scale?: Scale;
+  /** Karşılaştırma: iki yer (A, B). Verilirse tur başında önce A sonra B referansı çalar ve yerel ölçek ikisinin birleşimidir. */
+  pair?: { tag: string; name: string; center: LatLon }[] | null;
   lang: Lang;
   /** Öncelikli duyuru (sesli rehber açıksa konuşur, kapalıysa ekran okuyucuya gider). */
   announce: (t: string) => void;
@@ -21,7 +25,7 @@ interface Opts {
   beamPlaces?: (bearingDeg: number) => string;
 }
 
-export function useRadar({ placeName, center, layers, rangeKm, mode, lang, announce, onRevolution, beamPlaces }: Opts) {
+export function useRadar({ placeName, center, layers, rangeKm, mode, scale = 'local', pair = null, lang, announce, onRevolution, beamPlaces }: Opts) {
   const placesRef = useRef(beamPlaces); placesRef.current = beamPlaces;
   const en = lang === 'en';
   const [playing, setPlaying] = useState(false);
@@ -33,10 +37,23 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, lang, annou
   const manualAngle = useRef<number | null>(null);
 
   const P = useMemo(() => (center ? { center, rangeKm, ...DEFAULTS } : null), [center, rangeKm]);
-  const computed = useMemo(() => (P ? layers.map((layer) => { const vals = sampleLayer(layer, P); return { layer, vals, local: localRange(vals) }; }) : []), [layers, P]);
+  const pairKey = pair ? pair.map((p) => `${p.center.lat},${p.center.lon}`).join('|') : '';
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const pairMemo = useMemo(() => pair, [pairKey]);
+  const computed = useMemo(() => (P ? layers.map((layer) => {
+    const vals = sampleLayer(layer, P);
+    const refs = (pairMemo ?? [{ center: P.center }]).map((q) => layer.sample(q.center));
+    let local = playedRange(layer, vals, P, refs);
+    // karşılaştırmada yerel ölçek iki yerin BİRLEŞİK aralığı: A ve B'de aynı değer aynı nota
+    if (pairMemo) for (const q of pairMemo) {
+      const o = playedRange(layer, sampleLayer(layer, { ...P, center: q.center }), { ...P, center: q.center }, refs);
+      if (Number.isFinite(o.min)) local = { ...local, min: Math.min(local.min, o.min), max: Math.max(local.max, o.max) };
+    }
+    return { layer, vals, local };
+  }) : []), [layers, P, pairMemo]);
 
   const frameRef = useRef<RadarFrame | null>(null);
-  frameRef.current = P ? { P, mode, revSec, layers: computed } : null;
+  frameRef.current = P ? { P, mode, scale, revSec, layers: computed, refs: pairMemo ?? undefined } : null;
   const player = useMemo(() => new RadarPlayer(() => frameRef.current), []);
   useEffect(() => () => player.stop(), [player]);
   const revCb = useRef(onRevolution); revCb.current = onRevolution;
@@ -50,7 +67,7 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, lang, annou
   useEffect(() => {
     player.onEvents = (events, b) => {
       const F = frameRef.current; if (!F) return;
-      const lines = [...events.map((e) => formatEvent(e, langRef.current)), ...beamSilences(F, b).map((s) => `${s.label}: ${formatSilent(s.bearing, langRef.current)}`)];
+      const lines = [...events.map((e) => formatEvent(e, langRef.current)), ...(b < 0 ? [] : beamSilences(F, b).map((s) => `${s.label}: ${formatSilent(s.bearing, langRef.current)}`))];
       if (!lines.length) return; // bu adımda sırası gelen katman yok (ritim) — gösterge son notada kalır
       setNowLines(lines);
       const now = Date.now();
@@ -81,7 +98,7 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, lang, annou
   // Yer tamamen kalkarsa dur.
   useEffect(() => { if (!P) stop(); }, [P, stop]);
   // Hız değişince zamanlamayı aynı ışından yeniden kur.
-  useEffect(() => { if (player.playing) player.start(Math.round((player.angle() / 360) * DEFAULTS.beams) % DEFAULTS.beams); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [revSec]);
+  useEffect(() => { if (player.playing) player.start(player.beamNow()); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [revSec]);
 
   /** Sesli özet. Okunurken tekrar basılırsa susar. */
   const summary = useCallback(() => {
@@ -112,19 +129,27 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, lang, annou
     hush(); stop(); engine.unlock();
     const run = ++legendRun.current;
     setTalking('legend');
-    const tone = (timbre: string, t: number, pan: number, dt = 0, dur = 0.5) => engine.voice(timbre, noteHz(t, PARTS[timbre as keyof typeof PARTS] ?? PARTS.temp), engine.now + 0.05 + dt, dur, 0.8, pan);
+    const tone = (timbre: string, t: number, pan: number, dt = 0, dur = 0.5, hits = 1) => {
+      for (let h = 0; h < hits; h++) engine.voice(timbre, noteHz(t, PARTS[timbre as keyof typeof PARTS] ?? PARTS.temp, mode), engine.now + 0.05 + dt + (h * dur) / hits, (dur / hits) * 0.85, 0.3 + 0.7 * t, pan, t);
+    };
+    const lowHigh = (id: string) => { tone(id, 0.05, 0, 0, 0.9, 1); tone(id, 0.5, 0, 1.0, 0.9, 2); tone(id, 0.95, 0, 2.0, 0.9, 3); };
+    const first = layers[0];
     const steps: [string, () => void][] = en ? [
       ['The radar sweeps around the place you chose, starting from north and turning clockwise. This bell marks north.', () => engine.northTick(engine.now + 0.05)],
       ['Places to the west sound in your left ear,', () => tone('temp', 0.5, -1)],
       ['places to the east in your right ear.', () => tone('temp', 0.5, 1)],
-      ['The higher the note, the higher the value. First a low value, then a high one.', () => { tone('temp', 0.1, 0); tone('temp', 0.9, 0, 0.6); }],
+      ['A higher value sounds three ways at once: a higher note, more beats, and a brighter tone. Low, middle, high.', () => lowHigh(first?.id ?? 'temp')],
+      [scale === 'local' ? 'Local scale: the lowest value around this place is the lowest note, the highest is the highest note, so small differences are audible.' : 'Global scale: the same value is the same note everywhere, for comparing places.', () => {}],
+      ['Each sweep starts with a plain reference tone: the value at the center. Compare every note with it.', () => { if (first) tone('ref', 0.5, 0, 0, 0.7); }],
       ['Every layer is a different instrument.', () => {}],
       ...layers.map((l): [string, () => void] => [`${l.label}: ${l.instrument}.`, () => { tone(l.id, 0.3, 0, 0, 0.6); tone(l.id, 0.6, 0, 0.45, 0.6); tone(l.id, 0.9, 0, 0.9, 0.8); }]),
     ] : [
       ['Radar, seçtiğin yerin çevresinde kuzeyden başlayıp saat yönünde döner. Bu zil kuzeyi gösterir.', () => engine.northTick(engine.now + 0.05)],
       ['Batıdaki yerler sol kulakta,', () => tone('temp', 0.5, -1)],
       ['doğudakiler sağ kulakta duyulur.', () => tone('temp', 0.5, 1)],
-      ['Nota inceldikçe değer yükselir. Önce düşük, sonra yüksek değer.', () => { tone('temp', 0.1, 0); tone('temp', 0.9, 0, 0.6); }],
+      ['Yüksek değer üç şekilde duyulur: daha ince nota, daha sık vuruş ve daha parlak ses. Düşük, orta, yüksek.', () => lowHigh(first?.id ?? 'temp')],
+      [scale === 'local' ? 'Yerel ölçek: bu yerin çevresindeki en düşük değer en pes, en yüksek değer en ince notadır; küçük farklar da duyulur.' : 'Küresel ölçek: aynı değer her yerde aynı notadır; yerleri karşılaştırmak için.', () => {}],
+      ['Her tur yalın bir referans sesiyle başlar: merkezdeki değer. Her notayı onunla karşılaştır.', () => { if (first) tone('ref', 0.5, 0, 0, 0.7); }],
       ['Her katman ayrı bir enstrümandır.', () => {}],
       ...layers.map((l): [string, () => void] => [`${l.label}: ${l.instrument}.`, () => { tone(l.id, 0.3, 0, 0, 0.6); tone(l.id, 0.6, 0, 0.45, 0.6); tone(l.id, 0.9, 0, 0.9, 0.8); }]),
     ];
@@ -140,7 +165,7 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, lang, annou
     if (run !== legendRun.current) return;
     setLegend(null); setTalking(null);
     announce(en ? 'Legend finished. Press Space to play.' : 'Lejant bitti. Çalmak için Boşluk.');
-  }, [stop, layers, announce, en, talking, hush]);
+  }, [stop, layers, announce, en, talking, hush, mode, scale]);
 
   // klavye: Boşluk, ←/→, S, L (metin alanlarında ve diyaloglarda devre dışı)
   const keys = useRef<(e: KeyboardEvent) => void>(() => {});
@@ -167,5 +192,8 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, lang, annou
     return { layer: first.layer, center: c, maxDir: ex ? compass8(ex.bearing, lang) : null, maxVal: ex?.v ?? NaN };
   }, [computed, P, lang]);
 
-  return { playing, play, stop, toggle, revSec, setRevSec, legend, runLegend, summary, stepBeam, angle, computed, headline, P, talking, hush, nowLines, liveLine };
+  /** Ölçek açıklamaları (katman başına). */
+  const scaleInfo = useMemo(() => computed.map(({ layer, local }) => describeScale(layer, scale, local, lang)), [computed, scale, lang]);
+
+  return { scaleInfo, playing, play, stop, toggle, revSec, setRevSec, legend, runLegend, summary, stepBeam, angle, computed, headline, P, talking, hush, nowLines, liveLine };
 }

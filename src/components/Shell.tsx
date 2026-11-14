@@ -2,7 +2,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { tr, type Lang } from '../i18n.ts';
 import { formatKm } from '../lib/geo.ts';
-import type { Mode } from '../lib/radar.ts';
+import type { Mode, Scale } from '../lib/radar.ts';
 import { IconContrast, IconGlobe, IconHeadphones, IconInfo, IconMic, IconPause, IconPin, IconPlay, IconSpeak } from './icons.tsx';
 
 // ---------------- Diyalog (modal): Esc kapatır, odak içeride döner, kapanınca açana döner
@@ -78,6 +78,8 @@ export interface NowProps {
   headline: { label: string; center: string; maxDir: string | null; maxVal: string; when: string } | null;
   instruments: { id: string; label: string; instrument: string; color: string }[];
   rangeKm: number; setRange: (km: number) => void; revSec: number; setRevSec: (s: number) => void; mode: Mode; setMode: (m: Mode) => void;
+  /** Adım 2: ölçek anahtarı (yerel varsayılan) ve katman başına ölçek açıklaması. */
+  scale: Scale; setScale: (s: Scale) => void; scaleInfo?: string[];
   legend: string | null;
   /** Canlı gösterge: şu an çalan notaların verisi (her adımda) ve ekran okuyucu satırı (seyreltilmiş). */
   nowLines?: string[];
@@ -136,6 +138,18 @@ export function NowCard(p: NowProps) {
         </label>
         <label className="switch"><input type="checkbox" checked={p.mode === 'hikaye'} onChange={(e) => p.setMode(e.target.checked ? 'hikaye' : 'bilim')} /> <span>{tr(lang, 'story')}</span></label>
       </div>
+      <fieldset className="fs">
+        <legend>{lang === 'en' ? 'Note scale' : 'Nota ölçeği'}</legend>
+        <div className="seg">
+          {(['local', 'global'] as Scale[]).map((s) => (
+            <label key={s} className={s === p.scale ? 'on' : ''}>
+              <input type="radio" name="scale" value={s} checked={s === p.scale} onChange={() => p.setScale(s)} />
+              {s === 'local' ? (lang === 'en' ? 'Local (this area)' : 'Yerel (bu alan)') : (lang === 'en' ? 'Global (fixed)' : 'Küresel (sabit)')}
+            </label>
+          ))}
+        </div>
+        {p.scaleInfo && p.scaleInfo.length > 0 && <p className="small muted scale-info">{p.scaleInfo.join(' · ')}</p>}
+      </fieldset>
       {p.children}
       <p className="keys">{tr(lang, 'keys')}</p>
     </section>

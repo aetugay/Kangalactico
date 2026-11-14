@@ -267,8 +267,10 @@ class AudioEngine {
    * Enstrüman sesi. timbre: katman kimliği; gain 0..1 (vurgu); pan -1..+1 (yön).
    *   co2 → keman (yaylı, uzun)        temp → gitar (çekilen tel)      sst → arp
    *   black_carbon → çello (pizzicato)  dust → çelesta (çan)            sea_salt → flüt     sulfate → marimba
+   *   ref → referans tonu (tur başında merkez değeri; diyapazon gibi yalın, hiçbir enstrümana benzemez)
+   * bright 0..1 (Adım 2): tını parlaklığı — değer yükseldikçe süzgeç açılır (temelin 1.5× → 11.5× üstü).
    */
-  voice(timbre: string, freq: number, when: number, dur: number, gain: number, pan: number) {
+  voice(timbre: string, freq: number, when: number, dur: number, gain: number, pan: number, bright?: number) {
     if (gain <= 0.001) return;
     const vol = this.mix.vol[timbre] ?? 1;
     if (vol <= 0.01) return;
@@ -276,7 +278,11 @@ class AudioEngine {
     const ac = this.ctx();
     const out = this.panNode(pan);
     const g = ac.createGain();
-    g.connect(out);
+    if (bright !== undefined) {
+      const tone = ac.createBiquadFilter(); tone.type = 'lowpass'; tone.Q.value = 0.6;
+      tone.frequency.value = Math.min(16000, freq * (1.5 + 10 * Math.max(0, Math.min(1, bright))));
+      g.connect(tone).connect(out);
+    } else g.connect(out);
     const lvl = (0.45 + 0.55 * Math.min(1, gain)) * vol; // değer vurguyu artırır ama ses hiç kaybolmaz
     const osc = (type: OscillatorType, f: number, level: number, dest: AudioNode, len: number, detune = 0) => {
       const o = ac.createOscillator(); o.type = type; o.frequency.value = f; o.detune.value = detune;
@@ -342,6 +348,16 @@ class AudioEngine {
         g.gain.setValueAtTime(0.0001, when);
         g.gain.exponentialRampToValueAtTime(0.16 * lvl, when + 0.004);
         g.gain.exponentialRampToValueAtTime(0.0001, when + 0.45);
+        break;
+      }
+      case 'ref': { // referans: sinüs + hafif 2. ve 3. harmonik (parlaklık süzgeci bunları açar), yumuşak atak, vibratosuz
+        const len = Math.max(0.3, dur);
+        osc('sine', freq, 1, g, len + 0.2); osc('triangle', freq * 2, 0.35, g, len + 0.2); osc('sine', freq * 3, 0.15, g, len + 0.2);
+        const peak = 0.12 * lvl;
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.linearRampToValueAtTime(peak, when + 0.04);
+        g.gain.setValueAtTime(peak, when + len - 0.06);
+        g.gain.linearRampToValueAtTime(0.0001, when + len + 0.12);
         break;
       }
       default: pluck('guitar', 0.5, 3200);

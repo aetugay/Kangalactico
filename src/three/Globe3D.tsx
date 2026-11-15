@@ -21,6 +21,10 @@ interface Props {
   onPick: (p: LatLon) => void;
   onHover?: (p: LatLon | null) => void; // fare küre üstünde gezerken altındaki nokta (yer adını söylemek için)
   onSlow: () => void;          // FPS düşük → 2D'ye düş
+  /** Dekor modu (landing hero): yakınlaştırma/döndürme/seçme yok (sayfa kaydırması küreye takılmaz), yalnız yavaş kendi kendine dönme. */
+  decor?: boolean;
+  /** Taban görüntüsü yüklenip ilk kare çizildi (poster → canlı sahne geçişi için). */
+  onReady?: () => void;
 }
 
 /** Enlem/boylam → küre birim vektörü (three SphereGeometry UV düzeniyle uyumlu). */
@@ -142,6 +146,7 @@ export function Globe3D(props: Props) {
       if (disposed) { t.dispose(); return; }
       t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso; t.needsUpdate = true;
       uniforms.uBase.value = t; uniforms.uHasBase.value = 1; uniforms.uCoastW.value = 0; // taban görüntüsü varken raster kara maskesi kullanılmaz
+      requestAnimationFrame(() => requestAnimationFrame(() => P.current.onReady?.()));
     });
     fetch(`${import.meta.env.BASE_URL}data/coastline_50m.json`).then((r) => (r.ok ? r.json() : null)).then((c: { points: number; starts: number[]; data: string } | null) => {
       if (!c || disposed) return;
@@ -169,6 +174,7 @@ export function Globe3D(props: Props) {
     controls.enablePan = false; controls.enableDamping = true; controls.dampingFactor = 0.08;
     controls.minDistance = 1.35; controls.maxDistance = 6; controls.rotateSpeed = 0.5;
     controls.autoRotate = !P.current.reducedMotion; controls.autoRotateSpeed = 0.55;
+    if (P.current.decor) { controls.enableZoom = false; controls.enableRotate = false; controls.autoRotateSpeed = 0.35; renderer.domElement.style.pointerEvents = 'none'; }
 
     // --- doku geçişi
     const texOf = (s: GlobeSource) => {

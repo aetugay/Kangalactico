@@ -24,6 +24,7 @@ export const C = {
     text: t("Discover Earth's hidden stories through sound. Explore scientific data, experience real-time sonification, and understand our planet through a new dimension.",
       'Dünya’nın gizli hikâyelerini sesle keşfet. Bilimsel veriyi gez, gerçek zamanlı sonifikasyonu deneyimle ve gezegenimizi yeni bir boyuttan anla.'),
     how: t('Discover How It Works', 'Nasıl Çalıştığını Gör'),
+    skip: t('Skip intro', 'Girişi atla'),
     visualAlt: t('Animated solar system with sound-wave rings spreading from Earth', 'Dünya’dan ses dalgası halkalarının yayıldığı dönen güneş sistemi'),
   },
   why: {
@@ -54,13 +55,13 @@ export const C = {
       { b: t('Accessibility and inclusion', 'Erişilebilirlik ve kapsayıcılık'), p: t('— a blind student can explore the same NASA data as everyone else.', '— görme engelli bir öğrenci herkesle aynı NASA verisini keşfedebilir.') },
       { b: t('Museums and science outreach', 'Müzeler ve bilim iletişimi'), p: t('— a listening station for the planet, controlled by voice.', '— sesle yönetilen bir gezegen dinleme istasyonu.') },
     ],
-    shotAlt: t('EarthEar app: a 3D globe showing lightning density over Central Africa, with the radar rings around the chosen point and the sound-world panel on the right', 'EarthEar uygulaması: Orta Afrika üzerinde yıldırım yoğunluğunu gösteren 3B küre, seçilen noktanın çevresinde radar halkaları ve sağda ses dünyası paneli'),
+    shotAlt: t('EarthEar app: the 3D Blue Marble globe showing Africa and Europe, with the radar rings around a point in the Sahara', 'EarthEar uygulaması: Afrika ve Avrupa’yı gösteren 3B Blue Marble küre, Sahra’daki bir noktanın çevresinde radar halkaları'),
   },
   pillars: {
     eyebrow: t('Innovation', 'Yenilik'),
     title: t('Three pillars', 'Üç temel'),
     items: [
-      { h: t('Interactive 3D Earth', 'Etkileşimli 3B Dünya'), p: t('A Blue Marble globe (or a 2D map) with data layers on top. Choose any place in the world, switch layers, step through months.', 'Üzerinde veri katmanları olan Blue Marble küre (ya da 2B harita). Dünyada herhangi bir yeri seç, katman değiştir, aylar arasında gez.'), img: 'currents', alt: t('3D globe showing ocean current speed off the east coast of North America', 'Kuzey Amerika doğu kıyısı açıklarında okyanus akıntı hızını gösteren 3B küre') },
+      { h: t('Interactive 3D Earth', 'Etkileşimli 3B Dünya'), p: t('A Blue Marble globe (or a 2D map) with data layers on top. Choose any place in the world, switch layers, step through months.', 'Üzerinde veri katmanları olan Blue Marble küre (ya da 2B harita). Dünyada herhangi bir yeri seç, katman değiştir, aylar arasında gez.'), img: 'canopy', alt: t('3D globe over South America with the canopy-height layer and the radar around the Amazon', 'Kanopi yüksekliği katmanı ve Amazon çevresinde radarla Güney Amerika üzerinde 3B küre') },
       { h: t('Scientific sonification', 'Bilimsel sonifikasyon'), p: t('A radar sweep, a sound world per layer and music generated from the data. Spoken summary and an audio legend explain what you hear.', 'Radar taraması, her katmana bir ses dünyası ve veriden üretilen müzik. Sesli özet ve sesli lejant ne duyduğunu anlatır.'), img: 'radar-aerosol', alt: t('Radar view over the Sahara with the aerosol layer and the beam turning', 'Sahra üzerinde aerosol katmanıyla radar görünümü, dönen ışın') },
       { h: t('Voice & AI Guide', 'Ses ve AI Rehber'), p: t('Wake word "Earth" (Turkish: "Dünya"), hold Space to talk, spoken answers and a typed command box. The guide is a rule-based parser that understands Turkish and English — not a chatbot.', 'Uyandırma kelimesi "Dünya" (İngilizce "Earth"), Boşluk basılı tut-konuş, sesli yanıtlar ve yazılı komut kutusu. Rehber Türkçe ve İngilizce anlayan kural tabanlı bir çözümleyicidir; sohbet botu değildir.'), img: 'guide', alt: t('Guide panel with suggested commands and the command history', 'Önerilen komutlar ve komut geçmişiyle Rehber paneli') },
     ],
@@ -131,8 +132,9 @@ export const C = {
     eyebrow: t('Live experience', 'Canlı deneyim'),
     title: t('This is the real app', 'Bu gerçek uygulama'),
     shots: [
-      { img: 'globe-lightning', cap: t('Lightning climatology over Central Africa (5° cells)', 'Orta Afrika üzerinde yıldırım iklimi (5° hücreler)') },
-      { img: 'canopy', cap: t('Canopy height over the Amazon (GEDI)', 'Amazon üzerinde kanopi yüksekliği (GEDI)') },
+      { img: 'globe-lightning', cap: t('Lightning climatology over the Congo Basin (5° cells)', 'Kongo Havzası üzerinde yıldırım iklimi (5° hücreler)') },
+      { img: 'night', cap: t('Night lights over Europe (NASA SVS 5313, 2023)', 'Avrupa üzerinde gece ışıkları (NASA SVS 5313, 2023)') },
+      { img: 'currents', cap: t('Ocean current speed off North America (OSCAR, 5°)', 'Kuzey Amerika açıklarında okyanus akıntı hızı (OSCAR, 5°)') },
       { img: 'weather', cap: t('Weather tab with the GEOS-FP forecast for Sivas', 'Sivas için GEOS-FP tahminiyle Hava sekmesi') },
     ],
     btn: t('Explore the Interactive Earth', 'Etkileşimli Dünya’yı keşfet'),

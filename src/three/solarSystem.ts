@@ -42,7 +42,7 @@ export function mountSolarSystem(el: HTMLElement, o: SolarOpts): () => void {
   let renderer: THREE.WebGLRenderer;
   try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'low-power' }); } catch { return () => {}; } // WebGL yok: yalnız CSS arka plan
   const low = matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency ?? 8) <= 4;
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, low ? 1.25 : 1.75));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, low ? 1 : 1.75)); // zayıf cihazda piksel oranı 1
   renderer.setClearColor(0x02040a); renderer.outputColorSpace = THREE.SRGBColorSpace;
   el.appendChild(renderer.domElement);
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(45, 1, 0.05, 400);
@@ -86,7 +86,9 @@ export function mountSolarSystem(el: HTMLElement, o: SolarOpts): () => void {
   resize(); const ro = new ResizeObserver(resize); ro.observe(el);
   let raf = 0, t = 0, last = performance.now(), leaveT = -1, finished = false;
   const place = () => { for (const b of bodies) { const a = b.phase + t * 0.18 * b.P.speed; b.mesh.position.set(Math.cos(a) * b.P.r, 0, Math.sin(a) * b.P.r); b.mesh.rotation.y = t * 0.6; } };
+  let skip = false;
   const frame = (now: number) => {
+    if (low && !o.isLeaving?.()) { skip = !skip; if (skip) { raf = requestAnimationFrame(frame); return; } } // zayıf cihaz: 30 fps (uçuş tam hızda)
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (!reduced) t += dt;
     place();

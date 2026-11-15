@@ -1,27 +1,13 @@
 // EarthEar landing sayfası ("/"). Uygulama "/app" altında; buradan ses ya da mikrofon BAŞLAMAZ.
 // Metin: content.ts (EN varsayılan, TR). Dil seçimi localStorage 'lang' (uygulamayla ortak) + /app bağlantılarına ?lang=.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import '../styles/tokens.css';
 import './landing.css';
 import { C, NAV, REPO, type LLang } from './content.ts';
+import { HeroIntro } from './HeroIntro.tsx';
 
 const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const initialLang = (): LLang => { try { const s = localStorage.getItem('lang'); return s === 'tr' ? 'tr' : 'en'; } catch { return 'en'; } };
-
-/** Hero görseli: paylaşılan güneş sistemi sahnesi (three.js tembel yüklenir) + Dünya'dan yayılan ses dalgası halkaları. */
-function HeroVisual({ alt }: { alt: string }) {
-  const el = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    let stop: (() => void) | null = null, dead = false;
-    const go = () => import('../three/solarSystem.ts').then(({ mountSolarSystem }) => {
-      if (dead || !el.current) return;
-      stop = mountSolarSystem(el.current, { reduced: reducedMotion(), earthUrl: '/media/bluemarble_2048.jpg', waves: true, ...(innerWidth > 760 ? { home: [0, 12, 21], look: [-9, 0, 0] } : { home: [0, 15, 22], look: [0, -5.5, 0] }) }); // masaüstü: sistem sağda, yazı solda · telefon: sistem üstte
-    });
-    const w = window as unknown as { requestIdleCallback?: (f: () => void) => number }; const id = w.requestIdleCallback ? w.requestIdleCallback(go) : setTimeout(go, 200);
-    return () => { dead = true; stop?.(); void id; };
-  }, []);
-  return <div ref={el} className="hero-visual" role="img" aria-label={alt} />;
-}
 
 /** Kaydırınca beliren bölüm (reduced-motion'da hemen görünür). */
 function useReveal() {
@@ -53,7 +39,9 @@ export default function Landing() {
   const setLang = (l: LLang) => { setLangS(l); try { localStorage.setItem('lang', l); } catch { /* yok say */ } };
   useEffect(() => { document.documentElement.lang = lang; document.title = lang === 'tr' ? 'EarthEar — Değişen gezegeni dinle' : 'EarthEar — Listen to the Changing Planet'; }, [lang]);
   useReveal();
-  const img = (name: string) => `/landing/${name}.webp`;
+  /** Gerçek GPU ile çekilmiş görüntü: 1× (1440 px) + 2× (2880 px), tembel yükleme. */
+  const HAS2X = ['africa-europe', 'canopy', 'globe-lightning', 'night', 'currents', 'radar-aerosol', 'weather'];
+  const pic = (name: string, alt: string) => <img src={`/landing/${name}.webp`} srcSet={HAS2X.includes(name) ? `/landing/${name}.webp 1x, /landing/${name}@2x.webp 2x` : undefined} alt={alt} width={name === 'africa-europe' ? 1100 : 1440} height={name === 'africa-europe' ? 740 : 900} loading="lazy" decoding="async" />;
 
   return (
     <div className="lp">
@@ -72,7 +60,7 @@ export default function Landing() {
 
       <main id="top">
         <section className="hero" aria-labelledby="hero-h">
-          <HeroVisual alt={L(C.hero.visualAlt)} />
+          <HeroIntro skipLabel={L(C.hero.skip)} />
           <div className="hero-copy">
             <p className="brand">{L(C.hero.brand)}</p>
             <h1 id="hero-h">{L(C.hero.title)}</h1>
@@ -91,7 +79,7 @@ export default function Landing() {
 
         <Section id="about" eyebrow={L(C.about.eyebrow)} title={L(C.about.title)}>
           <p className="intro big">{L(C.about.lead)}</p>
-          <figure className="shot wide"><img src={img('globe-lightning')} alt={L(C.about.shotAlt)} width={1200} height={750} loading="lazy" decoding="async" /></figure>
+          <figure className="shot wide">{pic('africa-europe', L(C.about.shotAlt))}</figure>
           <h3 className="sub">{L(C.about.diffTitle)}</h3>
           <div className="grid3">{C.about.diff.map((c, i) => <article key={i} className="card"><h4>{L(c.h)}</h4><p>{L(c.p)}</p></article>)}</div>
           <h3 className="sub">{L(C.about.useTitle)}</h3>
@@ -101,7 +89,7 @@ export default function Landing() {
         <Section eyebrow={L(C.pillars.eyebrow)} title={L(C.pillars.title)} id="innovation">
           <div className="pillars">{C.pillars.items.map((p, i) => (
             <article key={i} className="pillar">
-              <img src={img(p.img)} alt={L(p.alt)} width={1200} height={750} loading="lazy" decoding="async" />
+              {pic(p.img, L(p.alt))}
               <div><h3>{L(p.h)}</h3><p>{L(p.p)}</p></div>
             </article>
           ))}</div>
@@ -141,7 +129,7 @@ export default function Landing() {
         </Section>
 
         <Section eyebrow={L(C.live.eyebrow)} title={L(C.live.title)} id="live">
-          <div className="grid3">{C.live.shots.map((s, i) => <figure key={i} className="shot"><img src={img(s.img)} alt={L(s.cap)} width={1200} height={750} loading="lazy" decoding="async" /><figcaption>{L(s.cap)}</figcaption></figure>)}</div>
+          <div className="grid2">{C.live.shots.map((s, i) => <figure key={i} className="shot">{pic(s.img, L(s.cap))}<figcaption>{L(s.cap)}</figcaption></figure>)}</div>
           <p className="center"><a className="btn btn-primary btn-lg" href={app()}>{L(C.live.btn)}</a></p>
         </Section>
 

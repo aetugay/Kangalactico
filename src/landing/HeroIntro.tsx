@@ -9,7 +9,7 @@ const Globe3D = lazy(() => import('../three/Globe3D.tsx').then((m) => ({ default
 const KEY = 'ee-intro-done';
 const reduced = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const seen = () => { try { return sessionStorage.getItem(KEY) === '1'; } catch { return false; } };
-const touch = () => typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+const touch = () => typeof matchMedia !== 'undefined' && (matchMedia('(pointer: coarse)').matches || innerWidth <= 760); // telefon (dar ekran da sayılır)
 
 export function HeroIntro({ skipLabel }: { skipLabel: string }) {
   const [phase, setPhase] = useState<'solar' | 'fly' | 'globe'>(() => (reduced() || seen() ? 'globe' : 'solar'));

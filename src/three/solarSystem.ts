@@ -41,7 +41,7 @@ export function mountSolarSystem(el: HTMLElement, o: SolarOpts): () => void {
   const { reduced, earthUrl } = o;
   let renderer: THREE.WebGLRenderer;
   try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'low-power' }); } catch { return () => {}; } // WebGL yok: yalnız CSS arka plan
-  const low = matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency ?? 8) <= 4;
+  const low = matchMedia('(pointer: coarse)').matches || innerWidth <= 760 || (navigator.hardwareConcurrency ?? 8) <= 4; // telefon / zayıf cihaz
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, low ? 1 : 1.75)); // zayıf cihazda piksel oranı 1
   renderer.setClearColor(0x02040a); renderer.outputColorSpace = THREE.SRGBColorSpace;
   el.appendChild(renderer.domElement);
@@ -52,14 +52,14 @@ export function mountSolarSystem(el: HTMLElement, o: SolarOpts): () => void {
   // yıldız alanı: iki katman, hafif parıldama (katman opaklığı yavaşça değişir)
   const starTex = glowTexture('rgba(255,255,255,1)', 'rgba(200,220,255,.35)');
   const starLayers = [0, 1].map((k) => {
-    const n = low ? 450 : 1400, pos = new Float32Array(n * 3);
+    const n = low ? 220 : 1400, pos = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) { const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, R = 120 + Math.random() * 150, s = Math.sqrt(1 - u * u); pos.set([R * s * Math.cos(th), R * u, R * s * Math.sin(th)], i * 3); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const m = new THREE.PointsMaterial({ size: (k ? 3.2 : 2.2) * Math.min(devicePixelRatio || 1, 1.5), map: starTex, transparent: true, depthWrite: false, color: k ? 0xcfe0ff : 0xffffff, sizeAttenuation: false });
     const p = new THREE.Points(g, m); scene.add(p); return p;
   });
   // Güneş + hale
-  const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, 48, 32), new THREE.MeshBasicMaterial({ map: bandTexture(['#ffd35a', '#ffb02e', '#ffe58f'], 7) }));
+  const sun = new THREE.Mesh(new THREE.SphereGeometry(1.5, low ? 24 : 48, low ? 16 : 32), new THREE.MeshBasicMaterial({ map: bandTexture(['#ffd35a', '#ffb02e', '#ffe58f'], 7) }));
   scene.add(sun);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('rgba(255,220,120,.9)', 'rgba(255,150,40,.25)'), blending: THREE.AdditiveBlending, depthWrite: false }));
   halo.scale.set(11, 11, 1); scene.add(halo);
@@ -71,7 +71,7 @@ export function mountSolarSystem(el: HTMLElement, o: SolarOpts): () => void {
       new THREE.LineBasicMaterial({ color: isEarth ? 0x5ee4f2 : 0x8899bb, transparent: true, opacity: isEarth ? 0.75 : 0.22 }));
     scene.add(ring);
     const mat = new THREE.MeshStandardMaterial({ map: bandTexture(P.colors, 31 + i * 13), roughness: 0.9, metalness: 0, ...(isEarth ? { emissive: new THREE.Color(0x1b4f7a), emissiveIntensity: 0.55 } : {}) }); // Dünya gece tarafında da seçilsin
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(P.size, 40, 28), mat);
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(P.size, low ? 20 : 40, low ? 14 : 28), mat);
     if (isEarth) new THREE.TextureLoader().load(earthUrl, (t) => { t.colorSpace = THREE.SRGBColorSpace; mat.map = t; mat.needsUpdate = true; });
     if (P.ring) { const rg = new THREE.Mesh(new THREE.RingGeometry(P.size * 1.35, P.size * 2.2, 64), new THREE.MeshBasicMaterial({ color: 0xd9c79a, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })); rg.rotation.x = Math.PI / 2.4; mesh.add(rg); }
     if (isEarth) { const g = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture('rgba(130,240,255,1)', 'rgba(94,228,242,.45)'), blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false })); g.scale.set(2.6, 2.6, 1); g.renderOrder = -1; mesh.add(g); }
@@ -80,7 +80,7 @@ export function mountSolarSystem(el: HTMLElement, o: SolarOpts): () => void {
   });
   const earth = bodies.find((b) => b.isEarth)!;
   // ses dalgası halkaları (landing hero): Dünya'dan yayılan, sönen halkalar — Dünya'yı "dinlemek"
-  const waves = o.waves ? [0, 1, 2].map(() => { const w = new THREE.Mesh(new THREE.RingGeometry(0.98, 1, 64), new THREE.MeshBasicMaterial({ color: 0x5ee4f2, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false })); w.rotation.x = -Math.PI / 2; scene.add(w); return w; }) : [];
+  const waves = o.waves ? (low ? [0, 1] : [0, 1, 2]).map(() => { const w = new THREE.Mesh(new THREE.RingGeometry(0.98, 1, 64), new THREE.MeshBasicMaterial({ color: 0x5ee4f2, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false })); w.rotation.x = -Math.PI / 2; scene.add(w); return w; }) : [];
 
   const resize = () => { const w = el.clientWidth, h = el.clientHeight; renderer.setSize(w, h, false); cam.aspect = w / Math.max(1, h); cam.updateProjectionMatrix(); if (reduced && !raf) renderer.render(scene, cam); };
   resize(); const ro = new ResizeObserver(resize); ro.observe(el);

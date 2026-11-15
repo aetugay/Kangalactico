@@ -105,7 +105,9 @@ export function Globe3D(props: Props) {
   useEffect(() => {
     const el = host.current!;
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // dekor (landing) + zayıf cihaz: piksel oranı 1 ve 30 fps — uygulamadaki küre etkilenmez
+    const lowDecor = !!P.current.decor && (matchMedia('(pointer: coarse)').matches || innerWidth <= 760 || (navigator.hardwareConcurrency ?? 8) <= 4);
+    renderer.setPixelRatio(lowDecor ? 1 : Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     el.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
@@ -251,9 +253,11 @@ export function Globe3D(props: Props) {
     // 4 sn ısınmadan sonra 5 sn boyunca kare sürelerinin ORTANCASINA bakılır (tek tük uzun kareler sayılmaz).
     const fps = { t0: performance.now(), frames: [] as number[], done: false };
     const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+    let skipF = false;
     const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
       if (document.hidden) return;
+      if (lowDecor) { skipF = !skipF; if (skipF) return; } // dekor + zayıf cihaz: 30 fps
       if (now - last > 1000 && !fps.done) { fps.t0 = now; fps.frames.length = 0; } // sekme gizliydi: ölçümü baştan al
       const dt = Math.min(0.1, (now - last) / 1000); last = now;
       if (fade) { const k = Math.min(1, (now - fade.t0) / fade.dur); uniforms.uMix.value = k; if (k >= 1) finishFade(); }

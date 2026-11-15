@@ -7,7 +7,7 @@ import type { RadarLayer } from './radar.ts';
 export type C5Id = 'currents' | 'lis' | 'gedi';
 export interface C5File {
   id: C5Id; unit: string; domain: 'sea' | 'land' | 'all'; scale: 'linear' | 'log'; min: number; max: number; cellDeg: number; resolutionKm: number; latLimit?: number;
-  kanit: { koleksiyon: string; degisken: string; donem: string; birim: string; toplama: string; kaynak_paket: string };
+  kanit: { koleksiyon: string; degisken: string; donem: string; birim: string; toplama: string; duzeltme?: string; kaynak_paket: string };
   note: { tr: string; en: string }; cells: [number, number, number][];
 }
 const MAX_KM = 400;

@@ -1,0 +1,681 @@
+{
+ "nokta": 1917,
+ "aylar": "2025-02…2026-01",
+ "denemeler": [
+  {
+   "deneme": "kimlik (olduğu gibi)",
+   "kara_orani": 0.263,
+   "guclu_yerinde": "2/9",
+   "sakin_yerinde": "2/4",
+   "guclu": [
+    {
+     "n": "Gulf Stream",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Kuroshio",
+     "v": 0.12,
+     "ok": false
+    },
+    {
+     "n": "Agulhas",
+     "v": 0.072,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 0°)",
+     "v": 0.235,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 90°D)",
+     "v": 0.167,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 150°B)",
+     "v": 0.171,
+     "ok": false
+    },
+    {
+     "n": "Güney Ekvator (0°, 120°B)",
+     "v": 0.409,
+     "ok": true
+    },
+    {
+     "n": "Güney Ekvator (0°, 160°B)",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Somali (8°K, 52°D)",
+     "v": 0.318,
+     "ok": true
+    }
+   ],
+   "sakin": [
+    {
+     "n": "K. Pasifik girdabı",
+     "v": 0.119,
+     "ok": true
+    },
+    {
+     "n": "Sargasso",
+     "v": 0.228,
+     "ok": false
+    },
+    {
+     "n": "G. Pasifik girdabı",
+     "v": 0.207,
+     "ok": false
+    },
+    {
+     "n": "G. Hint girdabı",
+     "v": 0.071,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "deneme": "boylam 0–360 → −180–180 (+180° kaydırma)",
+   "kara_orani": 0.147,
+   "guclu_yerinde": "6/9",
+   "sakin_yerinde": "3/4",
+   "guclu": [
+    {
+     "n": "Gulf Stream",
+     "v": 0.411,
+     "ok": true
+    },
+    {
+     "n": "Kuroshio",
+     "v": 0.318,
+     "ok": true
+    },
+    {
+     "n": "Agulhas",
+     "v": 0.655,
+     "ok": true
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 0°)",
+     "v": 0.099,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 90°D)",
+     "v": 0.223,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 150°B)",
+     "v": 0.18,
+     "ok": false
+    },
+    {
+     "n": "Güney Ekvator (0°, 120°B)",
+     "v": 0.354,
+     "ok": true
+    },
+    {
+     "n": "Güney Ekvator (0°, 160°B)",
+     "v": 0.268,
+     "ok": true
+    },
+    {
+     "n": "Somali (8°K, 52°D)",
+     "v": 0.623,
+     "ok": true
+    }
+   ],
+   "sakin": [
+    {
+     "n": "K. Pasifik girdabı",
+     "v": 0.132,
+     "ok": true
+    },
+    {
+     "n": "Sargasso",
+     "v": 0.143,
+     "ok": true
+    },
+    {
+     "n": "G. Pasifik girdabı",
+     "v": 0.106,
+     "ok": true
+    },
+    {
+     "n": "G. Hint girdabı",
+     "v": 0.162,
+     "ok": false
+    }
+   ]
+  },
+  {
+   "deneme": "boylam +2,5° (yarım hücre)",
+   "kara_orani": 0.263,
+   "guclu_yerinde": "2/9",
+   "sakin_yerinde": "1/4",
+   "guclu": [
+    {
+     "n": "Gulf Stream",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Kuroshio",
+     "v": 0.154,
+     "ok": false
+    },
+    {
+     "n": "Agulhas",
+     "v": 0.072,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 0°)",
+     "v": 0.235,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 90°D)",
+     "v": 0.167,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 150°B)",
+     "v": 0.171,
+     "ok": false
+    },
+    {
+     "n": "Güney Ekvator (0°, 120°B)",
+     "v": 0.409,
+     "ok": true
+    },
+    {
+     "n": "Güney Ekvator (0°, 160°B)",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Somali (8°K, 52°D)",
+     "v": 0.33,
+     "ok": true
+    }
+   ],
+   "sakin": [
+    {
+     "n": "K. Pasifik girdabı",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Sargasso",
+     "v": 0.228,
+     "ok": false
+    },
+    {
+     "n": "G. Pasifik girdabı",
+     "v": 0.207,
+     "ok": false
+    },
+    {
+     "n": "G. Hint girdabı",
+     "v": 0.071,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "deneme": "boylam −2,5° (yarım hücre)",
+   "kara_orani": 0.263,
+   "guclu_yerinde": "2/9",
+   "sakin_yerinde": "2/4",
+   "guclu": [
+    {
+     "n": "Gulf Stream",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Kuroshio",
+     "v": 0.12,
+     "ok": false
+    },
+    {
+     "n": "Agulhas",
+     "v": 0.083,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 0°)",
+     "v": 0.207,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 90°D)",
+     "v": 0.17,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 150°B)",
+     "v": 0.177,
+     "ok": false
+    },
+    {
+     "n": "Güney Ekvator (0°, 120°B)",
+     "v": 0.529,
+     "ok": true
+    },
+    {
+     "n": "Güney Ekvator (0°, 160°B)",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Somali (8°K, 52°D)",
+     "v": 0.318,
+     "ok": true
+    }
+   ],
+   "sakin": [
+    {
+     "n": "K. Pasifik girdabı",
+     "v": 0.119,
+     "ok": true
+    },
+    {
+     "n": "Sargasso",
+     "v": 0.316,
+     "ok": false
+    },
+    {
+     "n": "G. Pasifik girdabı",
+     "v": 0.176,
+     "ok": false
+    },
+    {
+     "n": "G. Hint girdabı",
+     "v": 0.067,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "deneme": "enlem +2,5° (yarım hücre)",
+   "kara_orani": 0.24,
+   "guclu_yerinde": "2/9",
+   "sakin_yerinde": "3/4",
+   "guclu": [
+    {
+     "n": "Gulf Stream",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Kuroshio",
+     "v": 0.12,
+     "ok": false
+    },
+    {
+     "n": "Agulhas",
+     "v": 0.077,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 0°)",
+     "v": 0.235,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 90°D)",
+     "v": 0.167,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 150°B)",
+     "v": 0.171,
+     "ok": false
+    },
+    {
+     "n": "Güney Ekvator (0°, 120°B)",
+     "v": 0.409,
+     "ok": true
+    },
+    {
+     "n": "Güney Ekvator (0°, 160°B)",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Somali (8°K, 52°D)",
+     "v": 0.318,
+     "ok": true
+    }
+   ],
+   "sakin": [
+    {
+     "n": "K. Pasifik girdabı",
+     "v": 0.119,
+     "ok": true
+    },
+    {
+     "n": "Sargasso",
+     "v": 0.228,
+     "ok": false
+    },
+    {
+     "n": "G. Pasifik girdabı",
+     "v": 0.138,
+     "ok": true
+    },
+    {
+     "n": "G. Hint girdabı",
+     "v": 0.083,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "deneme": "enlem −2,5° (yarım hücre)",
+   "kara_orani": 0.268,
+   "guclu_yerinde": "1/9",
+   "sakin_yerinde": "2/4",
+   "guclu": [
+    {
+     "n": "Gulf Stream",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Kuroshio",
+     "v": 0.206,
+     "ok": false
+    },
+    {
+     "n": "Agulhas",
+     "v": 0.072,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 0°)",
+     "v": 0.236,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 90°D)",
+     "v": 0.076,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 150°B)",
+     "v": 0.241,
+     "ok": false
+    },
+    {
+     "n": "Güney Ekvator (0°, 120°B)",
+     "v": 0.377,
+     "ok": true
+    },
+    {
+     "n": "Güney Ekvator (0°, 160°B)",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Somali (8°K, 52°D)",
+     "v": 0.195,
+     "ok": false
+    }
+   ],
+   "sakin": [
+    {
+     "n": "K. Pasifik girdabı",
+     "v": 0.173,
+     "ok": false
+    },
+    {
+     "n": "Sargasso",
+     "v": 0.111,
+     "ok": true
+    },
+    {
+     "n": "G. Pasifik girdabı",
+     "v": 0.207,
+     "ok": false
+    },
+    {
+     "n": "G. Hint girdabı",
+     "v": 0.071,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "deneme": "enlem ters (−enlem)",
+   "kara_orani": 0.378,
+   "guclu_yerinde": "1/9",
+   "sakin_yerinde": "1/4",
+   "guclu": [
+    {
+     "n": "Gulf Stream",
+     "v": 0.152,
+     "ok": false
+    },
+    {
+     "n": "Kuroshio",
+     "v": 0.208,
+     "ok": false
+    },
+    {
+     "n": "Agulhas",
+     "v": 0.081,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 0°)",
+     "v": 0.133,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 90°D)",
+     "v": 0.056,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 150°B)",
+     "v": 0.055,
+     "ok": false
+    },
+    {
+     "n": "Güney Ekvator (0°, 120°B)",
+     "v": 0.409,
+     "ok": true
+    },
+    {
+     "n": "Güney Ekvator (0°, 160°B)",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Somali (8°K, 52°D)",
+     "v": 0.239,
+     "ok": false
+    }
+   ],
+   "sakin": [
+    {
+     "n": "K. Pasifik girdabı",
+     "v": 0.469,
+     "ok": false
+    },
+    {
+     "n": "Sargasso",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "G. Pasifik girdabı",
+     "v": 0.117,
+     "ok": true
+    },
+    {
+     "n": "G. Hint girdabı",
+     "v": 0.227,
+     "ok": false
+    }
+   ]
+  },
+  {
+   "deneme": "enlem ters + boylam +180°",
+   "kara_orani": 0.357,
+   "guclu_yerinde": "2/9",
+   "sakin_yerinde": "1/4",
+   "guclu": [
+    {
+     "n": "Gulf Stream",
+     "v": 0.094,
+     "ok": false
+    },
+    {
+     "n": "Kuroshio",
+     "v": 0.122,
+     "ok": false
+    },
+    {
+     "n": "Agulhas",
+     "v": 0.106,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 0°)",
+     "v": 0.066,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 90°D)",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 150°B)",
+     "v": 0.081,
+     "ok": false
+    },
+    {
+     "n": "Güney Ekvator (0°, 120°B)",
+     "v": 0.354,
+     "ok": true
+    },
+    {
+     "n": "Güney Ekvator (0°, 160°B)",
+     "v": 0.268,
+     "ok": true
+    },
+    {
+     "n": "Somali (8°K, 52°D)",
+     "v": 0.21,
+     "ok": false
+    }
+   ],
+   "sakin": [
+    {
+     "n": "K. Pasifik girdabı",
+     "v": 0.156,
+     "ok": false
+    },
+    {
+     "n": "Sargasso",
+     "v": null,
+     "ok": false
+    },
+    {
+     "n": "G. Pasifik girdabı",
+     "v": 0.09,
+     "ok": true
+    },
+    {
+     "n": "G. Hint girdabı",
+     "v": null,
+     "ok": false
+    }
+   ]
+  },
+  {
+   "deneme": "boylam +180° + yarım hücre (+2,5°)",
+   "kara_orani": 0.141,
+   "guclu_yerinde": "6/9",
+   "sakin_yerinde": "3/4",
+   "guclu": [
+    {
+     "n": "Gulf Stream",
+     "v": 0.411,
+     "ok": true
+    },
+    {
+     "n": "Kuroshio",
+     "v": 0.505,
+     "ok": true
+    },
+    {
+     "n": "Agulhas",
+     "v": 0.655,
+     "ok": true
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 0°)",
+     "v": 0.103,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 90°D)",
+     "v": 0.223,
+     "ok": false
+    },
+    {
+     "n": "Antarktik Çevre (55°G, 150°B)",
+     "v": 0.18,
+     "ok": false
+    },
+    {
+     "n": "Güney Ekvator (0°, 120°B)",
+     "v": 0.354,
+     "ok": true
+    },
+    {
+     "n": "Güney Ekvator (0°, 160°B)",
+     "v": 0.268,
+     "ok": true
+    },
+    {
+     "n": "Somali (8°K, 52°D)",
+     "v": 0.696,
+     "ok": true
+    }
+   ],
+   "sakin": [
+    {
+     "n": "K. Pasifik girdabı",
+     "v": 0.132,
+     "ok": true
+    },
+    {
+     "n": "Sargasso",
+     "v": 0.143,
+     "ok": true
+    },
+    {
+     "n": "G. Pasifik girdabı",
+     "v": 0.106,
+     "ok": true
+    },
+    {
+     "n": "G. Hint girdabı",
+     "v": 0.162,
+     "ok": false
+    }
+   ]
+  }
+ ]
+}

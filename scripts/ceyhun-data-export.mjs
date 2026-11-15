@@ -27,12 +27,16 @@ const write = (id, o) => { fs.writeFileSync(`${OUT}/${id}.json`, JSON.stringify(
 
 // 1) Okyanus yüzey akıntı hızı — OSCAR L4 FINAL V2.0, √(u²+v²), 12 ayın ortalaması; karaya düşen hücreler atılır
 {
-  const K = J('jukebox_okyanus_akintilari_kure_12ay.json'), { months, cells, partial } = perPoint(K, (v) => v.reduce((s, x) => s + x, 0) / v.length);
+  const K = J('jukebox_okyanus_akintilari_kure_12ay.json'), { months, cells: cells0, partial } = perPoint(K, (v) => v.reduce((s, x) => s + x, 0) / v.length);
+  // BOYLAM DÜZELTMESİ (scripts/audit-oscar.mjs → data/audit_oscar.json): paket OSCAR'ın 0–360 boylamını −180–180 diye yazmış.
+  // +180° kaydırınca karaya düşen oran %26,3 → %14,7 (SST paketindeki kıyı payıyla aynı) ve Gulf Stream, Kuroshio, Agulhas, Somali, ekvator akıntıları yerine oturuyor.
+  const wrap = (lo) => ((((lo + 180) % 360) + 360) % 360) - 180;
+  const cells = cells0.map(([la, lo, v]) => [la, wrap(lo + 180), v]);
   const keep = cells.filter(([la, lo]) => !isLand(la, lo));
   write('currents', {
     id: 'currents', unit: 'm/s', domain: 'sea', scale: 'linear', min: 0, max: r3(Math.max(...keep.map((c) => c[2]))), cellDeg: 5, resolutionKm: 550, dropped: cells.length - keep.length, partial,
-    kanit: { koleksiyon: K.meta.veri_kaynagi, degisken: 'u, v (yüzey akıntısı) → hız = √(u²+v²)', donem: `${months[0]} … ${months[months.length - 1]}`, birim: 'm/s', toplama: '12 aylık ortalama', kaynak_paket: 'Ceyhun, referans/data 2026-11-15' },
-    note: { tr: 'Dönemi diğer katmanlardan farklı (2025-02 … 2026-01). Çözünürlük ~550 km (5°); kıyıda karaya düşen hücreler atıldı.', en: 'Period differs from the other layers (2025-02 … 2026-01). Resolution ~550 km (5°); coastal cells falling on land were removed.' },
+    kanit: { koleksiyon: K.meta.veri_kaynagi, degisken: 'u, v (yüzey akıntısı) → hız = √(u²+v²)', donem: `${months[0]} … ${months[months.length - 1]}`, birim: 'm/s', toplama: '12 aylık ortalama', duzeltme: 'boylam +180° (paket 0–360 boylamını −180–180 diye yazmış; data/audit_oscar.json)', kaynak_paket: 'Ceyhun, referans/data 2026-11-15' },
+    note: { tr: 'Boylam düzeltildi: paket 0–360 boylamını −180–180 diye yazmıştı, +180° kaydırıldı (doğrulama: Gulf Stream, Kuroshio, Agulhas, ekvator akıntıları yerinde). Dönemi diğer katmanlardan farklı (2025-02 … 2026-01). Çözünürlük ~550 km (5°); kıyıda karaya düşen hücreler atıldı.', en: 'Longitude corrected: the package wrote OSCAR 0–360 longitudes as −180–180; shifted by +180° (check: Gulf Stream, Kuroshio, Agulhas, equatorial currents in place). Period differs from the other layers (2025-02 … 2026-01). Resolution ~550 km (5°); coastal cells falling on land were removed.' },
     cells: keep.map(([la, lo, v]) => [la, lo, r3(v)]),
   });
 }

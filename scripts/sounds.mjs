@@ -8,7 +8,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 
 const DIR = 'public/sounds', RAW = `${DIR}/raw`;
 fs.mkdirSync(RAW, { recursive: true });
-const OUT_NAMES = new Set(['buz_catirti_1', 'buz_catirti_2', 'ates_kucuk', 'ates_buyuk', 'toz_siddetli', 'toz_hafif', 'ruzgar_kuvvetli', 'ruzgar_hafif', 'kis_ruzgari', 'dalga_sakin', 'deniz_serpinti', 'dalga_sert', 'orman_kus', 'yaprak_hisirti', 'gece_circir', 'kar', 'yagmur_orta', 'yagmur_cisenti', 'yagmur_saganak', 'gok_yakin_1', 'gok_yakin_2', 'gok_yakin_3', 'gok_uzak_1', 'gok_uzak_2']);
+const OUT_NAMES = new Set(['buz_catirti_1', 'buz_catirti_2', 'ates_kucuk', 'ates_buyuk', 'toz_siddetli', 'toz_hafif', 'ruzgar_kuvvetli', 'ruzgar_hafif', 'kis_ruzgari', 'dalga_sakin', 'deniz_serpinti', 'dalga_sert', 'orman_kus', 'yaprak_hisirti', 'gece_circir', 'kar', 'yagmur_orta', 'yagmur_cisenti', 'yagmur_saganak', 'gok_yakin_1', 'gok_yakin_2', 'gok_yakin_3', 'gok_uzak_1', 'gok_uzak_2', 'volkan']); // volkan: sounds-v2.mjs üretir
 for (const f of fs.readdirSync(DIR)) { const p = path.join(DIR, f); if (fs.statSync(p).isFile() && !f.endsWith('.json') && !OUT_NAMES.has(f.replace(/.mp3$/, ''))) fs.renameSync(p, path.join(RAW, f)); }
 // önce tam ad ("rain." → rain.wav; lightrainthunder.wav DEĞİL), yoksa ad içinde geçen ("-forest.wav")
 const src = (name) => { const all = fs.readdirSync(RAW); const f = all.find((x) => x.startsWith(name + '.')) ?? all.find((x) => x.includes(name)); if (!f) throw new Error(`ham dosya yok: ${name}`); return path.join(RAW, f); };

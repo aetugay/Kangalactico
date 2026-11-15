@@ -3,8 +3,7 @@
  "synth": [
   "sehir_trafik",
   "sehir_kalabalik",
-  "agustos_bocegi",
-  "volkan"
+  "agustos_bocegi"
  ],
  "files": [
   {
@@ -222,6 +221,86 @@
    "seconds": 8,
    "process": "yok",
    "kb": 126
+  }
+ ],
+ "v2": [
+  {
+   "role": "kis_ruzgari",
+   "old": "wind.mp3",
+   "neu": "814710__cvltiv8r__flute-chamber-beautiful-winds-deep-reverb.wav",
+   "gainDb": -10,
+   "flatOld": 0.331,
+   "flatNew": 0.288,
+   "centroidOld": 6151,
+   "centroidNew": 5722,
+   "kb": 595,
+   "used": true,
+   "why": "yankılı flüt → buzlu rüzgârın uğuldayan tonu (bulanık, 600 Hz–2,6 kHz); rüzgârın hışırtısı baskın"
+  },
+  {
+   "role": "ruzgar_hafif",
+   "old": "wind.mp3",
+   "neu": "333996__wood_flutes__native-american-style-flute-in-a.mp3",
+   "gainDb": -14,
+   "flatOld": 0.013,
+   "flatNew": 0.011,
+   "centroidOld": 778,
+   "centroidNew": 726,
+   "kb": 595,
+   "used": true,
+   "why": "Kızılderili flütü bir oktav pes + alçak geçiren → esintinin altında yumuşak, havalı gövde"
+  },
+  {
+   "role": "ruzgar_kuvvetli",
+   "old": "wind.mp3",
+   "neu": "324085__piermic__improvisation-with-sopranino-recorder.wav",
+   "gainDb": -15,
+   "flatOld": 0.247,
+   "flatNew": 0.231,
+   "centroidOld": 4481,
+   "centroidNew": 4404,
+   "kb": 595,
+   "used": true,
+   "why": "sopranino blok flüt yüksek geçiren + bulanık → sert rüzgârda ıslık/uğultu"
+  },
+  {
+   "role": "dalga_sakin",
+   "old": "wave.wav",
+   "neu": "872028__tomentum__emotional-music-for-film-and-tv-110-bpm.wav",
+   "gainDb": -12,
+   "flatOld": 0.413,
+   "flatNew": 0.263,
+   "centroidOld": 4955,
+   "centroidNew": 4619,
+   "kb": 595,
+   "used": true,
+   "why": "film müziğinin bas pedi bir oktav pes (<380 Hz) → dalganın altında derin deniz kabarması; tizdeki köpük eski kayıttan"
+  },
+  {
+   "role": "dalga_sert",
+   "old": "wave.wav",
+   "neu": "757835__phinster__5-52-pm-electric-sax.m4a",
+   "gainDb": -12,
+   "flatOld": 0.445,
+   "flatNew": 0.288,
+   "centroidOld": 5458,
+   "centroidNew": 5175,
+   "kb": 595,
+   "used": true,
+   "why": "elektrikli saksafon kaydının güçlü bas bandı iki oktav pes (<300 Hz) → sert dalganın gövdesi; melodi bandı atıldı"
+  },
+  {
+   "role": "volkan",
+   "old": "thunderstorm.wav",
+   "neu": "861539__evanboyerman__emotionalsadtragic-string-orchestral-bgm-background-music.wav",
+   "gainDb": -3,
+   "flatOld": 0.007,
+   "flatNew": 0.003,
+   "centroidOld": 139,
+   "centroidNew": 128,
+   "kb": 595,
+   "used": true,
+   "why": "yaylı orkestranın bas sesi bir oktav pes (<160 Hz) + fırtına kaydının boğuk gürlemesi → derin volkan uğultusu (şimdiye kadar sentezdi)"
   }
  ]
 }

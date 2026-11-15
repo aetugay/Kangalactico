@@ -13,8 +13,9 @@
     "test:sound": "node scripts/test-sound.mjs",
     "test:worlds": "node scripts/test-worlds.mjs",
     "forecast": "node scripts/forecast.mjs",
-    "sounds": "node scripts/sounds.mjs",
-    "test:music": "node scripts/test-music.mjs"
+    "sounds": "node scripts/sounds.mjs && node scripts/sounds-v2.mjs",
+    "test:music": "node scripts/test-music.mjs",
+    "sounds:v2": "node scripts/sounds-v2.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

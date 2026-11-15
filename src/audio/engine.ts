@@ -408,6 +408,7 @@ class AudioEngine {
       case 'dust': if (SB.has('toz_hafif', 'toz_siddetli')) { loopS('toz_hafif', 0.9 * L * (1 - T)); loopS('toz_siddetli', 0.9 * L * T); return; } break;
       case 'smoke': if (SB.has('ates_kucuk', 'ates_buyuk')) { loopS('ates_kucuk', 0.9 * L * (1 - T)); loopS('ates_buyuk', 0.9 * L * T); return; } break;
       case 'spray': if (SB.has('deniz_serpinti')) { loopS('deniz_serpinti', 0.8 * L); return; } break;
+      case 'volcano': if (SB.has('volkan')) { loopS('volkan', 0.95 * L); return; } break;
       case 'thunder': if (SB.has('gok_yakin_1', 'gok_yakin_2', 'gok_yakin_3', 'gok_uzak_1', 'gok_uzak_2')) { // olay tetikleyici: rastgele varyant; yakın = sert, uzak = boğuk + gecikmeli
         const n = Math.max(1, Math.round(p.rate * dur));
         for (let k = 0; k < n; k++) shotS(p.sharp > 0.55 ? `gok_yakin_${1 + Math.floor(rnd() * 3)}` : `gok_uzak_${1 + Math.floor(rnd() * 2)}`, when + p.delay + rnd() * dur * 0.8, 0.9 * L);

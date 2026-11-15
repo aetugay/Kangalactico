@@ -96,7 +96,7 @@ export function PlacePicker({ cities, place, onPick, announce, autoFocus, lang =
         <label htmlFor={`${id}-in`} className={compact ? 'sr' : 'lbl'}>{T('Şehir ara', 'Search for a city')}</label>
         <input
           id={`${id}-in`} ref={input} type="text" className="field" autoComplete="off" spellCheck={false}
-          placeholder={cities ? T('Örn. şehir adı yaz…', 'e.g. type a city name…') : T('Şehir listesi yükleniyor…', 'Loading city list…')} disabled={!cities}
+          placeholder={!cities ? T('Şehir listesi yükleniyor…', 'Loading city list…') : compact && place ? `${placeLabel(place)} · ${T('başka yer ara…', 'search another place…')}` : T('Örn. şehir adı yaz…', 'e.g. type a city name…')} disabled={!cities}
           role="combobox" aria-autocomplete="list" aria-expanded={open && hits.length > 0} aria-controls={listId}
           aria-activedescendant={open && active >= 0 ? `${id}-opt-${active}` : undefined}
           value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey} onBlur={() => setTimeout(() => setOpen(false), 150)}

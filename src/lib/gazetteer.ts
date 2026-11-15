@@ -79,6 +79,7 @@ export class Gazetteer {
   constructor(pf: PlacesFile, cities: CityRow[] = [], asciiNames: Record<string, string> = {}) {
     const trOfCity: Record<string, string> = {};
     for (const [tr, en] of Object.entries(pf.cityAliases)) if (!trOfCity[en]) trOfCity[en] = tr[0].toLocaleUpperCase('tr') + tr.slice(1);
+    this.trOfCityMap = trOfCity;
     const put = (m: Map<string, Hit>, k: string, h: Hit) => { const f = fold(k).replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim(); if (f.length >= 2 && (!m.has(f) || m.get(f)!.pop < h.pop)) m.set(f, h); };
     for (const r of pf.regions) { const h: Hit = { kind: 'region', tr: r.tr, en: r.en, lat: r.lat, lon: r.lon, pop: 1e12 }; for (const n of r.names) put(this.idx, n, h); }
     for (const c of pf.countries) {
@@ -92,6 +93,9 @@ export class Gazetteer {
     for (const [tr, en] of Object.entries(pf.cityAliases)) { const h = this.city.get(fold(en)); if (h) this.city.set(fold(tr), h); }
     this.fuzzyPool = [...this.idx.entries(), ...[...this.city.entries()].filter(([, h]) => h.pop >= 100_000)];
   }
+  private trOfCityMap: Record<string, string> = {};
+  /** Şehrin Türkçe adı (Londra, Bağdat…); yoksa kendisi. */
+  cityTr = (en: string) => this.trOfCityMap[en] ?? en;
   /** Tam eşleşme: önce ülke/bölge, sonra şehir. */
   private exact(s: string): Hit | null { return this.idx.get(s) ?? this.city.get(s) ?? null; }
   /** Bir metindeki yeri bul. En uzun ad önce ("Güney Afrika" > "Afrika"); son sözcüğün ekleri denenir. */

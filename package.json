@@ -17,7 +17,9 @@
     "test:music": "node scripts/test-music.mjs",
     "test:places": "node scripts/test-places.mjs",
     "places": "node scripts/places.mjs",
-    "sounds:v2": "node scripts/sounds-v2.mjs"
+    "sounds:v2": "node scripts/sounds-v2.mjs",
+    "test:revgeo": "node scripts/test-revgeo.mjs",
+    "regions": "node scripts/regions.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

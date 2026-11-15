@@ -4,7 +4,7 @@ import { haversineKm, type LatLon } from './geo.ts';
 
 export type CityRow = [name: string, cc: string, lat: number, lon: number, pop: number];
 export interface CitiesFile { cities: CityRow[]; asciiNames: Record<string, string>; count: number }
-export interface Place extends LatLon { name: string; country?: string; source: 'arama' | 'harita' | 'konum' | 'bağlantı' }
+export interface Place extends LatLon { name: string; country?: string; source: 'arama' | 'harita' | 'konum' | 'bağlantı'; /** TR ve EN ayrı ad (ters coğrafi kodlama / derin bağlantı / sözlük) */ names?: { tr: string; en: string } }
 
 /** Türkçe ve aksanlı harfleri sadeleştir (İ→i, ş→s, ...) — "sivas", "SİVAS", "Sıvas" eşleşsin. */
 export function fold(s: string): string {
@@ -49,6 +49,16 @@ export class Cities {
     }
     return best;
   }
+  /** Ad için şehir: km içinde nüfusu ≥ minPop olan EN BÜYÜK şehir; yoksa en yakın şehir (banliyö yerine bilinen şehir: Reykjavík, Sydney). */
+  landmark(p: LatLon, km = 300, minPop = 100_000): { row: CityRow; km: number } | null {
+    const here = this.nearest(p, 25); if (here) return here; // nokta bir şehrin üstündeyse o şehir (Sivas'ta "Kayseri yakını" değil)
+    for (const c of this.data.cities) { // nüfusa göre sıralı
+      if (c[4] < minPop) break;
+      if (Math.abs(c[2] - p.lat) > km / 100) continue;
+      const d = haversineKm(p, { lat: c[2], lon: c[3] }); if (d <= km) return { row: c, km: d };
+    }
+    return this.nearest(p, km);
+  }
   /** Bir noktanın çevresindeki (km içinde) en kalabalık şehir — haritada "burası neresi" için. */
   notable(p: LatLon, km = 150): CityRow | null {
     for (const c of this.data.cities) { // dosya nüfusa göre sıralı: ilk bulunan en kalabalık olandır
@@ -78,5 +88,6 @@ export class Cities {
   }
 }
 
-export const rowToPlace = (c: CityRow, source: Place['source']): Place => ({ name: c[0], country: countryName(c[1]), lat: c[2], lon: c[3], source });
-export const placeLabel = (p: Place) => (p.country ? `${p.name}, ${p.country}` : p.name);
+export const rowToPlace = (c: CityRow, source: Place['source'], trName = c[0]): Place => ({ name: c[0], country: countryName(c[1]), lat: c[2], lon: c[3], source, names: { tr: `${trName}, ${countryName(c[1], 'tr')}`, en: `${c[0]}, ${countryName(c[1], 'en')}` } });
+const uiLang = (): 'tr' | 'en' => (typeof localStorage !== 'undefined' && localStorage.getItem('lang') === 'en' ? 'en' : 'tr');
+export const placeLabel = (p: Place) => (p.names ? p.names[uiLang()] : p.country ? `${p.name}, ${p.country}` : p.name);

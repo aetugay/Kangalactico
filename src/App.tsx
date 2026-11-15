@@ -33,6 +33,7 @@ import { INSTRUMENT_LABEL, M24 } from './lib/m24.ts';
 
 import { Cities, countryName, fold, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
 import { C5Source, loadC5, type C5Id } from './lib/cells5.ts';
+import { RevGeo, type RegionsFile } from './lib/revgeo.ts';
 import { Gazetteer, goLine, hitName, soru, type Hit, type PlacesFile } from './lib/gazetteer.ts';
 import { gainFor, noteHz, PARTS, type Mode, type RadarLayer, type Scale, type SoundMode } from './lib/radar.ts';
 import { landTexture, paintEquirect } from './lib/textures.ts';
@@ -93,7 +94,7 @@ export default function App() {
   const guideRef = useRef(guide); guideRef.current = guide;
   const langRef = useRef(lang); langRef.current = lang;
   speech.setLang(lang);
-  const setLang = (l: Lang) => { langRef.current = l; setLangS(l); store.set('lang', l); speech.setLang(l); handsFree.setLang(l); announceRef.current(l === 'en' ? 'Language: English. Voice commands, the voice guide and the screen are now in English.' : 'Dil: Türkçe. Sesli komut, sesli rehber ve ekran artık Türkçe.'); };
+  const setLang = (l: Lang) => { langRef.current = l; setLangS(l); store.set('lang', l); try { const u = new URL(location.href); if (u.searchParams.has('lang')) { u.searchParams.set('lang', l); history.replaceState(null, '', u); } } catch { /* yok say */ } speech.setLang(l); handsFree.setLang(l); announceRef.current(l === 'en' ? 'Language: English. Voice commands, the voice guide and the screen are now in English.' : 'Dil: Türkçe. Sesli komut, sesli rehber ve ekran artık Türkçe.'); };
   const announceRef = useRef<(t: string) => void>(() => {});
   const setGuide = (v: boolean) => {
     setGuideS(v); store.set('guide', v ? '1' : '0');
@@ -108,6 +109,8 @@ export default function App() {
   const [cities, setCities] = useState<Cities | null>(null);
   const [gaz, setGaz] = useState<Gazetteer | null>(null); // yer çözümleyici: ülkeler + bölgeler + şehirler, Türkçe ekler
   const gazRef = useRef(gaz); gazRef.current = gaz;
+  const [revgeo, setRevgeo] = useState<RevGeo | null>(null); // ters coğrafi kodlama: nokta → ülke / deniz adı (TR/EN)
+  const revRef = useRef(revgeo); revRef.current = revgeo;
   const [co2, setCo2] = useState<Co2Source | null>(null);
   const [temp, setTemp] = useState<TemperatureSource | null>(null);
   const [sst, setSst] = useState<SstSource | null>(null);
@@ -145,6 +148,7 @@ export default function App() {
   const [land, setLand] = useState<LandMask | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
+    loadJson<RegionsFile>(BASE, 'regions.json').then((f) => setRevgeo(new RevGeo(f))).catch(() => { /* adsız: koordinat okunur */ });
     loadJson<CitiesFile>(BASE, 'cities.json').then((d) => {
       setCities(new Cities(d));
       loadJson<PlacesFile>(BASE, 'places.json').then((pf) => setGaz(new Gazetteer(pf, d.cities, d.asciiNames)))
@@ -161,7 +165,7 @@ export default function App() {
   // ev konumu: yalnız bu tarayıcıda (localStorage), hiçbir yere gönderilmez
   const [home, setHomeS] = useState<Place | null>(() => { try { const h = JSON.parse(store.get('home') ?? 'null'); return h && typeof h.lat === 'number' ? h : null; } catch { return null; } });
   const homeRef = useRef(home); homeRef.current = home;
-  const saveHome = (p: Place | null) => { setHomeS(p); if (p) store.set('home', JSON.stringify({ lat: p.lat, lon: p.lon, name: p.name, country: p.country, source: p.source })); else { try { localStorage.removeItem('home'); } catch { /* yok say */ } } };
+  const saveHome = (p: Place | null) => { setHomeS(p); if (p) store.set('home', JSON.stringify({ lat: p.lat, lon: p.lon, name: p.name, country: p.country, source: p.source, names: p.names })); else { try { localStorage.removeItem('home'); } catch { /* yok say */ } } };
   const quietPlace = useRef(false); // bir sonraki yer değişikliği duyurulmasın (ev karşılaması, tur dönüşü)
   const [rangeKm, setRange] = useState(2000);
   const [mode, setMode] = useState<Mode>('bilim'); // Adım 1: bilim modu varsayılan — yalnız veri sesleri; tam ton dizisi
@@ -285,24 +289,32 @@ export default function App() {
   useEffect(() => { if (on.aerosol && !aerImg) { const i = new Image(); i.onload = () => setAerImg(i); i.src = `${BASE}media/aerosols_5669_2048.jpg`; } }, [on.aerosol, aerImg]);
 
   // ---------- yer seçimi
-  const pickPoint = useCallback((p: LatLon, source: Place['source']) => {
-    const near = cities?.nearest(p, 75);
-    const en = langRef.current === 'en';
-    setPlace(near ? { lat: p.lat, lon: p.lon, name: en ? `near ${near.row[0]}` : `${near.row[0]} yakını`, country: countryName(near.row[1], langRef.current), source } : { ...p, name: formatLatLon(p, langRef.current), source });
-    setPickOpen(false);
+  /** Noktanın adı (TR ve EN): derin bağlantı adı > ülke / deniz (+300 km içindeki şehir) > koordinat. */
+  const namesFor = useCallback((p: LatLon): { tr: string; en: string } => {
+    const lm = cities?.landmark(p, 300), al = gazRef.current?.cityTr;
+    const city = lm ? { tr: al ? al(lm.row[0]) : lm.row[0], en: lm.row[0], km: lm.km } : null;
+    return revRef.current?.name(p, city) ?? (city ? { tr: `${city.tr} yakını`, en: `near ${city.en}` } : { tr: formatLatLon(p, 'tr'), en: formatLatLon(p, 'en') });
   }, [cities]);
+  const pickPoint = useCallback((p: LatLon, source: Place['source'], given?: { tr: string; en: string }) => {
+    const names = given ?? namesFor(p);
+    setPlace({ lat: p.lat, lon: p.lon, name: names[langRef.current], names, source });
+  }, [namesFor]);
   useEffect(() => { // paylaşılabilir bağlantı (kullanıcı seçimi; kodda şehir yok)
     if (!cities || place) return;
     const q = params.get('q'), lat = params.get('lat'), lon = params.get('lon');
     if (q) { const row = cities.find(q); if (row) setPlace(rowToPlace(row, 'bağlantı')); }
-    else if (lat && lon && !Number.isNaN(+lat) && !Number.isNaN(+lon)) pickPoint({ lat: +lat, lon: +lon }, 'bağlantı');
+    else if (lat && lon && !Number.isNaN(+lat) && !Number.isNaN(+lon)) {
+      const n = params.get('name'), ntr = params.get('name_tr') ?? n, nen = params.get('name_en') ?? n;
+      pickPoint({ lat: +lat, lon: +lon }, 'bağlantı', ntr && nen ? { tr: ntr, en: nen } : undefined);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cities]);
+  }, [cities, revgeo]);
   useEffect(() => {
     if (!place) return;
     const u = new URL(location.href);
     // her zaman koordinat: yenileme / paylaşım aynı yeri açar ("Manaus yakını", "Kanada (Ottawa)" gibi adlar aranamaz)
     u.searchParams.delete('q'); u.searchParams.set('lat', place.lat.toFixed(3)); u.searchParams.set('lon', place.lon.toFixed(3));
+    if (place.source !== 'bağlantı') for (const k of ['name', 'name_tr', 'name_en']) u.searchParams.delete(k); // ad yalnız bağlantıdan gelen yer için
     history.replaceState(null, '', u);
   }, [place]);
   // ---------- radar katmanları
@@ -485,14 +497,14 @@ export default function App() {
     const parts = layers.map((l) => {
       const a = l.sample(place), b = l.sample(placeB);
       if (Number.isNaN(a) || Number.isNaN(b)) return en ? `${l.label}: no data at one of the places.` : `${l.label}: yerlerden birinde veri yok.`;
-      const d = Math.abs(a - b), hi = a > b ? place.name : placeB.name;
+      const d = Math.abs(a - b), hi = a > b ? nm(place) : nm(placeB);
       const diff = l.unit === 'ppm' ? `${d.toFixed(1)} ppm` : l.unit === '°C' ? `${Math.round(d)} ${en ? 'degrees' : 'derece'}` : `${Math.round(d * 100)}`;
       const same = l.unit === 'ppm' ? d < 0.05 : l.unit === '°C' ? d < 0.5 : d < 0.01;
-      return en ? `${l.label}: ${place.name} ${l.fmt(a)}, ${placeB.name} ${l.fmt(b)}. ${same ? 'About the same.' : `${hi} is higher by ${diff}.`}`
-        : `${l.label}: ${place.name} ${l.fmt(a)}, ${placeB.name} ${l.fmt(b)}. ${same ? 'Neredeyse aynı.' : `${hi} ${diff} daha yüksek.`}`;
+      return en ? `${l.label}: ${nm(place)} ${l.fmt(a)}, ${nm(placeB)} ${l.fmt(b)}. ${same ? 'About the same.' : `${hi} is higher by ${diff}.`}`
+        : `${l.label}: ${nm(place)} ${l.fmt(a)}, ${nm(placeB)} ${l.fmt(b)}. ${same ? 'Neredeyse aynı.' : `${hi} ${diff} daha yüksek.`}`;
     });
     const km = formatKm(haversineKm(place, placeB));
-    announce((en ? `${place.name} and ${placeB.name} are ${km} apart. ` : `${place.name} ile ${placeB.name} arası ${km}. `) + (parts.length ? parts.join(' ') : en ? 'No layer is on.' : 'Hiç katman açık değil.'));
+    announce((en ? `${nm(place)} and ${nm(placeB)} are ${km} apart. ` : `${nm(place)} ile ${nm(placeB)} arası ${km}. `) + (parts.length ? parts.join(' ') : en ? 'No layer is on.' : 'Hiç katman açık değil.'));
   };
 
   // ---------- anlatıcı
@@ -640,7 +652,7 @@ export default function App() {
     const en = langRef.current === 'en', h = homeRef.current;
     const done = () => { if (canListen && handsFree.enabled) engine.beep(); else if (!listener.supported) hfApi.current.unavailable(); };
     const parts: string[] = [];
-    if (h) { quietPlace.current = true; setPlace({ ...h }); parts.push(en ? `Welcome home, ${h.name}.` : `Evinize hoş geldiniz, ${h.name}.`); }
+    if (h) { quietPlace.current = true; setPlace({ ...h }); parts.push(en ? `Welcome home, ${nm(h)}.` : `Evinize hoş geldiniz, ${nm(h)}.`); }
     if (store.get('tourDone') !== '1') {
       setTourAsk(true);
       parts.push(canListen ? (en ? 'Shall I let you listen to the Earth? Say yes or no.' : 'Sana Dünya\'yı dinleteyim mi? Evet ya da hayır deyin.')
@@ -676,8 +688,8 @@ export default function App() {
         const co2s = live2.current.co2; if (!co2s) return;
         only('co2'); setAdvance(false); setMode('bilim'); setMonth(0);
         const series = co2s.grid.monthSeries(start);
-        if (!await tell(en ? `The planet breathes. You will hear one year of carbon dioxide above ${start.name}. When the violin rises, there is more carbon dioxide in the air.`
-          : `Gezegenin nefesi. ${start.name} üzerindeki karbondioksitin bir yılını dinleyeceksin. Keman inceldikçe havadaki karbondioksit artar.`)) return;
+        if (!await tell(en ? `The planet breathes. You will hear one year of carbon dioxide above ${nm(start)}. When the violin rises, there is more carbon dioxide in the air.`
+          : `Gezegenin nefesi. ${nm(start)} üzerindeki karbondioksitin bir yılını dinleyeceksin. Keman inceldikçe havadaki karbondioksit artar.`)) return;
         await sleep(200); if (!radarRef.current.playing) radarRef.current.play();
         for (let m = 0; m < 12; m++) {
           if (!alive()) return;
@@ -694,8 +706,8 @@ export default function App() {
         const t = live2.current.temp!, frame = live2.current.tFrame || t.frames - 1, dir = start.lat >= 0 ? 180 : 0;
         const val = (p: LatLon) => t.layer.sample(frame, p);
         const total = Math.abs(start.lat) * 111, steps = Math.max(2, Math.min(8, Math.round(total / 700)));
-        if (!await tell(en ? `Journey toward the equator. We leave ${start.name} and travel ${dir === 180 ? 'south' : 'north'}. When the guitar rises, the surface is warmer.`
-          : `Ekvatora yolculuk. ${start.name} üzerinden ${dir === 180 ? 'güneye' : 'kuzeye'} doğru gidiyoruz. Gitar inceldikçe yüzey daha sıcak.`)) return;
+        if (!await tell(en ? `Journey toward the equator. We leave ${nm(start)} and travel ${dir === 180 ? 'south' : 'north'}. When the guitar rises, the surface is warmer.`
+          : `Ekvatora yolculuk. ${nm(start)} üzerinden ${dir === 180 ? 'güneye' : 'kuzeye'} doğru gidiyoruz. Gitar inceldikçe yüzey daha sıcak.`)) return;
         await sleep(200); if (!radarRef.current.playing) radarRef.current.play();
         const v0 = val(start); let vLast = v0;
         for (let i = 1; i <= steps; i++) {
@@ -714,9 +726,9 @@ export default function App() {
         const dust = live2.current.aer!.layers.dust;
         let best = { v: 0, br: 0, km: 0 };
         for (let br = 0; br < 360; br += 10) for (let km = 250; km <= 5000; km += 250) { const v = dust.sample(0, destination(start, br, km)); if (v > best.v) best = { v, br, km }; }
-        if (best.v < 0.08) { await tell(en ? `Travelers in the air. There is no dense dust within 5000 kilometers of ${start.name} in this image.` : `Havadaki yolcular. Bu görselde ${start.name} çevresinde 5000 kilometre içinde yoğun toz yok.`); return; }
-        if (!await tell(en ? `Travelers in the air. The densest dust is ${formatKm(best.km)} to the ${compass8(best.br, 'en')} of ${start.name}. We are going there. The celesta bells are dust.`
-          : `Havadaki yolcular. En yoğun toz ${start.name} üzerinden ${compass8(best.br)} yönünde, ${formatKm(best.km)} uzakta. Oraya gidiyoruz. Çelesta çanları tozu gösterir.`)) return;
+        if (best.v < 0.08) { await tell(en ? `Travelers in the air. There is no dense dust within 5000 kilometers of ${nm(start)} in this image.` : `Havadaki yolcular. Bu görselde ${nm(start)} çevresinde 5000 kilometre içinde yoğun toz yok.`); return; }
+        if (!await tell(en ? `Travelers in the air. The densest dust is ${formatKm(best.km)} to the ${compass8(best.br, 'en')} of ${nm(start)}. We are going there. The celesta bells are dust.`
+          : `Havadaki yolcular. En yoğun toz ${nm(start)} üzerinden ${compass8(best.br)} yönünde, ${formatKm(best.km)} uzakta. Oraya gidiyoruz. Çelesta çanları tozu gösterir.`)) return;
         await sleep(200); if (!radarRef.current.playing) radarRef.current.play();
         for (let i = 1; i <= 4; i++) {
           if (!alive()) return;
@@ -773,7 +785,12 @@ export default function App() {
   const [heard, setHeard] = useState<string | null>(null);
   /** Yer çözümleyici (src/lib/gazetteer.ts; sınama: npm run test:places). */
   const findPlace = (raw: string) => gazRef.current?.resolve(raw) ?? null;
-  const hitPlace = (h: Hit): Place => ({ lat: h.lat, lon: h.lon, name: hitName(h, langRef.current), country: h.kind === 'city' && h.cc ? countryName(h.cc) : undefined, source: 'arama' });
+  /** Yerin arayüz dilindeki adı (TR/EN ayrı). */
+  const nm = (p: Place) => p.names?.[langRef.current] ?? p.name;
+  const hitPlace = (h: Hit): Place => {
+    const names = h.kind === 'city' && h.cc ? { tr: `${hitName(h, 'tr')}, ${countryName(h.cc, 'tr')}`, en: `${hitName(h, 'en')}, ${countryName(h.cc, 'en')}` } : { tr: hitName(h, 'tr'), en: hitName(h, 'en') };
+    return { lat: h.lat, lon: h.lon, name: names[langRef.current], names, source: 'arama' };
+  };
   // sesle başlayan iş sesle biter: yer bulunamazsa en yakın 2 aday sesli sorulur, cevap ("birincisi", "Kanada", "evet") burada beklenir
   const choiceRef = useRef<{ cands: Hit[]; action: 'go' | 'compare' | 'weather'; until: number } | null>(null);
   const noAck = useRef(false);       // komut anlaşıldı ama yapılamadı → "Anlaşıldı" denmez
@@ -783,7 +800,7 @@ export default function App() {
     if (action === 'weather') { openWeather({ ...p, name: en ? h.en : h.tr }); return; }
     if (action === 'compare') {
       setPlaceB(p); setCompare(true); setCmpTurn(0);
-      announce(en ? `Comparing with ${p.name}: one sweep here, one sweep there. Say "difference" to hear the numbers.` : `${p.name} ile karşılaştırılıyor: bir tur burası, bir tur orası. Sayıları duymak için "fark" de.`);
+      announce(en ? `Comparing with ${nm(p)}: one sweep here, one sweep there. Say "difference" to hear the numbers.` : `${nm(p)} ile karşılaştırılıyor: bir tur burası, bir tur orası. Sayıları duymak için "fark" de.`);
       if (!R.playing) setTimeout(() => radarRef.current.play(), 300); return;
     }
     quietPlace.current = true; setPlace(p); setPickOpen(false);
@@ -834,7 +851,7 @@ export default function App() {
     // "ne duyuyorum": merkezde duyulan ses + değeri (alt çubuktaki özetle aynı hesap: en baskın ses dünyası)
     if (has('ne duyuyorum', 'neyi duyuyorum', 'ne caliyor', 'ne calıyor', 'what am i hearing', 'what is playing', 'whats playing', 'what do i hear') || word('acikla', 'explain')) {
       if (!needPlace()) return true;
-      const here = placeLabel(active ?? place!).split(',')[0];
+      const here = placeLabel(active ?? place!); // "Kisangani yakını, Demokratik Kongo Cumhuriyeti"
       if (centerBest) { announce(en ? `${here}. ${centerBest.l.label}: ${fmtShort(centerBest.l, centerBest.v)}; you are hearing ${centerDesc}.` : `${here}. ${centerBest.l.label}: ${fmtShort(centerBest.l, centerBest.v)}, ${centerDesc} duyuyorsun.`); return true; }
       const l0 = layers[0], v0 = l0 && active ? l0.sample(active) : NaN;
       if (l0 && !Number.isNaN(v0)) { announce(en ? `${here}. ${l0.label}: ${fmtShort(l0, v0)}, played as ${l0.instrument} notes.` : `${here}. ${l0.label}: ${fmtShort(l0, v0)}, ${l0.instrument} notalarıyla çalıyor.`); return true; }
@@ -852,7 +869,7 @@ export default function App() {
     if (has('evde', 'evimde', 'at home', 'my home', 'home weather') && has(' hava', 'weather', 'forecast')) { const h = homeRef.current; if (!h) announce(noHome); else openWeather({ ...h, name: h.name }); return true; }
     if (has('burasi benim evim', 'burasi evim', 'evimi kaydet', 'ev olarak kaydet', 'evim olsun', 'evim burasi', 'this is my home', 'save my home', 'save home', 'set home', 'my home is here')) {
       if (!needPlace()) return true;
-      saveHome(place!); announce(en ? `${place!.name} saved as your home.` : `${place!.name} eviniz olarak kaydedildi.`); return true;
+      saveHome(place!); announce(en ? `${nm(place!)} saved as your home.` : `${nm(place!)} eviniz olarak kaydedildi.`); return true;
     }
     if (has('eve don', 'evime don', 'eve git', 'evime git', 'go home', 'take me home', 'back home')) {
       const h = homeRef.current; if (!h) { announce(noHome); return true; }
@@ -1362,7 +1379,7 @@ export default function App() {
         tabs={{ listen: listenTab, weather: weatherTab, explore: exploreTab, guide: guidePanel }} />
 
       <Dialog open={pickOpen} onClose={() => setPickOpen(false)} title={pickFor === 'B' ? (lang === 'en' ? 'Choose the second place' : 'İkinci yeri seç') : pickFor === 'H' ? (lang === 'en' ? 'Choose your home' : 'Ev konumunu seç') : tr(lang, 'searchTitle')} lang={lang}>
-        <PlacePicker cities={cities} place={pickFor === 'B' ? placeB : place} onPick={(p) => { if (pickFor === 'H') { saveHome(p); setPickOpen(false); announce(lang === 'en' ? `${p.name} saved as your home.` : `${p.name} eviniz olarak kaydedildi.`); return; } if (pickFor === 'B') { setPlaceB(p); setCompare(true); setCmpTurn(0); announce(lang === 'en' ? `Second place: ${placeLabel(p)}. The radar now plays one sweep here and one sweep there. Press Space to listen.` : `İkinci yer: ${placeLabel(p)}. Radar artık bir tur birinci yeri, bir tur ikinci yeri çalar. Dinlemek için Boşluk.`); } else setPlace(p); setPickOpen(false); }} announce={announce} autoFocus lang={lang} />
+        <PlacePicker cities={cities} place={pickFor === 'B' ? placeB : place} onPick={(p) => { if (pickFor === 'H') { saveHome(p); setPickOpen(false); announce(lang === 'en' ? `${nm(p)} saved as your home.` : `${nm(p)} eviniz olarak kaydedildi.`); return; } if (pickFor === 'B') { setPlaceB(p); setCompare(true); setCmpTurn(0); announce(lang === 'en' ? `Second place: ${placeLabel(p)}. The radar now plays one sweep here and one sweep there. Press Space to listen.` : `İkinci yer: ${placeLabel(p)}. Radar artık bir tur birinci yeri, bir tur ikinci yeri çalar. Dinlemek için Boşluk.`); } else setPlace(p); setPickOpen(false); }} announce={announce} autoFocus lang={lang} />
         <p className="small muted">{tr(lang, 'orTap')}</p>
       </Dialog>
       <StoriesDialog open={storiesOpen} onClose={() => setStoriesOpen(false)} lang={lang} stories={storyList} hasPlace={!!place} onRun={(id) => { setStoriesOpen(false); void runStory(id); }} />
@@ -1375,7 +1392,7 @@ export default function App() {
         guide={guide} setGuide={setGuide} handsFree={hfWanted} setHandsFree={setHfWanted} micSupported={listener.supported} shortcuts={shortcutsOn} setShortcuts={setShortcuts}
         music={mix.music} setMusic={(v) => setMix({ ...mix, music: v })} onSoundscape={() => { setSettingsOpen(false); setSoundOpen(true); }}
         rate={mix.rate} setRate={(v) => setMix({ ...mix, rate: v })}
-        home={home ? home.name : null} onHomeChange={() => { setSettingsOpen(false); setPickFor('H'); setPickOpen(true); }}
+        home={home ? nm(home) : null} onHomeChange={() => { setSettingsOpen(false); setPickFor('H'); setPickOpen(true); }}
         onHomeDelete={() => { saveHome(null); announce(lang === 'en' ? 'Home location deleted.' : 'Ev konumu silindi.'); }} />
       <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} lang={lang} onSpeak={() => { if (guideRef.current) void speech.say(helpText()); else announce(helpText()); }} />
       <About open={aboutOpen} onClose={() => setAboutOpen(false)} lang={lang} credits={credits} extra={<DataInventory lang={lang} />} />

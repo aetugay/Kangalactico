@@ -62,9 +62,9 @@ export function TopBar(p: { lang: Lang; setLang: (l: Lang) => void; hc: boolean;
   const en = lang === 'en';
   return (
     <header className="topbar">
-      {/* Adım 3: sekme sırasında İLK öğe — büyük Konuş düğmesi (Alt+T her yerde). Mobilde ekranın altında sabit. Web Speech yoksa komut kutusuna götürür. */}
-      <button type="button" className={`speak-btn${p.listening ? ' live' : ''}`} onClick={p.onTalk} aria-pressed={p.listening} aria-keyshortcuts="Alt+T">
-        <IconMic /> <span>{p.listening ? (en ? 'Listening…' : 'Dinliyorum…') : p.micSupported === false ? (en ? 'Speak / type' : 'Konuş / yaz') : (en ? 'Speak' : 'Konuş')}</span> <kbd aria-hidden="true">Alt+T</kbd>
+      {/* Adım 3: sekme sırasında İLK öğe — büyük Konuş düğmesi (Boşluk basılı tut). Mobilde ekranın altında sabit. Web Speech yoksa komut kutusuna götürür. */}
+      <button type="button" className={`speak-btn${p.listening ? ' live' : ''}`} onClick={p.onTalk} aria-pressed={p.listening} aria-keyshortcuts="Space">
+        <IconMic /> <span>{p.listening ? (en ? 'Listening…' : 'Dinliyorum…') : p.micSupported === false ? (en ? 'Speak / type' : 'Konuş / yaz') : (en ? 'Speak' : 'Konuş')}</span> <kbd aria-hidden="true">Boşluk</kbd>
       </button>
       <div className="brand" aria-label="EarthEar">Earth<span>Ear</span></div>
       <nav className="top-actions" aria-label={lang === 'tr' ? 'Genel ayarlar' : 'General settings'}>
@@ -132,7 +132,7 @@ export function NowCard(p: NowProps) {
       )}
       <p className="sr" aria-live="polite" aria-atomic="true">{p.playing ? p.liveLine : ''}</p>
       <div className="btn-row">
-        <button type="button" className="btn primary" onClick={p.onToggle} aria-keyshortcuts="Space">{p.playing ? <IconPause /> : <IconPlay />} {p.playing ? tr(lang, 'stop') : tr(lang, 'play')}</button>
+        <button type="button" className="btn primary" onClick={p.onToggle} aria-keyshortcuts="P">{p.playing ? <IconPause /> : <IconPlay />} {p.playing ? tr(lang, 'stop') : tr(lang, 'play')}</button>
         <button type="button" className="btn" onClick={p.onLegend} aria-pressed={p.talking === 'legend'} aria-keyshortcuts="L">{p.talking === 'legend' ? <IconPause /> : <IconHeadphones />} {p.talking === 'legend' ? tr(lang, 'stopLegend') : `${tr(lang, 'legend')} (L)`}</button>
         <button type="button" className="btn" onClick={p.onSummary} aria-pressed={p.talking === 'summary'} aria-keyshortcuts="S">{p.talking === 'summary' ? <IconPause /> : <IconSpeak />} {p.talking === 'summary' ? tr(lang, 'stopSummary') : `${tr(lang, 'summary')} (S)`}</button>
       </div>

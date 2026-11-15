@@ -1,6 +1,6 @@
 // Sesli komut: tarayıcının konuşma tanıması (Web Speech API; Chrome ve Edge).
 // Mikrofon izni ve internet gerekir (tanıma tarayıcının servisinde yapılır). Desteklenmiyorsa `supported` false olur.
-//  - listener.once / hold: bas-konuş (Alt+T, Konuş düğmesi, Boşluk basılı tut)
+//  - listener.once / hold: bas-konuş (Boşluk basılı tut, Konuş düğmesini basılı tut)
 //  - handsFree: eller serbest SÜREKLİ dinleme (varsayılan açık); bitince/hata verince kendini yeniden başlatır.
 //    EarthEar'in kendi sesi (speechSynthesis) konuşurken başlayan konuşmalar YOK SAYILIR (kendi sesini komut sanmasın).
 export type ListenError = 'unsupported' | 'denied' | 'nospeech' | 'network' | 'other';

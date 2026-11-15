@@ -33,7 +33,7 @@ const T = {
   highContrast: { tr: 'Yüksek kontrast', en: 'High contrast' },
   view3d: { tr: '3D Dünya', en: '3D globe' },
   view2d: { tr: '2D görünüm', en: '2D view' },
-  keys: { tr: 'Boşluk: çal/durdur · I/K/J/M: Dünya üzerinde gez · ←/→: ışını çevir · 1–4: katmanlar · S: özet · L: lejant · C: yer seç · B: karşılaştır · Y: hikâyeler · E: olaylar · V: ses sahnem · N: anlatıcı · T: sesli komut · H: yardım · Esc: sustur', en: 'Space: play/stop · I/K/J/M: travel the globe · ←/→: turn beam · 1–4: layers · S: summary · L: legend · C: choose place · B: compare · Y: stories · E: events · V: my soundscape · N: narrator · T: voice command · H: help · Esc: silence' },
+  keys: { tr: 'Boşluk basılı: konuş · P: çal/durdur · I/K/J/M: Dünya üzerinde gez · ←/→: ışını çevir · 1–4: katmanlar · S: özet · L: lejant · C: yer seç · B: karşılaştır · Y: hikâyeler · E: olaylar · V: ses sahnem · N: anlatıcı · H: yardım · Esc: sustur', en: 'Hold Space: speak · P: play/stop · I/K/J/M: travel the globe · ←/→: turn beam · 1–4: layers · S: summary · L: legend · C: choose place · B: compare · Y: stories · E: events · V: my soundscape · N: narrator · H: help · Esc: silence' },
   disclaimer: { tr: 'NASA verisi kullanılarak NASA Space Apps Challenge 2026 için hazırlanmıştır; NASA tarafından onaylanmamıştır.', en: 'Built with NASA data for the NASA Space Apps Challenge 2026; not endorsed by NASA.' },
   noLayer: { tr: 'Hiç katman açık değil.', en: 'No layer is on.' },
   fallback: { tr: '2D görünüm: bu cihazda 3D kapalı', en: '2D view: 3D is off on this device' },

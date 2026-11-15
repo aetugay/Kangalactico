@@ -9,13 +9,22 @@ import { IconInfo, IconMic, IconPause, IconPlay } from './icons.tsx';
 const T = (lang: Lang, t: string, e: string) => (lang === 'en' ? e : t);
 
 // ---------------- Üst çubuk
-export function AppHeader(p: { lang: Lang; listening: boolean; micSupported: boolean; onTalk: () => void; search: ReactNode; onWeather: () => void; onSettings: () => void; onAbout: () => void; onHelp: () => void }) {
+export function AppHeader(p: { lang: Lang; listening: boolean; micSupported: boolean; onTalk: () => void; onHoldStart: () => void; onHoldEnd: () => void; guide: boolean; onGuide: () => void; search: ReactNode; onWeather: () => void; onSettings: () => void; onAbout: () => void; onHelp: () => void }) {
   const { lang } = p;
+  // Konuş: fare/dokunmayla BASILI TUT = dinle, bırak = işle. Klavyeyle (Enter/Boşluk) normal düğme: bir kez dinler.
+  const held = useRef(false);
   return (
     <header className="hdr">
       <div className="hdr-brand" aria-label="EarthEar">Earth<span>Ear</span></div>
-      <button type="button" className={`speak-btn${p.listening ? ' live' : ''}`} onClick={p.onTalk} aria-pressed={p.listening} aria-keyshortcuts="Alt+T" title={T(lang, 'Sesli komut (Alt+T; Boşluk basılı tut)', 'Voice command (Alt+T; hold Space)')}>
+      <button type="button" className={`speak-btn${p.listening ? ' live' : ''}`} aria-pressed={p.listening} aria-keyshortcuts="Space" title={T(lang, 'Konuşmak için basılı tut (ya da Boşluk tuşunu basılı tut)', 'Hold to speak (or hold the Space key)')}
+        onPointerDown={(e) => { if (e.button !== 0 || !p.micSupported) return; held.current = true; try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* yok say */ } p.onHoldStart(); }}
+        onPointerUp={() => { if (held.current) p.onHoldEnd(); }} onPointerCancel={() => { if (held.current) { held.current = false; p.onHoldEnd(); } }}
+        onContextMenu={(e) => e.preventDefault()}
+        onClick={() => { if (held.current) { held.current = false; return; } p.onTalk(); }}>
         <IconMic /> <span>{p.listening ? T(lang, 'Dinliyorum…', 'Listening…') : !p.micSupported ? T(lang, 'Konuş / yaz', 'Speak / type') : T(lang, 'Konuş', 'Speak')}</span>
+      </button>
+      <button type="button" className={`chip guide-btn${p.guide ? ' on' : ''}`} onClick={p.onGuide} aria-pressed={p.guide} aria-label={T(lang, 'Sesli rehber', 'Voice guide')} aria-keyshortcuts="G" title={T(lang, 'Sesli rehber (G)', 'Voice guide (G)')}>
+        <span aria-hidden="true">{p.guide ? '🔊' : '🔈'}</span> <span>{T(lang, 'Sesli Rehber', 'Voice guide')}: <b>{p.guide ? T(lang, 'Açık', 'On') : T(lang, 'Kapalı', 'Off')}</b></span>
       </button>
       <div className="hdr-search">{p.search}</div>
       <nav className="hdr-actions" aria-label={T(lang, 'Genel', 'General')}>
@@ -48,7 +57,7 @@ export function SettingsDialog(p: {
       {p.can3d && sw(p.view3d, p.setView3d, T(lang, '3B Dünya (kapalıysa 2B harita)', '3D globe (off = 2D map)'))}
       {sw(p.guide, p.setGuide, T(lang, 'Sesli rehber (G) — ekran okuyucu kullanıyorsan kapat', 'Voice guide (G) — turn off if you use a screen reader'))}
       {p.micSupported && sw(p.handsFree, p.setHandsFree, T(lang, 'Eller serbest dinleme ("Dünya, …")', 'Hands-free listening ("Earth, …")'))}
-      {sw(!p.shortcuts, (v) => p.setShortcuts(!v), T(lang, 'Tek tuş kısayollarını kapat (Alt+T çalışmaya devam eder)', 'Turn off single-key shortcuts (Alt+T keeps working)'))}
+      {sw(!p.shortcuts, (v) => p.setShortcuts(!v), T(lang, 'Tek tuş kısayollarını kapat (Boşluk ile bas-konuş çalışmaya devam eder)', 'Turn off single-key shortcuts (hold-Space to talk keeps working)'))}
       <div className="mix-row">
         <label htmlFor="set-music">{T(lang, 'Müzik seviyesi', 'Music level')}: <b>{Math.round(p.music * 100)}%</b></label>
         <input id="set-music" type="range" min={0} max={3} step={0.05} value={p.music} aria-valuetext={`${Math.round(p.music * 100)}%`} onChange={(e) => p.setMusic(+e.target.value)} />
@@ -71,12 +80,12 @@ export function SettingsDialog(p: {
 // ---------------- Yardım (kısayollar artık ekranda değil, burada ve düğme ipuçlarında)
 export function HelpDialog({ open, onClose, lang, onSpeak }: { open: boolean; onClose: () => void; lang: Lang; onSpeak: () => void }) {
   const rows: [string, string, string][] = [
-    ['Alt+T', 'Sesli komut (her yerde)', 'Voice command (anywhere)'], ['Boşluk / Space', 'Çal / durdur · basılı tut: bas-konuş', 'Play / stop · hold: push-to-talk'],
+    ['Boşluk / Space', 'Basılı tut: konuş (bırakınca komut işlenir)', 'Hold: speak (release to run the command)'], ['P', 'Çal / durdur', 'Play / stop'],
     ['← →', 'Işını elle çevir', 'Turn the beam by hand'], ['I J K M', 'Kuzey / batı / güney / doğuya git', 'Go north / west / south / east'],
     ['C', 'Yer seç', 'Choose a place'], ['B', 'İkinci yer (karşılaştır)', 'Second place (compare)'], ['1–4', 'Katman aç/kapa', 'Toggle layers'],
     ['S', 'Sesli özet', 'Spoken summary'], ['L', 'Sesli lejant', 'Audio legend'], ['W', 'Hava durumu', 'Weather'], ['Y', 'Dünya hikâyeleri', 'Earth stories'],
-    ['E', 'Dünya olayları', 'Earth events'], ['V', 'Ses sahnem', 'My soundscape'], ['N', 'Anlatıcı', 'Narrator'], ['G', 'Sesli rehber', 'Voice guide'],
-    ['H / ?', 'Bu yardım', 'This help'], ['Esc', 'Konuşmayı sustur / pencereyi kapat', 'Silence speech / close window'],
+    ['E', 'Dünya olayları', 'Earth events'], ['V', 'Ses sahnem', 'My soundscape'], ['N', 'Anlatıcı', 'Narrator'],
+    ['H / ?', 'Bu yardım', 'This help'], ['G', 'Sesli rehber aç / kapa (üst çubukta da düğme)', 'Voice guide on / off (also a button in the top bar)'], ['Esc', 'Konuşmayı sustur / pencereyi kapat', 'Silence speech / close window'],
     [T(lang, 'Herhangi bir tuş', 'Any key'), 'Rehber konuşurken: konuşmayı keser (Boşluk hariç) · turu bitirir', 'While the guide speaks: interrupts speech (except Space) · ends the tour'],
   ];
   const voice: [string, string][] = lang === 'en' ? [
@@ -85,18 +94,18 @@ export function HelpDialog({ open, onClose, lang, onSpeak }: { open: boolean; on
     ['Earth, repeat', 'Repeat the last narration'], ['Earth, quiet', 'Stop speech only; nature and music keep playing'],
     ['Earth, this is my home / save my home', 'Save the current place as home (only in this browser)'],
     ['Earth, go home', 'Go to your home'], ['Earth, weather at home', 'Weather at your home'],
-    ['Earth, what is the weather in Ankara?', 'Weather sound first, then the narration'],
+    ['Earth, what is the weather in Sivas?', 'Weather sound first, then the narration'],
   ] : [
     ['Dünya, turu başlat', '30 saniyelik rehberli tur (herhangi bir tuş, "dur" ya da "geç" bitirir)'],
     ['Dünya, daha hızlı konuş / daha yavaş konuş', "Konuşma hızı (Ayarlar'da da var, 0.8–2×)"],
     ['Dünya, tekrar et', 'Son anlatımı tekrarla'], ['Dünya, sus', 'Yalnız konuşmayı durdurur; doğa ve müzik sürer'],
     ['Dünya, burası benim evim / evimi kaydet', 'Bulunduğun yeri ev olarak kaydet (yalnız bu tarayıcıda)'],
     ['Dünya, eve dön', 'Evine git'], ['Dünya, evde hava nasıl?', 'Evindeki hava durumu'],
-    ["Dünya, Ankara'da hava nasıl?", 'Önce havanın sesi, sonra anlatım'],
+    ["Dünya, Sivas'ta hava nasıl?", 'Önce havanın sesi, sonra anlatım'],
   ];
   return (
     <Dialog open={open} onClose={onClose} title={T(lang, 'Yardım ve kısayollar', 'Help and shortcuts')} lang={lang}>
-      <p className="small">{T(lang, 'Eller serbest dinleme açıkken cümleye "Dünya" diye başla: "Dünya, Sivas\'a git", "Dünya, çal", "Dünya, Ankara\'da hava nasıl?". Yazılı komut kutusu Rehber sekmesinde.', 'With hands-free listening on, start with "Earth": "Earth, go to Sivas", "Earth, play", "Earth, what is the weather in Ankara?". The typed command box is in the Guide tab.')}</p>
+      <p className="small">{T(lang, 'Eller serbest dinleme açıkken cümleye "Dünya" diye başla: "Dünya, Sivas\'a git", "Dünya, çal", "Dünya, Sivas\'ta hava nasıl?". Konuşmak için Boşluk tuşunu basılı tut. Yazılı komut kutusu Rehber sekmesinde.', 'With hands-free listening on, start with "Earth": "Earth, go to Sivas", "Earth, play", "Earth, what is the weather in Sivas?". The typed command box is in the Guide tab.')}</p>
       <table className="inv"><thead><tr><th>{T(lang, 'Tuş', 'Key')}</th><th>{T(lang, 'İşlev', 'Action')}</th></tr></thead>
         <tbody>{rows.map(([k, t, e]) => <tr key={k}><td><kbd>{k}</kbd></td><td>{lang === 'en' ? e : t}</td></tr>)}</tbody></table>
       <h3 className="sec-title">{T(lang, 'Sesli komutlar', 'Voice commands')}</h3>
@@ -178,7 +187,7 @@ export function PlayerBar(p: {
       <div className="pl-mid">
         <div className="pl-btns">
           <button type="button" className="icon-btn" onClick={p.onPrev ?? undefined} disabled={!p.onPrev} aria-label={T(lang, 'Önceki zaman', 'Previous time')} title={T(lang, 'Önceki zaman', 'Previous time')}>⏮</button>
-          <button type="button" className="play-btn" onClick={p.onToggle} disabled={!p.canPlay} aria-keyshortcuts="Space" title={T(lang, 'Çal / durdur (Boşluk)', 'Play / stop (Space)')}>{p.playing ? <IconPause /> : <IconPlay />}<span>{p.playing ? tr(lang, 'stop') : tr(lang, 'play')}</span></button>
+          <button type="button" className="play-btn" onClick={p.onToggle} disabled={!p.canPlay} aria-keyshortcuts="P" title={T(lang, 'Çal / durdur (P)', 'Play / stop (P)')}>{p.playing ? <IconPause /> : <IconPlay />}<span>{p.playing ? tr(lang, 'stop') : tr(lang, 'play')}</span></button>
           <button type="button" className="icon-btn" onClick={p.onNext ?? undefined} disabled={!p.onNext} aria-label={T(lang, 'Sonraki zaman', 'Next time')} title={T(lang, 'Sonraki zaman', 'Next time')}>⏭</button>
           <button type="button" className="chip small-chip" onClick={p.onLegend} aria-pressed={p.talking === 'legend'} aria-keyshortcuts="L" title={T(lang, 'Sesli lejant (L)', 'Audio legend (L)')}>{tr(lang, 'legend')}</button>
           <button type="button" className="chip small-chip" onClick={p.onSummary} aria-pressed={p.talking === 'summary'} aria-keyshortcuts="S" title={T(lang, 'Sesli özet (S)', 'Spoken summary (S)')}>{tr(lang, 'summary')}</button>

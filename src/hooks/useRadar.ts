@@ -186,7 +186,7 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, sound = 'bo
     }
     if (run !== legendRun.current) return;
     setLegend(null); setTalking(null);
-    announce(en ? 'Legend finished. Press Space to play.' : 'Lejant bitti. Çalmak için Boşluk.');
+    announce(en ? 'Legend finished. Press P to play.' : 'Lejant bitti. Çalmak için P.');
   }, [stop, layers, announce, en, talking, hush, mode, scale, sound]);
 
   // klavye: Boşluk, ←/→, S, L (metin alanlarında ve diyaloglarda devre dışı)
@@ -194,7 +194,7 @@ export function useRadar({ placeName, center, layers, rangeKm, mode, sound = 'bo
   keys.current = (e) => {
     if (e.shiftKey || !P || !shortcutAllowed(e)) return; // yazı alanı / form denetimi / açık diyalog → kısayol yok
     const tag = e.target instanceof HTMLElement ? e.target.tagName.toLowerCase() : '';
-    // Boşluk App.tsx'te: kısa basış çal/durdur, basılı tutma bas-konuş
+    // Boşluk App.tsx'te: basılı tut = konuş; P = çal/durdur
     void tag;
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); stepBeam(e.key === 'ArrowRight' ? 1 : -1); }
     else if (e.key === 's' || e.key === 'S') { e.preventDefault(); summary(); }

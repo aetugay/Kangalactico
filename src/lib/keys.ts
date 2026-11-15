@@ -16,7 +16,7 @@ export function inDialog(t: EventTarget | null): boolean {
 }
 
 /** Genel kısayol işlenmeli mi? Değiştirici tuşlar, yazı alanları ve açık diyaloglar hariç. */
-/** Ayarlar → "Tek tuş kısayollarını kapat" (ekran okuyucu tuşlarıyla çakışırsa). Alt+T her zaman çalışır. */
+/** Ayarlar → "Tek tuş kısayollarını kapat" (ekran okuyucu tuşlarıyla çakışırsa). Boşluk ile bas-konuş her zaman çalışır (App.tsx). */
 let enabled = true;
 export const setShortcutsEnabled = (v: boolean) => { enabled = v; };
 export const shortcutsEnabled = () => enabled;

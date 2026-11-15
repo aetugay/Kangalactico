@@ -51,7 +51,7 @@ export function Weather({ open, onClose, lang, forecast: F, error, target, annou
   let body: React.ReactNode;
   if (error) body = <p role="alert">{en ? 'The forecast file could not be loaded. The rest of the app keeps working.' : 'Tahmin dosyası yüklenemedi. Uygulamanın geri kalanı çalışmaya devam eder.'} <small className="muted">({error})</small></p>;
   else if (!F) body = <p role="status">{en ? 'Loading forecast…' : 'Tahmin yükleniyor…'}</p>;
-  else if (!target) body = <p>{en ? 'Choose a place first (for example say "Earth, go to Ankara").' : 'Önce bir yer seç (örneğin "Dünya, Ankara\'ya git" de).'}</p>;
+  else if (!target) body = <p>{en ? 'Choose a place first (for example say "Earth, go to Sivas").' : 'Önce bir yer seç (örneğin "Dünya, Sivas\'a git" de).'}</p>;
   else {
     const s = F.sample(F.nowStep(now), target), days = F.days(target).filter((d) => d.date >= todayIso), c = nowCond(s), stale = staleLine(F.meta, F.ageHours(now), lang);
     const ns = nowSceneOf(F, target, now);

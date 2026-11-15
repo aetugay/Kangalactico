@@ -539,3 +539,30 @@ html.hc .tour-cap .tour-prog { color: #0033cc; background: #e8eeff; }
 .home-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 2px; }
 @media (max-width: 900px) { .tour-cap .tour-text { font-size: 15px; } }
 .pl-change { margin-left: 6px; min-height: 32px; font-size: 13px; vertical-align: middle; }
+
+/* ---------- Giriş ekranı: dönen güneş sistemi (StartGate.tsx) */
+.start-gate { overflow: hidden; }
+.start-gate .gate-space { position: absolute; inset: 0; }
+.start-gate .gate-space canvas { width: 100% !important; height: 100% !important; display: block; }
+.start-gate .gate-ui { position: relative; z-index: 1; display: grid; justify-items: center; gap: 14px; margin-top: -4vh; pointer-events: none; }
+.start-gate .gate-ui .gate-btn { pointer-events: auto; min-width: 220px; min-height: 76px; font-size: 28px; letter-spacing: .02em; }
+.start-gate h1 { margin: 0; }
+.gate-title { display: block; font: 800 clamp(56px, 11vw, 132px)/1 var(--font-h); letter-spacing: -.03em; color: #fff; text-shadow: 0 4px 40px rgba(0,0,0,.7), 0 0 60px rgba(94,228,242,.25); }
+.gate-title span { color: var(--accent); }
+.gate-sub { margin: 0 0 8px; font: 600 clamp(20px, 3vw, 30px) var(--font-h); color: #dfe9ff; text-shadow: 0 2px 20px rgba(0,0,0,.8); }
+.start-gate .gate-note { color: #c6d3ee; text-shadow: 0 2px 12px rgba(0,0,0,.9); }
+.start-gate.leaving { pointer-events: none; }
+.start-gate.leaving .gate-ui { opacity: 0; transition: opacity .5s ease; }
+html.hc .gate-title, html.hc .gate-sub, html.hc .start-gate .gate-note { color: #000; text-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .start-gate.leaving .gate-ui { transition: none; } }
+
+/* ---------- Sesli Rehber düğmesi (üst çubuk) */
+.guide-btn { min-height: 44px; gap: 6px; white-space: nowrap; }
+.guide-btn b { font-weight: 800; }
+.guide-btn.on { border-color: var(--accent); background: rgba(94,228,242,.16); }
+html.hc .guide-btn.on { background: #0033cc; color: #fff; }
+@media (max-width: 900px) { .guide-btn > span:last-child { font-size: 13px; } }
+
+.start-gate { place-content: start center; padding-top: max(7vh, 32px); }
+.start-gate .gate-ui { margin-top: 0; }
+.hdr .guide-btn.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }

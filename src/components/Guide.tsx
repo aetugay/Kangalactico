@@ -25,7 +25,7 @@ interface Props {
 
 const CHIP_ICONS = [IconPin, IconPlay, IconWave, IconSpeak, IconGlobe, IconGlobe, IconSpeak, IconSpeak, IconPin, IconPin, IconWave];
 const CHIPS: Record<Lang, string[]> = {
-  tr: ['Ankara\'ya git', 'Çal', 'Deniz sıcaklığını aç', 'Özet', 'Switch to English', 'Turu başlat', 'Daha hızlı konuş', 'Tekrar et', 'Burası benim evim', 'Eve dön', 'Evde hava nasıl'],
+  tr: ['Sivas\'a git', 'Çal', 'Deniz sıcaklığını aç', 'Özet', 'Switch to English', 'Turu başlat', 'Daha hızlı konuş', 'Tekrar et', 'Burası benim evim', 'Eve dön', 'Evde hava nasıl'],
   en: ['Go to Tokyo', 'Play', 'Precipitation on', 'Summary', 'Türkçeye geç', 'Start the tour', 'Speak faster', 'Repeat', 'This is my home', 'Go home', 'Weather at home'],
 };
 
@@ -44,10 +44,10 @@ export function Guide({ lang, micSupported, listening, status, history, onTalk, 
       <form className="guide-row" onSubmit={(e) => { e.preventDefault(); send(q); }}>
         <label htmlFor={`${id}-in`} className="sr">{en ? 'Type a command' : 'Komut yaz'}</label>
         <input id={`${id}-in`} ref={inputRef} className="field guide-in" type="text" autoComplete="off" spellCheck={false} value={q} onChange={(e) => setQ(e.target.value)}
-          placeholder={en ? 'e.g. go to Tokyo, play…' : 'örn. Ankara\'ya git, çal…'} enterKeyHint="send" />
+          placeholder={en ? 'e.g. go to Sivas, play…' : 'örn. Sivas\'a git, çal…'} enterKeyHint="send" />
         <button type="submit" className="btn">{en ? 'Run' : 'Uygula'}</button>
         {micSupported && (
-          <button type="button" className={`btn mic-btn${listening ? ' live' : ''}`} onClick={onTalk} aria-pressed={listening} aria-keyshortcuts="Alt+T" aria-label={en ? 'Speak a command (Alt+T)' : 'Sesli komut ver (Alt+T)'}>
+          <button type="button" className={`btn mic-btn${listening ? ' live' : ''}`} onClick={onTalk} aria-pressed={listening} aria-keyshortcuts="Space" aria-label={en ? 'Speak a command (or hold Space)' : 'Sesli komut ver (ya da Boşluk tuşunu basılı tut)'}>
             <IconMic />
           </button>
         )}

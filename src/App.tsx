@@ -43,6 +43,9 @@ const BASE = import.meta.env.BASE_URL;
 type LayerId = 'co2' | 'temp' | 'sst' | 'aerosol' | 'ndvi' | 'lights' | 'lightning' | C5Id;
 /** 5° ayrı katmanlar (Ceyhun paketi, onaylı): kendi kartları, kendi çözünürlük etiketi; radar 1° SVS/v3 ızgarasına karıştırılmaz. */
 const C5_LAYERS: C5Id[] = ['currents', 'lis', 'gedi'];
+/** 5° katmanlar ŞU AN KAPALI (kareli, ~550 km): arayüzde gösterilmez; sesli komut ve ?layer= ile açılmaz, "şu an kapalı" denir. Veri (public/data/c5) duruyor; açmak için false yap. */
+const C5_DISABLED = true;
+const c5Off = (id: string) => C5_DISABLED && (C5_LAYERS as string[]).includes(id);
 /** Katmanlar panelinde: EIC görsellerinden (birincil) ve NASA ham verisi (ikincil). */
 const EIC_LAYERS: LayerId[] = ['aerosol', 'lightning', 'sst', 'lights', 'ndvi', 'temp'];
 const RAW_LAYERS: LayerId[] = []; // CO₂ (OCO-2) ve MERRA-2 ana deneyimden çıktı → Hakkında: veri doğrulaması
@@ -180,11 +183,12 @@ export default function App() {
   const [sstFrame, setSstFrame] = useState(0);
   const [on, setOn] = useState<Record<LayerId, boolean>>(() => {
     const base: Record<LayerId, boolean> = { co2: false, temp: true, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false, currents: false, lis: false, gedi: false };
-    const ids = URL_LAYERS.filter((x) => x in base) as LayerId[];
+    const ids = URL_LAYERS.filter((x) => x in base && !c5Off(x)) as LayerId[];
     if (!URL_LAYERS.length) return base;
     return { ...base, temp: false, ...Object.fromEntries(ids.map((k) => [k, true])) };
   });
-  const [visual, setVisual] = useState<LayerId>(() => (URL_LAYERS.find((x) => ['co2', 'temp', 'sst', 'aerosol', 'ndvi', 'lights', 'lightning', 'currents', 'lis', 'gedi'].includes(x)) as LayerId) ?? 'temp');
+  const c5OffRef = useRef<(id: LayerId) => void>(() => {}); // 5° "şu an kapalı" duyurusu (aşağıda tanımlanır)
+  const [visual, setVisual] = useState<LayerId>(() => (URL_LAYERS.filter((x) => !c5Off(x)).find((x) => ['co2', 'temp', 'sst', 'aerosol', 'ndvi', 'lights', 'lightning', 'currents', 'lis', 'gedi'].includes(x)) as LayerId) ?? 'temp');
   // 2024 aylık NASA katmanları (MERRA-2 / OCO-2; denetimden geçenler) — ayrı durum, mevcut 4 katmana dokunmaz
   const [m24, setM24] = useState<M24 | null>(null);
   const [m24Loading, setM24Loading] = useState(false);
@@ -380,7 +384,10 @@ export default function App() {
       : (en ? 'Global scale: the same value is the same note everywhere. Use it to compare places.' : 'Küresel ölçek: aynı değer her yerde aynı nota. Yerleri karşılaştırmak için.'));
   };
 
+  const c5OffMsg = (id: LayerId) => { const en = langRef.current === 'en'; announce(en ? `${LAYER_UI[id].label.en} is currently off (5° data, ~550 km cells).` : `${LAYER_UI[id].label.tr} şu an kapalı (5° veri, ~550 km hücre).`); };
+  c5OffRef.current = c5OffMsg;
   const toggleLayer = (id: LayerId) => {
+    if (c5Off(id) && !on[id]) { c5OffMsg(id); return; }
     setWorldTheme(null);
     const v = !on[id];
     if (v) setM24Visual(null);
@@ -413,6 +420,8 @@ export default function App() {
   // ---------- tek dokunuşla başlama + eller serbest dinleme (kör kullanıcı için tuş bilmek gerekmez)
   const [started, setStarted] = useState(false);
   const [gateDone, setGateDone] = useState(false); // giriş ekranı Dünya'ya yaklaşma animasyonu bitti mi
+  // ?layer= ile 5° katman istendiyse: açılmaz, karşılamadan sonra "şu an kapalı" denir
+  useEffect(() => { if (!started) return; const id = URL_LAYERS.find(c5Off) as LayerId | undefined; if (!id) return; const t = setTimeout(() => c5OffRef.current(id), 6000); return () => clearTimeout(t); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [started]);
   const [hfWanted, setHfWantedS] = useState(() => store.get('hf') !== '0'); // eller serbest dinleme tercihi (varsayılan açık)
   const hfWantedRef = useRef(hfWanted); hfWantedRef.current = hfWanted;
   const [hfLive, setHfLive] = useState(false);       // şu an sürekli dinliyor mu
@@ -948,6 +957,7 @@ export default function App() {
       return true;
     }
     const layer: LayerId | null = has('akinti', 'current') ? 'currents' : has('yildirim iklim', 'yildirim yogunl', 'flas yogunl', 'lightning climat', 'lightning density', 'lis otd') ? 'lis' : has('orman yuksekl', 'kanopi', 'agac boyu', 'agac yuksekl', 'forest height', 'canopy', 'gedi') ? 'gedi' : has('yildirim', 'simsek', 'lightning') ? 'lightning' : has('gece isik', 'night light', 'isiklar') ? 'lights' : has('bitki ortusu', 'ndvi', 'vejetasyon', 'vegetation', 'bitki', 'orman', 'forest') ? 'ndvi' : has('okyanus', 'deniz', 'ocean', ' sea ') ? 'sst' : has('sicakl', 'temperature', ' isi ') ? 'temp' : has('aerosol', 'toz', 'duman', 'dust', 'smoke') ? 'aerosol' : null;
+    if (layer && c5Off(layer)) { noAck.current = true; c5OffMsg(layer); return true; }
     if (layer) {
       const want = has('kapat', 'kapa ', 'kaldir', ' off ', 'remove') ? false : has(' ac ', 'ekle', 'goster', ' on ', ' add ', 'dinle', 'listen') ? true : !on[layer];
       if (on[layer] !== want) toggleLayer(layer);
@@ -1281,8 +1291,8 @@ export default function App() {
       <WorldThemes lang={lang} active={worldTheme} onPick={applyWorldTheme} />
       <h3 className="sec-title">{lang === 'en' ? 'Sound worlds — from NASA EIC visualizations' : 'Ses dünyaları — NASA EIC görsellerinden'}</h3>
       <LayerCards lang={lang} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }} info={layerInfo} />
-      <h3 className="sec-title">{lang === 'en' ? 'Separate layers — NASA data, 5° (~550 km)' : 'Ayrı katmanlar — NASA verisi, 5° (~550 km)'}</h3>
-      <LayerCards lang={lang} pills={c5Pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }} info={layerInfo} />
+      {!C5_DISABLED && <><h3 className="sec-title">{lang === 'en' ? 'Separate layers — NASA data, 5° (~550 km)' : 'Ayrı katmanlar — NASA verisi, 5° (~550 km)'}</h3>
+      <LayerCards lang={lang} pills={c5Pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }} info={layerInfo} /></>}
       <button type="button" className="btn scan-btn" onClick={() => setScanOpen(true)}>{lang === 'tr' ? '🌳 Orman yüksekliğini dinle (GEDI küre görseli)' : '🌳 Listen to forest height (GEDI globe visual)'}</button>
       <details className="adv">
         <summary>{lang === 'en' ? 'Advanced' : 'Gelişmiş'}</summary>

@@ -538,3 +538,4 @@ html.hc .tour-cap .tour-prog { color: #0033cc; background: #e8eeff; }
 .tour-btn { width: 100%; margin: 4px 0 12px; }
 .home-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 2px; }
 @media (max-width: 900px) { .tour-cap .tour-text { font-size: 15px; } }
+.pl-change { margin-left: 6px; min-height: 32px; font-size: 13px; vertical-align: middle; }

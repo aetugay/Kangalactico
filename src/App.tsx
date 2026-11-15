@@ -30,6 +30,7 @@ import { ImageScan } from './components/ImageScan.tsx';
 import { INSTRUMENT_LABEL, M24 } from './lib/m24.ts';
 
 import { Cities, countryName, fold, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
+import { Gazetteer, goLine, hitName, soru, type Hit, type PlacesFile } from './lib/gazetteer.ts';
 import { gainFor, noteHz, PARTS, type Mode, type RadarLayer, type Scale, type SoundMode } from './lib/radar.ts';
 import { landTexture, paintEquirect } from './lib/textures.ts';
 import { Globe3D, hasWebGL, type GlobeSource } from './three/Globe3D.tsx';
@@ -94,6 +95,8 @@ export default function App() {
 
   // ---------- veri
   const [cities, setCities] = useState<Cities | null>(null);
+  const [gaz, setGaz] = useState<Gazetteer | null>(null); // yer çözümleyici: ülkeler + bölgeler + şehirler, Türkçe ekler
+  const gazRef = useRef(gaz); gazRef.current = gaz;
   const [co2, setCo2] = useState<Co2Source | null>(null);
   const [temp, setTemp] = useState<TemperatureSource | null>(null);
   const [sst, setSst] = useState<SstSource | null>(null);
@@ -131,7 +134,11 @@ export default function App() {
   const [land, setLand] = useState<LandMask | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
-    loadJson<CitiesFile>(BASE, 'cities.json').then((d) => setCities(new Cities(d))).catch((e) => setErr(String(e)));
+    loadJson<CitiesFile>(BASE, 'cities.json').then((d) => {
+      setCities(new Cities(d));
+      loadJson<PlacesFile>(BASE, 'places.json').then((pf) => setGaz(new Gazetteer(pf, d.cities, d.asciiNames)))
+        .catch(() => setGaz(new Gazetteer({ countries: [], regions: [], cityAliases: {} }, d.cities, d.asciiNames)));
+    }).catch((e) => setErr(String(e)));
     loadCo2(BASE).then(setCo2).catch((e) => setErr(String(e)));
     loadJson<LandFile>(BASE, 'land_mask.json').then((d) => setLand(new LandMask(d))).catch(() => { /* kıyısız da çalışır */ });
   }, []);
@@ -740,23 +747,33 @@ export default function App() {
   // ---------- sesli komutlar: T tuşuna (ya da mikrofon düğmesine) bas, konuş; söyleneni yapar
   const [listening, setListening] = useState(false);
   const [heard, setHeard] = useState<string | null>(null);
-  const findCity = (raw: string) => {
-    const C = live2.current.cities; if (!C) return undefined;
-    const STOP = new Set(['git', 'gidelim', 'gotur', 'goturur', 'musun', 'yer', 'sec', 'sehir', 'sehri', 'sehrine', 'lutfen', 'bana', 'beni', 'oraya', 'karsilastir', 'kiyasla', 'ile', 've', 'icin', 'dinle', 'dinlemek', 'istiyorum', 'ac',
-      'go', 'to', 'take', 'me', 'choose', 'select', 'place', 'city', 'please', 'compare', 'with', 'the', 'listen', 'i', 'want', 'open']);
-    // şehir listesi İngilizce adları kullanır; sık kullanılan Türkçe adlar (eş ad)
-    const ALIAS: Record<string, string> = { roma: 'Rome', londra: 'London', moskova: 'Moscow', atina: 'Athens', viyana: 'Vienna', kahire: 'Cairo', pekin: 'Beijing', tahran: 'Tehran', bagdat: 'Baghdad', bruksel: 'Brussels', lizbon: 'Lisbon', varsova: 'Warsaw', prag: 'Prague', kudus: 'Jerusalem', munih: 'Munich', napoli: 'Naples', venedik: 'Venice', kopenhag: 'Copenhagen', lefkosa: 'Nicosia', tiflis: 'Tbilisi', erivan: 'Yerevan', selanik: 'Thessaloniki', cenevre: 'Geneva', floransa: 'Florence', belgrad: 'Belgrade', budapeste: 'Budapest', sofya: 'Sofia', bukres: 'Bucharest' };
-    const words = raw.replace(/[’'`]\S*/g, ' ').replace(/[.,!?]/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(fold(w))).map((w) => ALIAS[fold(w)] ?? w);
-    const exact = (cand: string) => {
-      for (let cut = 0; cut <= 4 && cand.length - cut >= 3; cut++) { // Türkçe ekler: "ankaraya", "sivasa", "izmire"
-        const c = cand.slice(0, cand.length - cut), row = C.find(c);
-        if (row && (fold(row[0]) === fold(c) || (cut === 0 && c.includes(' ') && fold(row[0]).startsWith(fold(c))))) return row; // "New York" → "New York City"
-      }
-      return undefined;
-    };
-    if (!words.length) return undefined;
-    return exact(words.join(' ')) ?? (words.length > 1 ? exact(words.slice(-2).join(' ')) : undefined) ?? words.map(exact).find(Boolean)
-      ?? (words.join(' ').length >= 4 ? C.find(words.join(' ')) : undefined);
+  /** Yer çözümleyici (src/lib/gazetteer.ts; sınama: npm run test:places). */
+  const findPlace = (raw: string) => gazRef.current?.resolve(raw) ?? null;
+  const hitPlace = (h: Hit): Place => ({ lat: h.lat, lon: h.lon, name: hitName(h, langRef.current), country: h.kind === 'city' && h.cc ? countryName(h.cc) : undefined, source: 'arama' });
+  // sesle başlayan iş sesle biter: yer bulunamazsa en yakın 2 aday sesli sorulur, cevap ("birincisi", "Kanada", "evet") burada beklenir
+  const choiceRef = useRef<{ cands: Hit[]; action: 'go' | 'compare' | 'weather'; until: number } | null>(null);
+  const noAck = useRef(false);       // komut anlaşıldı ama yapılamadı → "Anlaşıldı" denmez
+  const strictPass = useRef(false);  // ilk geçiş: tanıma adaylarının hiçbirinde kesin yer yoksa aday önerisine geçilir
+  const placeAction = (action: 'go' | 'compare' | 'weather', h: Hit) => {
+    const en = langRef.current === 'en', R = radarRef.current, p = hitPlace(h);
+    if (action === 'weather') { openWeather({ ...p, name: en ? h.en : h.tr }); return; }
+    if (action === 'compare') {
+      setPlaceB(p); setCompare(true); setCmpTurn(0);
+      announce(en ? `Comparing with ${p.name}: one sweep here, one sweep there. Say "difference" to hear the numbers.` : `${p.name} ile karşılaştırılıyor: bir tur burası, bir tur orası. Sayıları duymak için "fark" de.`);
+      if (!R.playing) setTimeout(() => radarRef.current.play(), 300); return;
+    }
+    quietPlace.current = true; setPlace(p); setPickOpen(false);
+    announce(goLine(h, en ? 'en' : 'tr'));
+    if (!R.playing) setTimeout(() => radarRef.current.play(), 2500); // duyurudan sonra müzik başlasın
+  };
+  /** Bulunamadı: sesli söyle, adayları sor (yazı penceresi AÇILMAZ). */
+  const notFound = (q: string, cands: Hit[], action: 'go' | 'compare' | 'weather') => {
+    const en = langRef.current === 'en'; noAck.current = true;
+    if (cands.length) {
+      choiceRef.current = { cands, action, until: Date.now() + 30000 };
+      announce(en ? `I could not find "${q}". ${cands.map((c) => c.en).join(' or ')}? Say "first", "second" or the name.`
+        : `"${q}" adlı yeri bulamadım. ${cands.map((c) => soru(c.tr)).join(', ')}? "Birincisi", "ikincisi" ya da adını söyleyin.`);
+    } else announce(en ? `I could not find "${q}". Say a country, city or region, for example: Earth, go to Canada.` : `"${q}" adlı yeri bulamadım. Bir ülke, şehir ya da bölge adı söyleyin, örneğin: Dünya, Kanada'ya git.`);
   };
   const MONTH_WORDS = [['ocak', 'january'], ['subat', 'february'], ['mart', 'march'], ['nisan', 'april'], ['mayis', 'may'], ['haziran', 'june'], ['temmuz', 'july'], ['agustos', 'august'], ['eylul', 'september'], ['ekim', 'october'], ['kasim', 'november'], ['aralik', 'december']];
   const commandHelp = () => (lang === 'en'
@@ -768,6 +785,8 @@ export default function App() {
     const t = ` ${fold(text).replace(/[.,!?’'`]/g, ' ').replace(/\s+/g, ' ').trim()} `;
     const has = (...w: string[]) => w.some((x) => t.includes(x));
     const word = (...w: string[]) => w.some((x) => t.includes(` ${x} `));
+    let prC: ReturnType<typeof findPlace> | undefined;
+    const pr = () => (prC === undefined ? (prC = findPlace(text)) : prC); // yer çözümü (gerekince, bir kez)
     const needPlace = () => { if (place) return true; announce(en ? 'Choose a place first. Say, for example: go to Ankara.' : 'Önce bir yer seç. Örneğin şöyle söyle: Ankara\'ya git.'); return false; };
 
     // dil (Adım 4): "Switch to English", "English", "İngilizceye geç" / "Türkçeye geç", "Turkish", "Türkçe" — iki dilde de çalışır
@@ -780,6 +799,12 @@ export default function App() {
     if (tourOn.current) {
       if (word('dur', 'durdur', 'gec', 'yeter', 'bitir', 'stop', 'skip', 'enough', 'end')) { tourApi.current.end('cancel'); return true; }
       tourApi.current.end('cmd'); // başka bir komut: tur biter, komut uygulanır
+    }
+    const ch = choiceRef.current;
+    if (ch && Date.now() < ch.until && gazRef.current) {
+      const c = gazRef.current.choose(text, ch.cands);
+      if (c === 'no') { choiceRef.current = null; announce(en ? 'Okay.' : 'Peki.'); return true; }
+      if (c) { choiceRef.current = null; placeAction(ch.action, c); return true; }
     }
     if (has('turu baslat', 'tur baslat', 'rehberli tur', 'turu ac', 'turu yap', 'start the tour', 'start tour', 'guided tour', 'take the tour')) { tourApi.current.start(); return true; }
     if (word('yardim', 'help', 'komutlar', 'commands') || has('ne soyleyebilirim', 'what can i say')) { announce(commandHelp()); return true; }
@@ -817,9 +842,11 @@ export default function App() {
       announce(en ? 'Three stories: the planet breathes, journey toward the equator, travelers in the air. Say, for example: tell the breath story.' : 'Üç hikâye var: Gezegenin nefesi, Ekvatora yolculuk, Havadaki yolcular. Örneğin şöyle söyle: nefes hikâyesini anlat.');
       return true;
     }
-    if (has(' hava', 'weather', 'meteorolog', 'forecast')) {
-      const row = findCity(text.replace(/hava( durumu)?|nas[ıi]l|haftal[ıi]k|burada|buras[ıi]|bug[üu]n|yar[ıi]n|weather|forecast|what'?s|here|today|tomorrow|the|in|like|meteorolog/gi, ' '));
-      const t = row ? { ...rowToPlace(row, 'arama'), name: row[0] } : place ? { ...place, name: placeLabel(place).split(',')[0] } : null;
+    if (word('hava', 'havasi', 'havada', 'havalar') || has('hava durumu', 'weather', 'meteorolog', 'forecast')) { // "Havana" hava değildir
+      const r = findPlace(text);
+      if (r?.hit) { placeAction('weather', r.hit); return true; }
+      if (r && r.query && r.cands.length) { if (strictPass.current) return false; notFound(r.query, r.cands, 'weather'); return true; }
+      const t = place ? { ...place, name: placeLabel(place).split(',')[0] } : null;
       if (!t) { announce(en ? 'Which place? Say for example: Earth, what is the weather in Ankara?' : 'Hangi yer? Örneğin: Dünya, Ankara\'da hava nasıl?'); return true; }
       openWeather(t); return true;
     }
@@ -827,9 +854,11 @@ export default function App() {
     if (has('olay', 'event')) { if (needPlace()) openEvents(); return true; }
     if (has('karsilastir', 'kiyasla', 'compare')) {
       if (!needPlace()) return true;
-      const row = findCity(text);
-      if (row) { const p = rowToPlace(row, 'arama'); setPlaceB(p); setCompare(true); setCmpTurn(0); announce(en ? `Comparing with ${placeLabel(p)}: one sweep here, one sweep there. Say "difference" to hear the numbers.` : `${placeLabel(p)} ile karşılaştırılıyor: bir tur burası, bir tur orası. Sayıları duymak için "fark" de.`); if (!R.playing) setTimeout(() => radarRef.current.play(), 300); }
-      else { setPickFor('B'); setPickOpen(true); }
+      const r = findPlace(text);
+      if (r?.hit) { placeAction('compare', r.hit); return true; }
+      if (strictPass.current) return false;
+      if (r?.query) notFound(r.query, r.cands, 'compare');
+      else { noAck.current = true; announce(en ? 'Compare with which place? Say for example: Earth, compare with Tokyo.' : 'Hangi yerle? Örneğin: Dünya, Tokyo ile karşılaştır.'); }
       return true;
     }
     if (has('sadece doga', 'muzigi kapat', 'muzik kapat', 'only nature', 'music off')) { setSoundMode('nature'); return true; }
@@ -844,6 +873,9 @@ export default function App() {
     if (has(' ozet', 'summary')) { if (needPlace()) R.summary(); return true; }
     if (has('lejant', 'legend', 'enstrumanlari tanit')) { if (needPlace()) void R.runLegend(); return true; }
     if (has('anlatici', 'narrator')) { setNarrator(!has('kapat', ' off ', 'kapa ')); return true; }
+
+    // ülke / bölge adı katman ve yön sözcüklerinden önce: "Pasifik Okyanusu'na git" okyanus katmanı, "Kuzey Kutbu'na git" kuzey yönü DEĞİL
+    { const P0 = pr(); if (P0?.hit && P0.hit.kind !== 'city' && (P0.intent || P0.whole)) { placeAction('go', P0.hit); return true; } }
 
     // 2024 aylık NASA katmanları (önce: daha özgül ifadeler). "deniz sıcaklığı" → 2024 MERRA-2; "okyanus" → ECCO2 katmanı
     const m24id = false && has('deniz yuzeyi sicakl', 'deniz sicakl', 'sea surface temp', 'sea temperature', 'sea surface') ? 'sst_24'
@@ -886,20 +918,19 @@ export default function App() {
     if (word('yavas', 'yavasla', 'yavaslat', 'slower', 'slow')) { R.setRevSec(12); announce(en ? 'Slower.' : 'Yavaşladı.'); return true; }
 
     const dir = word('kuzey', 'kuzeye', 'north') ? 0 : word('dogu', 'doguya', 'east') ? 90 : word('guney', 'guneye', 'south') ? 180 : word('bati', 'batiya', 'west') ? 270 : -1;
-    if (dir >= 0) { if (needPlace()) pickPoint(destination(place!, dir, rangeKm / 4), 'harita'); return true; }
+    if (dir >= 0 && !pr()?.hit) { if (needPlace()) pickPoint(destination(place!, dir, rangeKm / 4), 'harita'); return true; }
 
     if (word('dur', 'durdur', 'stop', 'pause', 'duraklat', 'yeter')) { R.stop(); stopStory(); return true; }
-    if (word('cal', 'baslat', 'basla', 'oynat', 'play', 'start', 'devam', 'dinle', 'muzik')) { if (needPlace() && !R.playing) R.play(); return true; }
+    if (word('cal', 'baslat', 'basla', 'oynat', 'play', 'start', 'devam', 'dinle', 'muzik')) { const P1 = pr(); if (P1?.hit) { placeAction('go', P1.hit); return true; } if (needPlace() && !R.playing) R.play(); return true; }
 
     const goWords = has(' git ', 'gidelim', 'gotur', 'yer sec', ' go to ', 'take me', ' sehir', ' ac ', ' sec ', ' open ');
-    const row = findCity(text);
-    if (row && (goWords || fold(row[0]) === fold(text.replace(/[’'`]\S*/g, '').trim()))) {
-      setPlace(rowToPlace(row, 'arama')); setPickOpen(false);
-      if (!R.playing) setTimeout(() => radarRef.current.play(), 2500); // yer duyurusundan sonra müzik başlasın
-      return true;
-    }
-    if (goWords) { setPickFor('A'); setPickOpen(true); return true; }
-    return false;
+    const r = findPlace(text);
+    if (r?.hit && (goWords || r.intent || r.whole)) { placeAction('go', r.hit); return true; }
+    if (!(goWords || r?.intent)) return false;
+    if (strictPass.current) return false; // önce diğer tanıma adaylarında kesin yer aranır
+    if (r?.query) notFound(r.query, r.cands, 'go');
+    else { noAck.current = true; announce(en ? 'Where to? Say for example: Earth, go to Canada.' : 'Nereye? Örneğin: Dünya, Kanada\'ya git.'); }
+    return true;
   };
   const cmdRef = useRef(runCommand); cmdRef.current = runCommand;
   const [cmdHistory, setCmdHistory] = useState<CmdEntry[]>([]);
@@ -910,14 +941,22 @@ export default function App() {
   const EXAMPLES = { tr: 'Ankara\'ya git; çal; sıcaklığı aç', en: 'go to Tokyo; play; temperature on' };
   /** Sesli ya da yazılı komut: aynı çözümleyici. Anlaşılırsa onay sesi + "Anlaşıldı: …" + komutun kendi duyurusu; anlaşılmazsa 3 örnek. */
   const execCommand = (alts: string[], source: 'voice' | 'text') => {
-    capture.current = []; silentReply.current = false;
+    capture.current = []; silentReply.current = false; noAck.current = false;
     let hit: string | null = null;
-    try { for (const a of alts) if (cmdRef.current(a)) { hit = a; break; } } finally { /* duyurular aşağıda */ }
+    try {
+      strictPass.current = true;   // 1. geçiş: tüm tanıma adaylarında kesin eşleşme
+      for (const a of alts) if (cmdRef.current(a)) { hit = a; break; }
+      strictPass.current = false;  // 2. geçiş: ilk aday için bulunamadı / aday önerisi
+      if (!hit && cmdRef.current(alts[0])) hit = alts[0];
+    } finally { strictPass.current = false; }
     const msgs = capture.current ?? []; capture.current = null;
     const en = langRef.current === 'en'; // dil komutu langRef'i hemen değiştirir → onay yeni dilde
     const text = hit ?? alts[0];
     let reply: string;
-    if (hit) {
+    if (hit && noAck.current) { // anlaşıldı ama yapılamadı (yer bulunamadı / aday soruldu): "Anlaşıldı" denmez
+      engine.unlock(); engine.confirm(false);
+      reply = msgs.join(' ');
+    } else if (hit) {
       engine.unlock(); engine.confirm(true);
       reply = [en ? `Understood: ${text}.` : `Anlaşıldı: ${text}.`, ...msgs].join(' ');
     } else {
@@ -937,7 +976,7 @@ export default function App() {
     const en = langRef.current === 'en';
     const msg = `${why ? why + ' ' : ''}${en ? 'Voice commands are not available right now. You can type commands.' : 'Sesli komut şu an kullanılamıyor. Yazarak komut verebilirsiniz.'}`;
     announce(msg); setGuideStatus({ kind: 'error', text: msg });
-    setGuideOpenS(true); setTimeout(() => guideInput.current?.focus(), 80);
+    if (!listener.supported) { setGuideOpenS(true); setTimeout(() => guideInput.current?.focus(), 80); }
   };
   const talk = (hold = false) => {
     const en = langRef.current === 'en';
@@ -972,6 +1011,8 @@ export default function App() {
           // Yalnız "Dünya" denirse 8 sn boyunca bir sonraki cümle uyandırma kelimesi olmadan komut sayılır.
           const WAKE = /^\s*(dünya|dunya|earth\s?ear|earth|örtır|ört ır)\b[\s,.!:;-]*/i;
           // Tur sorusu açıkken "evet / hayır", tur sürerken "dur / geç" uyandırma kelimesi olmadan da çalışır (yalnız bu kısa cevaplar).
+          const chs = choiceRef.current;
+          if (chs && Date.now() < chs.until && gazRef.current && alts.some((x) => gazRef.current!.choose(x, chs.cands))) { execRef.current(alts, 'voice'); return; }
           if (tourAskRef.current || tourOn.current) {
             const short = alts.map((a) => ` ${fold(a).replace(/[.,!?]/g, ' ').replace(/\s+/g, ' ').trim()} `);
             const any = (...w: string[]) => short.some((x) => w.some((y) => x.includes(` ${y} `)));
@@ -1271,7 +1312,7 @@ export default function App() {
         value={headline ? `${headline.center}` : null} summary={playerSummary} nowLine={radar.nowLines[0] ?? ''} liveLine={radar.liveLine}
         playing={radar.playing} canPlay={!!place} onToggle={radar.toggle} onPrev={timeCtl && timeCtl.i > 0 ? () => stepTime(-1) : null} onNext={timeCtl && timeCtl.i < timeCtl.n - 1 ? () => stepTime(1) : null}
         timeLabel={timeCtl ? timeCtl.label(timeCtl.i) : null} timePos={timeCtl ? { i: timeCtl.i, n: timeCtl.n, set: (i) => timeCtl.set(i) } : null}
-        onLegend={radar.runLegend} onSummary={radar.summary} talking={radar.talking}
+        onLegend={radar.runLegend} onSummary={radar.summary} talking={radar.talking} onChangePlace={() => { setPickFor('A'); setPickOpen(true); }}
         soundMode={soundMode} setSoundMode={setSoundMode} volume={mix.master} setVolume={(v) => setMix({ ...mix, master: v })} onPanel={() => setPanelOpen(!panelOpen)} />
 
       <SidePanel lang={lang} tab={panelTab} setTab={setPanelTab} open={panelOpen} setOpen={setPanelOpen}

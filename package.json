@@ -15,6 +15,8 @@
     "forecast": "node scripts/forecast.mjs",
     "sounds": "node scripts/sounds.mjs && node scripts/sounds-v2.mjs",
     "test:music": "node scripts/test-music.mjs",
+    "test:places": "node scripts/test-places.mjs",
+    "places": "node scripts/places.mjs",
     "sounds:v2": "node scripts/sounds-v2.mjs"
   },
   "dependencies": {

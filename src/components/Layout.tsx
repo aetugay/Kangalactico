@@ -164,12 +164,13 @@ export function PlayerBar(p: {
   onToggle: () => void; onPrev: (() => void) | null; onNext: (() => void) | null; timeLabel: string | null; timePos: { i: number; n: number; set: (i: number) => void } | null;
   onLegend: () => void; onSummary: () => void; talking: 'summary' | 'legend' | null;
   soundMode: SoundMode; setSoundMode: (m: SoundMode) => void; volume: number; setVolume: (v: number) => void; onPanel?: () => void;
+  onChangePlace: () => void;
 }) {
   const { lang } = p;
   return (
     <footer className="player">
       <div className="pl-left">
-        <p className="pl-place">{p.place ?? T(lang, 'Yer seçilmedi', 'No place chosen')}{p.value && <span className="pl-val"> · {p.value}</span>}</p>
+        <p className="pl-place">{p.place ?? T(lang, 'Yer seçilmedi', 'No place chosen')}{p.value && <span className="pl-val"> · {p.value}</span>} <button type="button" className="mini pl-change" onClick={p.onChangePlace} aria-keyshortcuts="C">{T(lang, 'Yeri değiştir', 'Change place')}</button></p>
         <p className="pl-sum">{p.summary}</p>
         {p.playing && p.nowLine && <p className="pl-now" aria-hidden="true">{p.nowLine}</p>}
         <p className="sr" aria-live="polite" aria-atomic="true">{p.playing ? p.liveLine : ''}</p>

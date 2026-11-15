@@ -81,7 +81,7 @@ const isTouchDevice = typeof matchMedia !== 'undefined' && matchMedia('(pointer:
 
 export default function App() {
   // ---------- tercihler
-  const [lang, setLangS] = useState<Lang>(() => (params.get('lang') === 'en' || store.get('lang') === 'en' ? 'en' : 'tr'));
+  const [lang, setLangS] = useState<Lang>(() => { const p = params.get('lang'); if (p === 'en' || p === 'tr') { store.set('lang', p); return p; } return store.get('lang') === 'en' ? 'en' : 'tr'; }); // ?lang= (landing dili) önceliklidir
   const [hc, setHcS] = useState(() => params.get('hc') === '1' || store.get('hc') === '1' || (typeof matchMedia !== 'undefined' && matchMedia('(prefers-contrast: more)').matches));
   const can3d = useMemo(() => hasWebGL(), []);
   const forced = params.get('view');
@@ -121,7 +121,7 @@ export default function App() {
   // ---------- yeni düzen: sağ panel (sekmeler), ayarlar, yardım, kısayol anahtarı
   const [panelOpen, setPanelOpenS] = useState(() => store.get('panel') !== '0' && !(typeof matchMedia !== 'undefined' && matchMedia('(max-width: 900px)').matches));
   const setPanelOpen = (v: boolean) => { setPanelOpenS(v); store.set('panel', v ? '1' : '0'); };
-  const [panelTab, setPanelTab] = useState<TabId>('listen');
+  const [panelTab, setPanelTab] = useState<TabId>(() => { const p = params.get('panel'); return p === 'weather' || p === 'explore' || p === 'guide' ? p : 'listen'; }); // ?panel= derin bağlantı
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [shortcutsOn, setShortcutsOnS] = useState(() => store.get('shortcuts') !== '0');
@@ -287,7 +287,8 @@ export default function App() {
   // ---------- yer seçimi
   const pickPoint = useCallback((p: LatLon, source: Place['source']) => {
     const near = cities?.nearest(p, 75);
-    setPlace(near ? { lat: p.lat, lon: p.lon, name: `${near.row[0]} yakını`, country: countryName(near.row[1]), source } : { ...p, name: formatLatLon(p), source });
+    const en = langRef.current === 'en';
+    setPlace(near ? { lat: p.lat, lon: p.lon, name: en ? `near ${near.row[0]}` : `${near.row[0]} yakını`, country: countryName(near.row[1], langRef.current), source } : { ...p, name: formatLatLon(p, langRef.current), source });
     setPickOpen(false);
   }, [cities]);
   useEffect(() => { // paylaşılabilir bağlantı (kullanıcı seçimi; kodda şehir yok)
@@ -1217,11 +1218,14 @@ export default function App() {
 
   // ---------- yeni düzen: alt çalar çubuğu verileri
   const moodNow = radar.P && radar.computed.length ? moodOf({ P: radar.P, mode, layers: radar.computed }) : null;
-  const centerDesc = (() => {
-    if (!active) return '';
-    for (const l of layers) { const w = WORLD_OF[l.id]; if (!w) continue; const v = l.sample(active); if (!Number.isNaN(v)) return describeWorld(w, v, gainFor(v, l, 'global'), lang); }
-    return '';
+  // merkezde EN BASKIN ses dünyası (aerosolde toz / duman / tuz / sülfat arasında en güçlüsü; yalnız ilk alt katman değil)
+  const centerBest = (() => {
+    if (!active) return null;
+    let best: { l: RadarLayer; v: number; t: number; w: World } | null = null;
+    for (const l of layers) { const w = WORLD_OF[l.id]; if (!w) continue; const v = l.sample(active); if (Number.isNaN(v)) continue; const t = gainFor(v, l, 'global'); if (!best || t > best.t) best = { l, v, t, w }; }
+    return best;
   })();
+  const centerDesc = centerBest ? describeWorld(centerBest.w, centerBest.v, centerBest.t, lang) : '';
   const placeShort = active ? placeLabel(active).split(',')[0] : '';
   const moodWord = moodNow && moodNow.energy > 0 ? (moodNow.minor ? (lang === 'en' ? 'tense' : 'gergin') : (lang === 'en' ? 'calm' : 'sakin')) : '';
   const playerSummary = active ? [placeShort, centerDesc, moodWord].filter(Boolean).join(' · ') : (lang === 'en' ? 'Search for a place above, tap the globe or say "Earth, go to Sivas".' : 'Yukarıdan bir yer ara, Dünya\'ya dokun ya da "Dünya, Sivas\'a git" de.');
@@ -1339,7 +1343,7 @@ export default function App() {
       </main>
 
       <PlayerBar lang={lang} place={active ? (compare && placeB ? (active === placeB ? 'B · ' : 'A · ') : '') + placeLabel(active) : null}
-        value={headline ? `${headline.center}` : null} summary={playerSummary} nowLine={radar.nowLines[0] ?? ''} liveLine={radar.liveLine}
+        value={centerBest ? fmtShort(centerBest.l, centerBest.v) : headline ? `${headline.center}` : null} summary={playerSummary} nowLine={radar.nowLines[0] ?? ''} liveLine={radar.liveLine}
         playing={radar.playing} canPlay={!!place} onToggle={radar.toggle} onPrev={timeCtl && timeCtl.i > 0 ? () => stepTime(-1) : null} onNext={timeCtl && timeCtl.i < timeCtl.n - 1 ? () => stepTime(1) : null}
         timeLabel={timeCtl ? timeCtl.label(timeCtl.i) : null} timePos={timeCtl ? { i: timeCtl.i, n: timeCtl.n, set: (i) => timeCtl.set(i) } : null}
         onLegend={radar.runLegend} onSummary={radar.summary} talking={radar.talking} onChangePlace={() => { setPickFor('A'); setPickOpen(true); }}

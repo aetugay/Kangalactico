@@ -30,9 +30,9 @@ const DIR8_SHORT = ['K', 'KD', 'D', 'GD', 'G', 'GB', 'B', 'KB'];
 export const compass8 = (deg: number, lang: 'tr' | 'en' = 'tr') => (lang === 'en' ? DIR8_EN : DIR8)[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 export const compass8Short = (deg: number) => DIR8_SHORT[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 
-export function formatLatLon(p: LatLon): string {
+export function formatLatLon(p: LatLon, lang: 'tr' | 'en' = (typeof localStorage !== 'undefined' && localStorage.getItem('lang') === 'en' ? 'en' : 'tr')): string {
   const f = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(2)}°${v >= 0 ? pos : neg}`;
-  return `${f(p.lat, 'K', 'G')} ${f(p.lon, 'D', 'B')}`;
+  return lang === 'en' ? `${f(p.lat, 'N', 'S')} ${f(p.lon, 'E', 'W')}` : `${f(p.lat, 'K', 'G')} ${f(p.lon, 'D', 'B')}`;
 }
 
 export const formatKm = (km: number) => (km >= 100 ? `${Math.round(km / 10) * 10} km` : `${Math.round(km)} km`);

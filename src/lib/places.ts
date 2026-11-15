@@ -14,8 +14,10 @@ export function fold(s: string): string {
     .normalize('NFD').replace(/\p{Diacritic}/gu, '');
 }
 
-const regionNames = typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames(['tr'], { type: 'region' }) : null;
-export const countryName = (cc: string) => { try { return regionNames?.of(cc) ?? cc; } catch { return cc; } };
+const regionNames: Record<string, Intl.DisplayNames | null> = {};
+const dn = (l: 'tr' | 'en') => (regionNames[l] ??= typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames([l], { type: 'region' }) : null);
+/** Ülke adı (dil verilmezse arayüz dili: localStorage 'lang'). */
+export const countryName = (cc: string, lang: 'tr' | 'en' = (typeof localStorage !== 'undefined' && localStorage.getItem('lang') === 'en' ? 'en' : 'tr')) => { try { return dn(lang)?.of(cc) ?? cc; } catch { return cc; } };
 
 export class Cities {
   private keys: string[];

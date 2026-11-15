@@ -831,6 +831,15 @@ export default function App() {
       if (c) { choiceRef.current = null; placeAction(ch.action, c); return true; }
     }
     if (has('turu baslat', 'tur baslat', 'rehberli tur', 'turu ac', 'turu yap', 'start the tour', 'start tour', 'guided tour', 'take the tour')) { tourApi.current.start(); return true; }
+    // "ne duyuyorum": merkezde duyulan ses + değeri (alt çubuktaki özetle aynı hesap: en baskın ses dünyası)
+    if (has('ne duyuyorum', 'neyi duyuyorum', 'ne caliyor', 'ne calıyor', 'what am i hearing', 'what is playing', 'whats playing', 'what do i hear') || word('acikla', 'explain')) {
+      if (!needPlace()) return true;
+      const here = placeLabel(active ?? place!).split(',')[0];
+      if (centerBest) { announce(en ? `${here}. ${centerBest.l.label}: ${fmtShort(centerBest.l, centerBest.v)}; you are hearing ${centerDesc}.` : `${here}. ${centerBest.l.label}: ${fmtShort(centerBest.l, centerBest.v)}, ${centerDesc} duyuyorsun.`); return true; }
+      const l0 = layers[0], v0 = l0 && active ? l0.sample(active) : NaN;
+      if (l0 && !Number.isNaN(v0)) { announce(en ? `${here}. ${l0.label}: ${fmtShort(l0, v0)}, played as ${l0.instrument} notes.` : `${here}. ${l0.label}: ${fmtShort(l0, v0)}, ${l0.instrument} notalarıyla çalıyor.`); return true; }
+      announce(en ? `${here}: there is no data under the center for the open layers.` : `${here}: açık katmanlarda merkezde veri yok.`); return true;
+    }
     if (word('yardim', 'help', 'komutlar', 'commands') || has('ne soyleyebilirim', 'what can i say')) { announce(commandHelp()); return true; }
     // konuşma: hız, tekrar, sus (yalnız konuşma; doğa ve müzik sürer)
     const rateTo = (d: number) => { const v = Math.max(0.8, Math.min(2, +(mixRef.current.rate + d).toFixed(1))); setMix({ ...mixRef.current, rate: v }); speech.setRate(v); announce(en ? `Speech rate ${v}.` : `Konuşma hızı ${String(v).replace('.', ',')}.`); };

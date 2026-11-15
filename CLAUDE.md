@@ -32,7 +32,7 @@ Hedef ödüller: Local Impact, Best Use of Science, Most Inspirational, Art & Te
 - "/" = landing (src/landing/Landing.tsx + content.ts EN/TR + landing.css; ses/mikrofon BAŞLATMAZ); "/app" = uygulama (main.tsx yol ayrımı, App tembel yüklenir). "/" uygulama parametresiyle açılırsa /app'e yönlenir. vite base '/'; vercel.json SPA rewrite.
 - URL: lat, lon (her zaman yazılır; q okunur), layer (virgüllü: lis, gedi, currents, aerosol… ya da seaice_24 gibi aylık), month (1–12), panel (weather|explore|guide), lang (önceliklidir), view, hc.
 - Ortak belirteçler src/styles/tokens.css; güneş sistemi sahnesi src/three/solarSystem.ts (StartGate + landing hero, waves seçeneği).
-- Landing iddiaları YALNIZ data/feature_list.md'den; rehber örnek komutları gerçek çözümleyiciden geçirildi ("ne duyuyorum" desteklenmiyor → listelenmedi). Ekran görüntüleri public/landing/*.webp (gerçek uygulama).
+- Landing iddiaları YALNIZ data/feature_list.md'den; rehber örnek komutları gerçek çözümleyiciden geçirildi ("ne duyuyorum / ne çalıyor / açıkla / what am I hearing" = merkezdeki ses + değer, eklendi). Ekran görüntüleri public/landing/*.webp (gerçek uygulama).
 
 ## Ekran düzeni (src/components/Layout.tsx)
 - Üst çubuk (header): Konuş (BASILI TUT = konuş; dokunmatikte de), logo, "Sesli Rehber: Açık/Kapalı" düğmesi (aria-pressed; G), satır içi yer arama (PlacePicker compact), Hava durumu, ? Yardım (kısayol listesi burada + düğme ipuçlarında), ⚙ Ayarlar (dil, yüksek kontrast, 3B/2B, sesli rehber, eller serbest, tek tuş kısayollarını kapat, müzik seviyesi, Ses sahnem), Hakkında.

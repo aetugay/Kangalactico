@@ -44,6 +44,8 @@ const app = fs.readFileSync('src/App.tsx', 'utf8');
 const body = app.slice(app.indexOf('const runCommand = '), app.indexOf('const cmdRef = useRef(runCommand)'));
 const opens = (body.match(/setPickOpen\(true\)/g) ?? []).length + (body.match(/toTextBox\(/g) ?? []).length;
 if (opens) fail++;
+// "ne duyuyorum" komutu çözümleyicide (runCommand) tanımlı olmalı
+for (const k of ['ne duyuyorum', 'ne caliyor', 'what am i hearing', 'acikla']) if (!body.includes(`'${k}'`)) { fail++; console.log('✗ komut eksik:', k); }
 console.log('| | İfade | Bulunan yer | Koordinat | Söylenen |\n|---|---|---|---|---|\n' + rows.join('\n'));
 console.log(`\nSesli komut çözümleyicisinde yazı penceresi açan çağrı: ${opens} ${opens ? '✗' : '✓'}`);
 console.log(fail ? `\n${fail} HATA` : `\nTümü geçti (${CASES.length + 2} ifade)`);

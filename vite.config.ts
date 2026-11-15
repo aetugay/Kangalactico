@@ -12,7 +12,7 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss(), {
     // public/sounds/raw/ (orijinal ses kayıtları, ~650 MB, git'e girmez) derlemeye kopyalanmasın
-    name: 'ham-sesleri-cikar', apply: 'build', closeBundle() { fs.rmSync(path.resolve(__dirname, 'dist/sounds/raw'), { recursive: true, force: true }); },
+    name: 'ham-sesleri-cikar', apply: 'build', closeBundle() { fs.rmSync(path.resolve(__dirname, 'dist/sounds/raw'), { recursive: true, force: true }); fs.rmSync(path.resolve(__dirname, 'dist/soundsv2'), { recursive: true, force: true }); /* soundsv2: kullanılmayan müzik kayıtları */ },
   }],
   server: {
     // Uygulama dışı klasörler izlenmez: raw/ (yüzlerce MB NASA medyası, yazılırken kilitli → EBUSY çökmesi),

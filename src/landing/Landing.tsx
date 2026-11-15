@@ -40,7 +40,7 @@ export default function Landing() {
   useEffect(() => { document.documentElement.lang = lang; document.title = lang === 'tr' ? 'EarthEar — Değişen gezegeni dinle' : 'EarthEar — Listen to the Changing Planet'; }, [lang]);
   useReveal();
   /** Gerçek GPU ile çekilmiş görüntü: 1× (1440 px) + 2× (2880 px), tembel yükleme. */
-  const HAS2X = ['africa-europe', 'canopy', 'globe-lightning', 'night', 'currents', 'radar-aerosol', 'weather'];
+  const HAS2X = ['africa-europe', 'canopy', 'globe-lightning', 'night', 'currents', 'radar-aerosol', 'weather', 'arctic'];
   const pic = (name: string, alt: string) => <img src={`/landing/${name}.webp`} srcSet={HAS2X.includes(name) ? `/landing/${name}.webp 1x, /landing/${name}@2x.webp 2x` : undefined} alt={alt} width={name === 'africa-europe' ? 1100 : 1440} height={name === 'africa-europe' ? 740 : 900} loading="lazy" decoding="async" />;
 
   return (

@@ -133,9 +133,9 @@ export const C = {
     title: t('This is the real app', 'Bu gerçek uygulama'),
     shots: [
       { img: 'globe-lightning', cap: t('Lightning climatology over the Congo Basin (5° cells)', 'Kongo Havzası üzerinde yıldırım iklimi (5° hücreler)') },
+      { img: 'arctic', cap: t('Arctic sea-ice fraction, March 2024 (MERRA-2): ice in purple, open water in yellow', 'Arktik deniz buzu oranı, Mart 2024 (MERRA-2): buz mor, açık deniz sarı') },
       { img: 'night', cap: t('Night lights over Europe (NASA SVS 5313, 2023)', 'Avrupa üzerinde gece ışıkları (NASA SVS 5313, 2023)') },
       { img: 'currents', cap: t('Ocean current speed off North America (OSCAR, 5°)', 'Kuzey Amerika açıklarında okyanus akıntı hızı (OSCAR, 5°)') },
-      { img: 'weather', cap: t('Weather tab with the GEOS-FP forecast for Sivas', 'Sivas için GEOS-FP tahminiyle Hava sekmesi') },
     ],
     btn: t('Explore the Interactive Earth', 'Etkileşimli Dünya’yı keşfet'),
   },

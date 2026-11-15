@@ -34,6 +34,7 @@ Hedef ödüller: Local Impact, Best Use of Science, Most Inspirational, Art & Te
 - YER ADI (src/lib/revgeo.ts, npm run regions → public/data/regions.json: Natural Earth 110m ülkeler + 50m deniz bölgeleri, TR/EN; sınama npm run test:revgeo): ad = derin bağlantı adı (name / name_tr / name_en) > ülke ya da deniz + 300 km içindeki şehir (25 km içinde şehir varsa o; yoksa ≥100 bin nüfuslu en büyük) > koordinat. Place.names {tr,en}; placeLabel arayüz diline göre. Arama kutusu, sesli rehber, "ne duyuyorum" bu adı kullanır.
 - URL: lat, lon (her zaman yazılır; q okunur), name/name_tr/name_en, layer (virgüllü: lis, gedi, currents, aerosol… ya da seaice_24 gibi aylık), month (1–12), panel (weather|explore|guide), lang (önceliklidir), view, hc.
 - Ortak belirteçler src/styles/tokens.css; güneş sistemi sahnesi src/three/solarSystem.ts (StartGate + landing hero, waves seçeneği).
+- GÖRSEL ÇEKİMİ (landing): Chrome --headless=new --use-angle=d3d11 --enable-gpu, DPR 2, JPEG yakalama (PNG büyük GPU yüzeyinde takılabiliyor). Görünür pencere arka plandayken tarayıcı rAF'yi durdurur → küre siyah görünür ve ekran görüntüsü takılır; bu UYGULAMA HATASI DEĞİL (Arktik deniz buzu 2×'te GPU'da doğru çiziliyor).
 - Landing iddiaları YALNIZ data/feature_list.md'den; rehber örnek komutları gerçek çözümleyiciden geçirildi ("ne duyuyorum / ne çalıyor / açıkla / what am I hearing" = merkezdeki ses + değer, eklendi). Ekran görüntüleri public/landing/*.webp (gerçek uygulama).
 
 ## Ekran düzeni (src/components/Layout.tsx)

@@ -19,7 +19,7 @@ const T = {
   story: { tr: 'Müzikal mod', en: 'Musical mode' },
   guide: { tr: 'Sesli rehber', en: 'Voice guide' },
   talk: { tr: 'Sesli komut (T)', en: 'Voice command (T)' },
-  talkLong: { tr: 'Konuşarak kullan (T)', en: 'Use by voice (T)' },
+  talkLong: { tr: 'Konuşarak kullan (Boşluk basılı tut)', en: 'Use by voice (hold Space)' },
   listening: { tr: 'Dinliyorum… konuş', en: 'Listening… speak' },
   stopLegend: { tr: 'Lejantı durdur', en: 'Stop legend' },
   stopSummary: { tr: 'Özeti durdur', en: 'Stop summary' },

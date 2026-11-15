@@ -4,7 +4,7 @@
 import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const APP_PARAMS = ['lat', 'lon', 'q', 'layer', 'month', 'view', 'hc', 'panel'];
+const APP_PARAMS = ['lat', 'lon', 'q', 'layer', 'month', 'view', 'hc', 'panel', 'range'];
 const path = location.pathname.replace(/\/+$/, '') || '/';
 const isApp = path === '/app' || path.startsWith('/app/');
 if (!isApp && path === '/' && APP_PARAMS.some((k) => new URLSearchParams(location.search).has(k))) {

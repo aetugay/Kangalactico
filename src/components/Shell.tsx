@@ -88,7 +88,7 @@ export function Intro({ lang, onPick, onTalk }: { lang: Lang; onPick: () => void
       <p className="tagline">{tr(lang, 'tagline')}</p>
       <p className="intro-sub">{tr(lang, 'intro')}</p>
       <button type="button" className="cta" onClick={onPick} aria-keyshortcuts="C"><IconPin /> {tr(lang, 'pick')}</button>
-      {onTalk && <button type="button" className="btn talk-cta" onClick={onTalk} aria-keyshortcuts="T"><IconMic /> {tr(lang, 'talkLong')}</button>}
+      {onTalk && <button type="button" className="btn talk-cta" onClick={onTalk} aria-keyshortcuts="Space"><IconMic /> {tr(lang, 'talkLong')}</button>}
       <p className="intro-hint">{tr(lang, 'orTap')}</p>
     </section>
   );

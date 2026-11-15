@@ -167,7 +167,7 @@ export default function App() {
   const homeRef = useRef(home); homeRef.current = home;
   const saveHome = (p: Place | null) => { setHomeS(p); if (p) store.set('home', JSON.stringify({ lat: p.lat, lon: p.lon, name: p.name, country: p.country, source: p.source, names: p.names })); else { try { localStorage.removeItem('home'); } catch { /* yok say */ } } };
   const quietPlace = useRef(false); // bir sonraki yer değişikliği duyurulmasın (ev karşılaması, tur dönüşü)
-  const [rangeKm, setRange] = useState(2000);
+  const [rangeKm, setRange] = useState(() => { const r = Number(params.get('range')); return [500, 2000, 5000].includes(r) ? r : 2000; }); // ?range= derin bağlantı
   const [mode, setMode] = useState<Mode>('bilim'); // Adım 1: bilim modu varsayılan — yalnız veri sesleri; tam ton dizisi
   const [scale, setScaleS] = useState<Scale>('global');
   // Ses modu: doğa (bilim) · doğa + müzik (varsayılan) · sadece müzik
@@ -277,7 +277,8 @@ export default function App() {
 
   // SST videosu (küre dokusu) — yalnızca küre üstünde gösterilirken oynar; ızgara karesi video zamanını izler
   const video = useMemo(() => { const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'none'; v.src = `${BASE}media/sst_3912_1024.mp4`; return v; }, []);
-  const showVideo = view3d && visual === 'sst' && on.sst;
+  // Küre SST'si artık pürüzsüz 1° veri dokusu (aynı SVS 3912 kaynağı); 1024 px video küre üstünde gürültülü/pikselli görünüyordu
+  const showVideo = false;
   useEffect(() => { if (showVideo) { video.preload = 'auto'; video.play().catch(() => {}); } else video.pause(); }, [showVideo, video]);
   useEffect(() => {
     if (!on.sst || !sst) return;
@@ -1192,7 +1193,7 @@ export default function App() {
     const op = showCells ? 0.92 : 0.65;
     const tk = (k: string) => `${k}-${vmode}-${!!keep}`;
     if (m24Idx >= 0) return { key: tk(`m24-${m24Idx}-${month}-${m24Rev}`), el: cachedTex(tk(`m24-${m24Idx}-${month}-${m24Rev}`)), opacity: op };
-    if (visual === 'sst' && on.sst) return { key: 'sst-video', el: video };
+    if (visual === 'sst' && sst) return { key: tk(`sst-${sstFrame}`), el: cachedTex(tk(`sst-${sstFrame}`)), opacity: op };
     if (visual === 'aerosol' && on.aerosol) return aerImg ? { key: 'aer-img', el: aerImg } : null;
     if (visual === 'ndvi' && ndvi) return { key: tk(`ndvi-${ndviFrame}`), el: cachedTex(tk(`ndvi-${ndviFrame}`)), opacity: op };
     if (visual === 'lights' && lights) return { key: tk(`lights-${lightsYear}`), el: cachedTex(tk(`lights-${lightsYear}`)), opacity: op };

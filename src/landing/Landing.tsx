@@ -39,9 +39,8 @@ export default function Landing() {
   const setLang = (l: LLang) => { setLangS(l); try { localStorage.setItem('lang', l); } catch { /* yok say */ } };
   useEffect(() => { document.documentElement.lang = lang; document.title = lang === 'tr' ? 'EarthEar — Değişen gezegeni dinle' : 'EarthEar — Listen to the Changing Planet'; }, [lang]);
   useReveal();
-  /** Gerçek GPU ile çekilmiş görüntü: 1× (1440 px) + 2× (2880 px), tembel yükleme. */
-  const HAS2X = ['africa-europe', 'canopy', 'globe-lightning', 'night', 'currents', 'radar-aerosol', 'weather', 'arctic'];
-  const pic = (name: string, alt: string) => <img src={`/landing/${name}.webp`} srcSet={HAS2X.includes(name) ? `/landing/${name}.webp 1x, /landing/${name}@2x.webp 2x` : undefined} alt={alt} width={name === 'africa-europe' ? 1100 : 1440} height={name === 'africa-europe' ? 740 : 900} loading="lazy" decoding="async" />;
+  /** Gerçek GPU ile çekilmiş uygulama görüntüsü (dile göre TR / EN): 1× (1440 px) + 2× (2880 px), tembel yükleme. */
+  const pic = (name: string, alt: string) => <img src={`/landing/${name}-${lang}.webp`} srcSet={`/landing/${name}-${lang}.webp 1x, /landing/${name}-${lang}@2x.webp 2x`} alt={alt} width={1440} height={840} loading="lazy" decoding="async" />;
 
   return (
     <div className="lp">
@@ -79,7 +78,7 @@ export default function Landing() {
 
         <Section id="about" eyebrow={L(C.about.eyebrow)} title={L(C.about.title)}>
           <p className="intro big">{L(C.about.lead)}</p>
-          <figure className="shot wide">{pic('africa-europe', L(C.about.shotAlt))}</figure>
+          <figure className="shot wide">{pic(C.about.shotImg, L(C.about.shotAlt))}</figure>
           <h3 className="sub">{L(C.about.diffTitle)}</h3>
           <div className="grid3">{C.about.diff.map((c, i) => <article key={i} className="card"><h4>{L(c.h)}</h4><p>{L(c.p)}</p></article>)}</div>
           <h3 className="sub">{L(C.about.useTitle)}</h3>

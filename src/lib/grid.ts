@@ -47,7 +47,20 @@ export class Layer {
         s += v * wt; ws += wt;
       }
     }
-    return ws > 1e-6 ? s / ws : NaN;
+    if (ws > 1e-6) return s / ws;
+    if (mode !== 'smooth') return NaN;
+    // YALNIZ GÖRSEL: kaynak görselin piksel analizinde değer çıkmayan küçük boşluk kümeleri (≤ 2 hücre) komşulardan
+    // uzaklık ağırlıklı doldurulur; ses / okunan değer bu yolu KULLANMAZ ('sound' kendi hücresine bakar). Kıyıyı maske keser.
+    let s2 = 0, w2 = 0;
+    for (let dy = -2; dy <= 2; dy++) {
+      const j = Math.min(h - 1, Math.max(0, cj + dy));
+      for (let dx = -2; dx <= 2; dx++) {
+        const v = this.cell(frame, (((ci + dx) % w) + w) % w, j);
+        if (Number.isNaN(v)) continue;
+        const wt = 1 / (1 + dx * dx + dy * dy); s2 += v * wt; w2 += wt;
+      }
+    }
+    return w2 > 0 ? s2 / w2 : NaN;
   }
 }
 

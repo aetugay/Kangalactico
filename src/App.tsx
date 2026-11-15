@@ -1,3 +1,4 @@
+import './index.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { engine } from './audio/engine.ts';
 import { speech } from './audio/speech.ts';
@@ -73,6 +74,9 @@ const LAYER_UI: Record<LayerId, { label: { tr: string; en: string }; instrument:
 };
 const store = { get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* yok say */ } } };
 const params = new URLSearchParams(location.search);
+// Derin bağlantı: ?layer=lis,gedi (ya da aylık katman kimliği, ör. seaice_24) · ?month=1–12 · ?lat=&lon= / ?q=
+const URL_LAYERS = (params.get('layer') ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+const URL_MONTH = (() => { const m = Number(params.get('month')); return Number.isInteger(m) && m >= 1 && m <= 12 ? m - 1 : 0; })();
 const isTouchDevice = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0;
 
 export default function App() {
@@ -166,12 +170,17 @@ export default function App() {
   const [soundMode, setSoundModeS] = useState<SoundMode>(() => (['nature', 'both', 'music'].includes(store.get('soundMode') ?? '') ? store.get('soundMode') as SoundMode : 'both'));
   const soundModeRef = useRef(soundMode); soundModeRef.current = soundMode;
   const setSoundMode = (m: SoundMode) => { setSoundModeS(m); store.set('soundMode', m); const en = langRef.current === 'en'; announce(m === 'nature' ? (en ? 'Nature sounds only (science mode).' : 'Yalnız doğa sesleri (bilim modu).') : m === 'music' ? (en ? 'Music only.' : 'Yalnız müzik.') : (en ? 'Nature sounds with music from the same data underneath.' : 'Doğa sesleri ve altında aynı veriden doğan müzik.')); }; // ses dünyaları: KÜRESEL ölçek (Sahra hep tozlu, Amazon hep yeşil) // Adım 2: yerel ölçek varsayılan — bu alandaki farklar 2 oktava yayılır
-  const [month, setMonth] = useState(0);
+  const [month, setMonth] = useState(URL_MONTH);
   const [advance, setAdvance] = useState(true);
   const [tFrame, setTFrame] = useState(0);
   const [sstFrame, setSstFrame] = useState(0);
-  const [on, setOn] = useState<Record<LayerId, boolean>>({ co2: false, temp: true, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false, currents: false, lis: false, gedi: false });
-  const [visual, setVisual] = useState<LayerId>('temp');
+  const [on, setOn] = useState<Record<LayerId, boolean>>(() => {
+    const base: Record<LayerId, boolean> = { co2: false, temp: true, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false, currents: false, lis: false, gedi: false };
+    const ids = URL_LAYERS.filter((x) => x in base) as LayerId[];
+    if (!URL_LAYERS.length) return base;
+    return { ...base, temp: false, ...Object.fromEntries(ids.map((k) => [k, true])) };
+  });
+  const [visual, setVisual] = useState<LayerId>(() => (URL_LAYERS.find((x) => ['co2', 'temp', 'sst', 'aerosol', 'ndvi', 'lights', 'lightning', 'currents', 'lis', 'gedi'].includes(x)) as LayerId) ?? 'temp');
   // 2024 aylık NASA katmanları (MERRA-2 / OCO-2; denetimden geçenler) — ayrı durum, mevcut 4 katmana dokunmaz
   const [m24, setM24] = useState<M24 | null>(null);
   const [m24Loading, setM24Loading] = useState(false);
@@ -196,6 +205,8 @@ export default function App() {
     announce(v ? (en ? `${n} on: ${inst}.` : `${n} açıldı: ${inst}.`) : (en ? `${n} off.` : `${n} kapandı.`));
   };
   const anyM24On = Object.values(m24On).some(Boolean);
+  // derin bağlantıdaki aylık katmanlar (ör. ?layer=seaice_24): açılışta bir kez
+  useEffect(() => { const ids = URL_LAYERS.filter((x) => /_24$/.test(x)); if (!ids.length) return; openM24(); setM24On(Object.fromEntries(ids.map((k) => [k, true]))); setM24Visual(ids[0]); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
   /** Ceyhun'un presetleri: yalnız UYGUN katmanlar açılır, diğer aylık katmanlar kapanır; çıkarılanlar söylenir. */
   const [, setActiveTheme] = useState<string | null>(null);
   const [worldTheme, setWorldTheme] = useState<string | null>(null);
@@ -289,8 +300,8 @@ export default function App() {
   useEffect(() => {
     if (!place) return;
     const u = new URL(location.href);
-    if (place.source === 'arama' || place.source === 'bağlantı') { u.searchParams.set('q', place.name); u.searchParams.delete('lat'); u.searchParams.delete('lon'); }
-    else { u.searchParams.delete('q'); u.searchParams.set('lat', place.lat.toFixed(3)); u.searchParams.set('lon', place.lon.toFixed(3)); }
+    // her zaman koordinat: yenileme / paylaşım aynı yeri açar ("Manaus yakını", "Kanada (Ottawa)" gibi adlar aranamaz)
+    u.searchParams.delete('q'); u.searchParams.set('lat', place.lat.toFixed(3)); u.searchParams.set('lon', place.lon.toFixed(3));
     history.replaceState(null, '', u);
   }, [place]);
   // ---------- radar katmanları

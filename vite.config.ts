@@ -7,9 +7,9 @@ import { fileURLToPath } from 'node:url';
 
 const root = (p: string) => fileURLToPath(new URL(p, import.meta.url)).replace(/\\/g, '/');
 
-// base: './' → aynı build hem Vercel'de hem GitHub Pages alt dizininde çalışır.
+// base: '/' → / ve /app aynı varlıkları kök yoldan yükler (Vercel).
 export default defineConfig({
-  base: './',
+  base: '/', // / = landing, /app = uygulama (Vercel SPA rewrite: vercel.json)
   plugins: [react(), tailwindcss(), {
     // public/sounds/raw/ (orijinal ses kayıtları, ~650 MB, git'e girmez) derlemeye kopyalanmasın
     name: 'ham-sesleri-cikar', apply: 'build', closeBundle() { fs.rmSync(path.resolve(__dirname, 'dist/sounds/raw'), { recursive: true, force: true }); fs.rmSync(path.resolve(__dirname, 'dist/soundsv2'), { recursive: true, force: true }); fs.rmSync(path.resolve(__dirname, 'dist/sounds/yedek'), { recursive: true, force: true }); /* soundsv2: kullanılmayan müzik kayıtları */ },

@@ -1,18 +1,7 @@
 @import 'tailwindcss';
 
 /* ===== Tema: koyu uzay + cam paneller. Yüksek kontrast: html.hc ===== */
-:root {
-  color-scheme: dark; /* yerel denetimler (select açılır listesi, kaydırma çubuğu) koyu temada açık yazı */
-  --bg: #02040a; --ink: #eef3ff; --muted: #a9b4cc; --line: rgba(255,255,255,.16);
-  --glass: rgba(9, 15, 30, .58); --glass-strong: rgba(9, 15, 30, .82);
-  --accent: #5ee4f2; --accent-ink: #021016; --warm: #ffcf5a; --focus: #ffd23f;
-  --radius: 18px; --font-h: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; --font-b: 'Inter', ui-sans-serif, system-ui, sans-serif;
-}
-html.hc {
-  color-scheme: light;
-  --bg: #ffffff; --ink: #000000; --muted: #1b1b1b; --line: #000000;
-  --glass: #ffffff; --glass-strong: #ffffff; --accent: #0033cc; --accent-ink: #ffffff; --warm: #000; --focus: #ff7a00;
-}
+@import './styles/tokens.css';
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-b); font-size: 16px; line-height: 1.45; -webkit-font-smoothing: antialiased; }

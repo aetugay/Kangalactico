@@ -34,6 +34,8 @@ export function SettingsDialog(p: {
   view3d: boolean; can3d: boolean; setView3d: (v: boolean) => void; guide: boolean; setGuide: (v: boolean) => void;
   handsFree: boolean; setHandsFree: (v: boolean) => void; micSupported: boolean; shortcuts: boolean; setShortcuts: (v: boolean) => void;
   music: number; setMusic: (v: number) => void; onSoundscape: () => void;
+  rate: number; setRate: (v: number) => void;
+  home: string | null; onHomeChange: () => void; onHomeDelete: () => void;
 }) {
   const { lang } = p;
   const sw = (checked: boolean, set: (v: boolean) => void, label: string) => <label className="switch set-row"><input type="checkbox" checked={checked} onChange={(e) => set(e.target.checked)} /> <span>{label}</span></label>;
@@ -51,6 +53,16 @@ export function SettingsDialog(p: {
         <label htmlFor="set-music">{T(lang, 'Müzik seviyesi', 'Music level')}: <b>{Math.round(p.music * 100)}%</b></label>
         <input id="set-music" type="range" min={0} max={3} step={0.05} value={p.music} aria-valuetext={`${Math.round(p.music * 100)}%`} onChange={(e) => p.setMusic(+e.target.value)} />
       </div>
+      <div className="mix-row">
+        <label htmlFor="set-rate">{T(lang, 'Konuşma hızı', 'Speech rate')}: <b>{p.rate.toFixed(1)}×</b></label>
+        <input id="set-rate" type="range" min={0.8} max={2} step={0.1} value={p.rate} aria-valuetext={`${p.rate.toFixed(1)}×`} onChange={(e) => p.setRate(+e.target.value)} />
+      </div>
+      <div className="set-row home-row" role="group" aria-labelledby="set-home-l">
+        <span id="set-home-l">{T(lang, 'Ev konumu', 'Home location')}: <b>{p.home ?? T(lang, 'kayıtlı değil', 'not saved')}</b></span>
+        <button type="button" className="btn sm" onClick={p.onHomeChange}>{p.home ? T(lang, 'Değiştir', 'Change') : T(lang, 'Ev seç', 'Choose home')}</button>
+        {p.home && <button type="button" className="btn sm" onClick={p.onHomeDelete}>{T(lang, 'Sil', 'Delete')}</button>}
+      </div>
+      <p className="small muted">{T(lang, 'Ev konumu yalnız bu tarayıcıda saklanır, hiçbir yere gönderilmez.', 'Your home is stored only in this browser and sent nowhere.')}</p>
       <button type="button" className="btn" onClick={p.onSoundscape} aria-keyshortcuts="V">{T(lang, 'Ses sahnem: genel ses, yankı, konuşma hızı… (V)', 'My soundscape: master, reverb, speech rate… (V)')}</button>
     </Dialog>
   );
@@ -65,12 +77,31 @@ export function HelpDialog({ open, onClose, lang, onSpeak }: { open: boolean; on
     ['S', 'Sesli özet', 'Spoken summary'], ['L', 'Sesli lejant', 'Audio legend'], ['W', 'Hava durumu', 'Weather'], ['Y', 'Dünya hikâyeleri', 'Earth stories'],
     ['E', 'Dünya olayları', 'Earth events'], ['V', 'Ses sahnem', 'My soundscape'], ['N', 'Anlatıcı', 'Narrator'], ['G', 'Sesli rehber', 'Voice guide'],
     ['H / ?', 'Bu yardım', 'This help'], ['Esc', 'Konuşmayı sustur / pencereyi kapat', 'Silence speech / close window'],
+    [T(lang, 'Herhangi bir tuş', 'Any key'), 'Rehber konuşurken: konuşmayı keser (Boşluk hariç) · turu bitirir', 'While the guide speaks: interrupts speech (except Space) · ends the tour'],
+  ];
+  const voice: [string, string][] = lang === 'en' ? [
+    ['Earth, start the tour', '30-second guided tour (any key, "stop" or "skip" ends it)'],
+    ['Earth, speak faster / speak slower', 'Speech rate (also in Settings, 0.8–2×)'],
+    ['Earth, repeat', 'Repeat the last narration'], ['Earth, quiet', 'Stop speech only; nature and music keep playing'],
+    ['Earth, this is my home / save my home', 'Save the current place as home (only in this browser)'],
+    ['Earth, go home', 'Go to your home'], ['Earth, weather at home', 'Weather at your home'],
+    ['Earth, what is the weather in Ankara?', 'Weather sound first, then the narration'],
+  ] : [
+    ['Dünya, turu başlat', '30 saniyelik rehberli tur (herhangi bir tuş, "dur" ya da "geç" bitirir)'],
+    ['Dünya, daha hızlı konuş / daha yavaş konuş', "Konuşma hızı (Ayarlar'da da var, 0.8–2×)"],
+    ['Dünya, tekrar et', 'Son anlatımı tekrarla'], ['Dünya, sus', 'Yalnız konuşmayı durdurur; doğa ve müzik sürer'],
+    ['Dünya, burası benim evim / evimi kaydet', 'Bulunduğun yeri ev olarak kaydet (yalnız bu tarayıcıda)'],
+    ['Dünya, eve dön', 'Evine git'], ['Dünya, evde hava nasıl?', 'Evindeki hava durumu'],
+    ["Dünya, Ankara'da hava nasıl?", 'Önce havanın sesi, sonra anlatım'],
   ];
   return (
     <Dialog open={open} onClose={onClose} title={T(lang, 'Yardım ve kısayollar', 'Help and shortcuts')} lang={lang}>
       <p className="small">{T(lang, 'Eller serbest dinleme açıkken cümleye "Dünya" diye başla: "Dünya, Sivas\'a git", "Dünya, çal", "Dünya, Ankara\'da hava nasıl?". Yazılı komut kutusu Rehber sekmesinde.', 'With hands-free listening on, start with "Earth": "Earth, go to Sivas", "Earth, play", "Earth, what is the weather in Ankara?". The typed command box is in the Guide tab.')}</p>
       <table className="inv"><thead><tr><th>{T(lang, 'Tuş', 'Key')}</th><th>{T(lang, 'İşlev', 'Action')}</th></tr></thead>
         <tbody>{rows.map(([k, t, e]) => <tr key={k}><td><kbd>{k}</kbd></td><td>{lang === 'en' ? e : t}</td></tr>)}</tbody></table>
+      <h3 className="sec-title">{T(lang, 'Sesli komutlar', 'Voice commands')}</h3>
+      <table className="inv"><thead><tr><th>{T(lang, 'Söyle', 'Say')}</th><th>{T(lang, 'İşlev', 'Action')}</th></tr></thead>
+        <tbody>{voice.map(([k, d]) => <tr key={k}><td>"{k}"</td><td>{d}</td></tr>)}</tbody></table>
       <div className="btn-row"><button type="button" className="btn" onClick={onSpeak}>{T(lang, 'Yardımı sesli oku', 'Read help aloud')}</button></div>
     </Dialog>
   );

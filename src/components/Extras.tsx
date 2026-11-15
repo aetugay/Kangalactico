@@ -14,6 +14,7 @@ export interface ExploreProps {
   onStories: () => void; onEvents: () => void; onSound: () => void;
   narrator: boolean; setNarrator: (v: boolean) => void; showNarrator?: boolean;
   story: string | null; onStopStory: () => void;
+  onTour: () => void;
 }
 export function Explore(p: ExploreProps) {
   const { lang } = p;
@@ -26,6 +27,7 @@ export function Explore(p: ExploreProps) {
           <button type="button" className="mini" onClick={p.onStopStory}>{T(lang, 'Hikâyeyi durdur (Esc)', 'Stop story (Esc)')}</button>
         </p>
       )}
+      <button type="button" className="btn primary tour-btn" onClick={p.onTour}>{T(lang, '🎧 Rehberli tur (30 sn)', '🎧 Guided tour (30 s)')}</button>
       <div className="btn-row">
         <button type="button" className="btn" onClick={p.onStories} aria-keyshortcuts="Y">{T(lang, 'Dünya hikâyeleri (Y)', 'Earth stories (Y)')}</button>
         <button type="button" className="btn" onClick={p.onEvents} aria-keyshortcuts="E">{T(lang, 'Dünya olayları (E)', 'Earth events (E)')}</button>
@@ -120,7 +122,7 @@ export function SoundDialog({ open, onClose, lang, mix, setMix, layerNames, onTe
       {slider('mix-master', T(lang, 'Genel ses', 'Master volume'), mix.master, 0, 1, (v) => setMix({ ...mix, master: v }))}
       {slider('mix-music', T(lang, 'Müzik seviyesi (doğa seslerinin altında)', 'Music level (under the nature sounds)'), mix.music, 0, 3, (v) => setMix({ ...mix, music: v }))}
       {slider('mix-reverb', T(lang, 'Salon yankısı', 'Hall reverb'), mix.reverb, 0, 0.8, (v) => setMix({ ...mix, reverb: v }))}
-      {slider('mix-rate', T(lang, 'Konuşma hızı', 'Speech rate'), mix.rate, 0.6, 1.8, (v) => setMix({ ...mix, rate: v }), `${mix.rate.toFixed(2)}×`)}
+      {slider('mix-rate', T(lang, 'Konuşma hızı', 'Speech rate'), mix.rate, 0.8, 2, (v) => setMix({ ...mix, rate: v }), `${mix.rate.toFixed(2)}×`)}
       {(['co2', 'temp', 'sst', 'aerosol'] as const).map((id) => (
         <fieldset key={id} className="fs mix-layer">
           <legend>{layerNames[id]}</legend>

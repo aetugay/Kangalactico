@@ -264,6 +264,7 @@ export function About({ open, onClose, lang, credits, extra }: { open: boolean; 
       </ul>
       <h3>{lang === 'tr' ? 'Sesli komut ve gizlilik' : 'Voice commands and privacy'}</h3>
       <p className="small">{lang === 'tr' ? 'Sesli komut Chrome/Edge\'in konuşma tanıma servisini kullanır; ses kaydı tarayıcı sağlayıcısına gönderilir. İstemiyorsanız "dinlemeyi durdur" deyin ya da EarthEar AI Guide panelinden eller serbest dinlemeyi kapatıp komutları yazın.' : 'Voice commands use the speech recognition service of Chrome/Edge; your voice is sent to the browser provider. If you prefer not, say "stop listening" or turn hands-free listening off in the EarthEar AI Guide panel and type commands.'}</p>
+      <p className="small">{lang === 'tr' ? 'Ev konumunuz ("Dünya, burası benim evim"), konuşma hızı ve tur tercihi yalnız bu tarayıcıda (localStorage) saklanır; hiçbir sunucuya gönderilmez. Silmek için: Ayarlar → Ev konumu → Sil.' : 'Your home location ("Earth, this is my home"), speech rate and tour preference are stored only in this browser (localStorage) and sent to no server. To delete: Settings → Home location → Delete.'}</p>
       {extra}
       <p className="disclaimer"><b>{tr(lang, 'disclaimer')}</b></p>
     </Dialog>

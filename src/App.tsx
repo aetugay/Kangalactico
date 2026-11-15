@@ -7,7 +7,7 @@ import { DataInventory } from './components/DataInventory.tsx';
 import { WorldThemes } from './components/WorldThemes.tsx';
 import { AppHeader, HelpDialog, LayerCards, PlayerBar, SettingsDialog, SidePanel, type TabId } from './components/Layout.tsx';
 import { moodOf } from './lib/music.ts';
-import { Weather } from './components/Weather.tsx';
+import { nowSceneOf, playThenSay, Weather } from './components/Weather.tsx';
 import { Forecast, spokenDetail, spokenSummary } from './lib/forecast.ts';
 import { WORLD_OF, describeWorld, legendLine, type World } from './lib/worlds.ts';
 import { soundBank, WEATHER_SOUNDS, WORLD_SOUNDS } from './audio/soundbank.ts';
@@ -46,6 +46,13 @@ const WORLD_THEMES: { tr: string; en: string; layers: LayerId[] }[] = [
   { tr: 'Okyanus', en: 'Ocean', layers: ['sst', 'aerosol'] },
   { tr: 'Şehirler ve Ormanlar', en: 'Cities and forests', layers: ['lights', 'ndvi'] },
   { tr: 'Sıcak ve Soğuk', en: 'Hot and cold', layers: ['temp', 'sst'] },
+];
+/** 30 sn'lik rehberli tur: 4 durak. need = radarda beklenecek katman kimlikleri. Değerler anlatımda veriden okunur. */
+const TOUR: { tr: string; en: string; lat: number; lon: number; layers: LayerId[]; need: string[]; range: number }[] = [
+  { tr: 'Sahra', en: 'the Sahara', lat: 23, lon: 12, layers: ['aerosol', 'temp'], need: ['dust', 'temp'], range: 2000 },
+  { tr: 'Amazon', en: 'the Amazon', lat: -3.1, lon: -60, layers: ['ndvi'], need: ['ndvi'], range: 2000 },
+  { tr: 'Orta Afrika', en: 'Central Africa', lat: -1.5, lon: 26, layers: ['lightning'], need: ['lightning'], range: 2000 },
+  { tr: 'Kuzey Atlantik', en: 'the North Atlantic', lat: 55, lon: -30, layers: ['sst'], need: ['sst'], range: 500 },
 ];
 const LAYER_UI: Record<LayerId, { label: { tr: string; en: string }; instrument: { tr: string; en: string }; color: string; icon: React.ReactNode }> = {
   co2: { label: { tr: 'Karbondioksit', en: 'Carbon dioxide' }, instrument: { tr: 'keman', en: 'violin' }, color: '#ffb547', icon: <IconBreath /> },
@@ -116,7 +123,10 @@ export default function App() {
   const openWeather = (t: (LatLon & { name: string }) | null) => {
     setWxTarget(t); setPanelTab('weather'); setPanelOpen(true); void soundBank.load(BASE, WEATHER_SOUNDS);
     if (!t) return;
-    loadWx().then((f) => { announce(spokenSummary(f, t.name, t, langRef.current)); }).catch(() => announce(langRef.current === 'en' ? 'The forecast file could not be loaded.' : 'Tahmin dosyası yüklenemedi.'));
+    Promise.all([loadWx(), soundBank.load(BASE, WEATHER_SOUNDS).catch(() => {})]).then(([f]) => {
+      const ns = nowSceneOf(f, t), sm = soundModeRef.current;
+      playThenSay(ns.sc, `now-${t.lat}-${t.lon}`, ns.d, spokenSummary(f, t.name, t, langRef.current), announce, { music: sm !== 'nature', nature: sm !== 'music' });
+    }).catch(() => announce(langRef.current === 'en' ? 'The forecast file could not be loaded.' : 'Tahmin dosyası yüklenemedi.'));
   };
   const [land, setLand] = useState<LandMask | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -130,11 +140,17 @@ export default function App() {
 
   // ---------- durum
   const [place, setPlace] = useState<Place | null>(null);
+  // ev konumu: yalnız bu tarayıcıda (localStorage), hiçbir yere gönderilmez
+  const [home, setHomeS] = useState<Place | null>(() => { try { const h = JSON.parse(store.get('home') ?? 'null'); return h && typeof h.lat === 'number' ? h : null; } catch { return null; } });
+  const homeRef = useRef(home); homeRef.current = home;
+  const saveHome = (p: Place | null) => { setHomeS(p); if (p) store.set('home', JSON.stringify({ lat: p.lat, lon: p.lon, name: p.name, country: p.country, source: p.source })); else { try { localStorage.removeItem('home'); } catch { /* yok say */ } } };
+  const quietPlace = useRef(false); // bir sonraki yer değişikliği duyurulmasın (ev karşılaması, tur dönüşü)
   const [rangeKm, setRange] = useState(2000);
   const [mode, setMode] = useState<Mode>('bilim'); // Adım 1: bilim modu varsayılan — yalnız veri sesleri; tam ton dizisi
   const [scale, setScaleS] = useState<Scale>('global');
   // Ses modu: doğa (bilim) · doğa + müzik (varsayılan) · sadece müzik
   const [soundMode, setSoundModeS] = useState<SoundMode>(() => (['nature', 'both', 'music'].includes(store.get('soundMode') ?? '') ? store.get('soundMode') as SoundMode : 'both'));
+  const soundModeRef = useRef(soundMode); soundModeRef.current = soundMode;
   const setSoundMode = (m: SoundMode) => { setSoundModeS(m); store.set('soundMode', m); const en = langRef.current === 'en'; announce(m === 'nature' ? (en ? 'Nature sounds only (science mode).' : 'Yalnız doğa sesleri (bilim modu).') : m === 'music' ? (en ? 'Music only.' : 'Yalnız müzik.') : (en ? 'Nature sounds with music from the same data underneath.' : 'Doğa sesleri ve altında aynı veriden doğan müzik.')); }; // ses dünyaları: KÜRESEL ölçek (Sahra hep tozlu, Amazon hep yeşil) // Adım 2: yerel ölçek varsayılan — bu alandaki farklar 2 oktava yayılır
   const [month, setMonth] = useState(0);
   const [advance, setAdvance] = useState(true);
@@ -183,7 +199,7 @@ export default function App() {
   const openM24 = () => { if (m24 || m24Loading || m24Started.current) return; m24Started.current = true; setM24Loading(true); M24.load(import.meta.env.BASE_URL).then((m) => { setM24(m); if (m.source === 'api') announce(langRef.current === 'en' ? 'Monthly layer file could not be loaded; using the team API as backup. Layers will sound after a short loading pause.' : 'Aylık katman dosyası yüklenemedi; ekip API\'si yedek olarak kullanılıyor. Katmanlar kısa bir yüklemeden sonra çalar.'); }).catch((e) => setErr(String(e))).finally(() => setM24Loading(false)); };
   const [pickOpen, setPickOpen] = useState(false);
   // iki yeri karşılaştırma: B yeri, sırayla dinleme ve tur sayacı
-  const [pickFor, setPickFor] = useState<'A' | 'B'>('A');
+  const [pickFor, setPickFor] = useState<'A' | 'B' | 'H'>('A');
   const [placeB, setPlaceB] = useState<Place | null>(null);
   const [compare, setCompare] = useState(false);
   const [cmpTurn, setCmpTurn] = useState(0);
@@ -207,8 +223,11 @@ export default function App() {
   const [audioOk, setAudioOk] = useState(true);
   // Duyuru: sesli rehber açıksa tarayıcı konuşur; kapalıysa ekran okuyucuya (aria-live) bırakılır — ikisi üst üste binmez.
   const capture = useRef<string[] | null>(null);
+  const lastSpoken = useRef('');      // "tekrar et" için son anlatım
+  const silentReply = useRef(false);  // "sus": onay sesi dışında hiçbir şey söyleme
   const announce = useCallback((t: string) => {
     if (capture.current) { capture.current.push(t); return; }
+    lastSpoken.current = t;
     if (guideRef.current && speech.supported) { void speech.say(t); return; }
     setLive(''); requestAnimationFrame(() => setLive(t));
   }, []);
@@ -332,7 +351,8 @@ export default function App() {
   // ---------- yer değişince duyuru. Radar çalıyorsa kısa tut (müzik kesilmeden yeni yerin sesi gelir).
   const playingRef = useRef(false); playingRef.current = radar.playing;
   useEffect(() => {
-    if (!place) return;
+    if (quietPlace.current) { quietPlace.current = false; return; }
+    if (!place || tourOn.current) return;
     const name = placeLabel(place);
     if (playingRef.current) { announce(`${name}.`); return; }
     const here = layersRef.current.map((l) => { const w = WORLD_OF[l.id]; const v = l.sample(place); return w && !Number.isNaN(v) ? describeWorld(w, v, gainFor(v, l, 'global'), lang) : null; }).filter(Boolean).join('; ');
@@ -369,9 +389,17 @@ export default function App() {
         : 'Merhaba, ben EarthEar. Kulaklık takmanızı öneririz. Sesli komut şu an kullanılamıyor. Yazarak komut verebilirsiniz: komut kutusuna bir şehir adı yazın, örneğin Sivas.');
     setLive(''); requestAnimationFrame(() => setLive(msg)); // ekran okuyucu her zaman duyar
     if (canListen) hfApi.current.start(false);          // mikrofon izni hemen istenir (kullanıcı hareketiyle); kendi sesimiz yankı süzgecinde
-    const after = () => { if (canListen && handsFree.enabled) engine.beep(); else if (!listener.supported) hfApi.current.unavailable(); };
+    const after = () => afterWelcome.current(canListen);
     if (guideRef.current && speech.supported) void speech.say(msg).then(after); else after();
   }, []);
+  const afterWelcome = useRef<(canListen: boolean) => void>(() => {});
+  // ---------- rehberli tur durumu
+  const [tour, setTour] = useState<{ i: number; n: number; text: string } | null>(null);
+  const [tourAsk, setTourAsk] = useState(false);
+  const tourAskRef = useRef(false); tourAskRef.current = tourAsk;
+  const tourRun = useRef(0), tourOn = useRef(false);
+  const tourPrev = useRef<{ place: Place | null; on: Record<LayerId, boolean>; m24On: Record<string, boolean>; visual: LayerId; range: number; playing: boolean } | null>(null);
+  const tourApi = useRef({ start: () => {}, end: (_why: 'done' | 'cancel' | 'cmd') => {}, answer: (_yes: boolean) => {} });
 
   // düğmenin, bağlantının, kaydırıcının adını oku (fare üstüne gelince ya da klavyeyle odaklanınca)
   useEffect(() => {
@@ -486,6 +514,113 @@ export default function App() {
   // ---------- Dünya hikâyeleri: seçilen yerden başlayan, veriyle anlatılan rehberli yolculuklar (kodda sabit yer yok)
   const storyRun = useRef(0);
   const stopStory = () => { if (!live2.current.story) return; storyRun.current++; setStory(null); speech.stop(); };
+
+  // ---------- 30 SANİYELİK REHBERLİ TUR: 4 durak. Her durakta kamera süzülür → ~1,5 sn ses → gerçek veriyle kısa anlatım → birkaç sn yalnız ses.
+  // Herhangi bir tuş, "dur" ya da "geç" turu bitirir. Bitince (ya da kesilince) önceki yer ve katmanlar geri gelir; bir daha sorulmaz.
+  const endLine = () => (langRef.current === 'en'
+    ? (listener.supported ? 'Now it is your turn. Say "Earth" and a city name.' : 'Now it is your turn. Type a city name in the command box.')
+    : (listener.supported ? 'Şimdi sıra sizde. "Dünya" deyip bir şehir söyleyin.' : 'Şimdi sıra sizde. Komut kutusuna bir şehir adı yazın.'));
+  const tourLine = (i: number): string => {
+    const en = langRef.current === 'en', lg = en ? 'en' : 'tr', S = TOUR[i];
+    const L = (id: string) => layersRef.current.find((l) => l.id === id);
+    const at = (id: string) => { const l = L(id); if (!l) return null; const v = l.sample(S); const w = WORLD_OF[l.id]; if (Number.isNaN(v) || !w) return null; const t = gainFor(v, l, 'global'); return { v, t, d: describeWorld(w, v, t, lg) }; };
+    const R = radarRef.current;
+    const mood = R.P && R.computed.length ? moodOf({ P: R.P, mode, layers: R.computed }) : null;
+    const music = soundModeRef.current !== 'nature' && mood;
+    if (i === 0) {
+      const d = at('dust'), T = at('temp');
+      return en
+        ? `This is the Sahara. What you hear is ${d ? d.d : 'dust'}: how dusty the air is, relative.${T ? ` Surface ${Math.round(T.v)} degrees.` : ''}${music ? (mood.minor ? ' The music is tense, because the region is under stress.' : ' The music is calm, because the region is not under stress right now.') : ''}`
+        : `Burası Sahra. Duyduğunuz ${d ? d.d : 'toz'}: havadaki tozun göreli yoğunluğu.${T ? ` Yüzey ${Math.round(T.v)} derece.` : ''}${music ? (mood.minor ? ' Müzik gergin, çünkü bölge zorlanıyor.' : ' Müzik sakin, çünkü bölge şu an zorlanmıyor.') : ''}`;
+    }
+    if (i === 1) {
+      const d = at('ndvi');
+      return en
+        ? `This is the Amazon. You hear ${d ? d.d : 'the forest'}: how green the land is, relative.${music ? (mood.minor ? ' The marimba sounds tense.' : ' The marimba is bright, because the forest is rich.') : ''}`
+        : `Burası Amazon. Duyduğunuz ${d ? d.d : 'orman'}: bitki örtüsünün göreli yoğunluğu.${music ? (mood.minor ? ' Marimba gergin.' : ' Marimba parlak, çünkü orman zengin.') : ''}`;
+    }
+    if (i === 2) {
+      const d = at('lightning');
+      return en
+        ? `This is Central Africa, the Congo basin. You hear ${d ? d.d : 'thunder'}: how often lightning strikes, relative.${music ? ' Timpani play along with the thunder.' : ''}`
+        : `Burası Orta Afrika, Kongo havzası. Duyduğunuz ${d ? d.d : 'gök gürültüsü'}: şimşek sıklığı, göreli.${music ? ' Timpani gök gürültüsüne eşlik ediyor.' : ''}`;
+    }
+    const d = at('sst');
+    const cold = d ? d.v < 8 : false;
+    return en
+      ? `This is the North Atlantic. You hear ${d ? d.d : 'waves'}: the sea surface temperature.${music ? (cold ? ' The celesta plays the cold water.' : ' The harp plays the cool water.') : ''}`
+      : `Burası Kuzey Atlantik. Duyduğunuz ${d ? d.d : 'dalgalar'}: deniz yüzeyinin sıcaklığı.${music ? (cold ? ' Çelesta soğuk suyu çalıyor.' : ' Arp serin suyu çalıyor.') : ''}`;
+  };
+  tourApi.current.end = (why) => {
+    if (!tourOn.current) return;
+    tourRun.current++; tourOn.current = false; setTour(null); store.set('tourDone', '1');
+    speech.stop();
+    const pr = tourPrev.current; tourPrev.current = null;
+    if (pr) {
+      setOn(pr.on); setM24On(pr.m24On); setVisual(pr.visual); setRange(pr.range);
+      if (why !== 'cmd') { if (pr.place) quietPlace.current = true; setPlace(pr.place); if (!pr.place || !pr.playing) radarRef.current.stop(); }
+    }
+    if (why !== 'cmd') {
+      const t = (why === 'cancel' ? (langRef.current === 'en' ? 'Tour ended. ' : 'Tur bitti. ') : '') + endLine();
+      announce(t);
+    }
+  };
+  tourApi.current.start = () => {
+    setTourAsk(false);
+    if (tourOn.current) return;
+    const my = ++tourRun.current; tourOn.current = true;
+    const alive = () => tourRun.current === my;
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    welcomed.current = true; engine.unlock();
+    radarRef.current.hush(); stopStory(); setCompare(false); setPickOpen(false);
+    tourPrev.current = { place, on, m24On, visual, range: rangeKm, playing: radarRef.current.playing };
+    const sayT = async (i: number, t: string) => {
+      if (!alive()) return false;
+      setTour({ i, n: TOUR.length, text: t }); lastSpoken.current = t;
+      if (guideRef.current && speech.supported) await speech.say(t);
+      else { setLive(''); requestAnimationFrame(() => setLive(`${i}/${TOUR.length}. ${t}`)); await wait(1500 + t.length * 60 / Math.max(0.8, speech.rate)); }
+      return alive();
+    };
+    void (async () => {
+      for (let i = 0; i < TOUR.length; i++) {
+        const S = TOUR[i], en = langRef.current === 'en';
+        setOn({ co2: false, temp: false, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false, ...Object.fromEntries(S.layers.map((k) => [k, true])) });
+        setM24On({}); setVisual(S.layers[0]); setWorldTheme(null); setRange(S.range);
+        setPlace({ lat: S.lat, lon: S.lon, name: en ? S.en.replace(/^the /, 'The ') : S.tr, source: 'harita' });
+        setTour({ i: i + 1, n: TOUR.length, text: en ? S.en.replace(/^the /, 'The ') : S.tr });
+        // katman ilk kez açılıyorsa yüklenmesini bekle (en çok 5 sn)
+        for (let k = 0; k < 50 && alive(); k++) { const ids = layersRef.current.map((l) => l.id as string); if (S.need.every((id) => ids.includes(id))) break; await wait(100); }
+        if (!alive()) return;
+        if (!radarRef.current.playing) radarRef.current.play();
+        await wait(1500); if (!alive()) return;              // önce ses
+        if (!await sayT(i + 1, tourLine(i))) return;        // sonra gerçek veriyle anlatım
+        await wait(2200); if (!alive()) return;              // birkaç sn yalnız ses
+      }
+      tourApi.current.end('done');
+    })();
+  };
+  tourApi.current.answer = (yes) => {
+    setTourAsk(false);
+    if (yes) { tourApi.current.start(); return; }
+    store.set('tourDone', '1');
+    announce((langRef.current === 'en' ? 'Okay. ' : 'Peki. ') + endLine().replace(/^(Now it is your turn|Şimdi sıra sizde)\. /, ''));
+  };
+  afterWelcome.current = (canListen) => {
+    const en = langRef.current === 'en', h = homeRef.current;
+    const done = () => { if (canListen && handsFree.enabled) engine.beep(); else if (!listener.supported) hfApi.current.unavailable(); };
+    const parts: string[] = [];
+    if (h) { quietPlace.current = true; setPlace({ ...h }); parts.push(en ? `Welcome home, ${h.name}.` : `Evinize hoş geldiniz, ${h.name}.`); }
+    if (store.get('tourDone') !== '1') {
+      setTourAsk(true);
+      parts.push(canListen ? (en ? 'Shall I let you listen to the Earth? Say yes or no.' : 'Sana Dünya\'yı dinleteyim mi? Evet ya da hayır deyin.')
+        : (en ? 'Shall I let you listen to the Earth? Choose Start tour or Skip.' : 'Sana Dünya\'yı dinleteyim mi? Turu başlat ya da Geç düğmesini seçin.'));
+    }
+    if (!parts.length) { done(); return; }
+    const t = parts.join(' '); lastSpoken.current = t;
+    setLive(''); requestAnimationFrame(() => setLive(t));
+    if (guideRef.current && speech.supported) void speech.say(t).then(done); else done();
+  };
+  useEffect(() => { if (tourAsk) setTimeout(() => document.querySelector<HTMLElement>('.tour-ask .btn.primary')?.focus(), 60); }, [tourAsk]);
   const storyList: StoryInfo[] = lang === 'en' ? [
     { id: 'journey', title: 'Journey toward the equator', text: 'Travel from your place toward the equator and hear the temperature change (guitar).' },
     { id: 'dust', title: 'Travelers in the air', text: 'Find the densest dust within 5000 km of your place and go there (celesta).' },
@@ -638,8 +773,34 @@ export default function App() {
     // dil (Adım 4): "Switch to English", "English", "İngilizceye geç" / "Türkçeye geç", "Turkish", "Türkçe" — iki dilde de çalışır
     if (has('ingilizce', 'english', 'ingilizceye')) { setLang('en'); return true; }
     if (has('turkce', 'turkish', 'turkceye')) { setLang('tr'); return true; }
+    if (tourAskRef.current) {
+      if (word('hayir', 'gec', 'istemiyorum', 'sonra', 'no', 'skip', 'later')) { tourApi.current.answer(false); return true; }
+      if (word('evet', 'olur', 'tamam', 'baslat', 'tabii', 'yes', 'sure', 'okay', 'ok', 'start')) { tourApi.current.answer(true); return true; }
+    }
+    if (tourOn.current) {
+      if (word('dur', 'durdur', 'gec', 'yeter', 'bitir', 'stop', 'skip', 'enough', 'end')) { tourApi.current.end('cancel'); return true; }
+      tourApi.current.end('cmd'); // başka bir komut: tur biter, komut uygulanır
+    }
+    if (has('turu baslat', 'tur baslat', 'rehberli tur', 'turu ac', 'turu yap', 'start the tour', 'start tour', 'guided tour', 'take the tour')) { tourApi.current.start(); return true; }
     if (word('yardim', 'help', 'komutlar', 'commands') || has('ne soyleyebilirim', 'what can i say')) { announce(commandHelp()); return true; }
-    if (has('dinlemeyi durdur', 'dinlemeyi kapat', 'dinlemeyi birak', 'stop listening') || word('sus')) {
+    // konuşma: hız, tekrar, sus (yalnız konuşma; doğa ve müzik sürer)
+    const rateTo = (d: number) => { const v = Math.max(0.8, Math.min(2, +(mixRef.current.rate + d).toFixed(1))); setMix({ ...mixRef.current, rate: v }); speech.setRate(v); announce(en ? `Speech rate ${v}.` : `Konuşma hızı ${String(v).replace('.', ',')}.`); };
+    if (has('hizli konus', 'speak faster', 'talk faster', 'faster speech', 'speak quicker')) { rateTo(0.2); return true; }
+    if (has('yavas konus', 'speak slower', 'talk slower', 'slower speech', 'speak more slowly')) { rateTo(-0.2); return true; }
+    if (has('tekrar et', 'tekrarla', 'tekrar soyle', 'bir daha soyle', 'repeat', 'say again', 'say that again')) { announce(lastSpoken.current || (en ? 'I have not said anything yet.' : 'Henüz bir şey söylemedim.')); return true; }
+    if (word('sus', 'sussana', 'susun', 'shush', 'hush') || has('stop talking', 'be quiet', 'shut up', 'konusmayi durdur', 'konusmayi kes', 'stop speaking')) { R.hush(); silentReply.current = true; return true; }
+    // ev konumu (yalnız bu tarayıcıda)
+    const noHome = en ? 'No home saved yet. Choose a place and say: Earth, this is my home.' : 'Henüz ev kaydedilmedi. Bir yer seçip "Dünya, burası benim evim" deyin.';
+    if (has('evde', 'evimde', 'at home', 'my home', 'home weather') && has(' hava', 'weather', 'forecast')) { const h = homeRef.current; if (!h) announce(noHome); else openWeather({ ...h, name: h.name }); return true; }
+    if (has('burasi benim evim', 'burasi evim', 'evimi kaydet', 'ev olarak kaydet', 'evim olsun', 'evim burasi', 'this is my home', 'save my home', 'save home', 'set home', 'my home is here')) {
+      if (!needPlace()) return true;
+      saveHome(place!); announce(en ? `${place!.name} saved as your home.` : `${place!.name} eviniz olarak kaydedildi.`); return true;
+    }
+    if (has('eve don', 'evime don', 'eve git', 'evime git', 'go home', 'take me home', 'back home')) {
+      const h = homeRef.current; if (!h) { announce(noHome); return true; }
+      setPlace({ ...h }); setPickOpen(false); if (!R.playing) setTimeout(() => radarRef.current.play(), 2500); return true;
+    }
+    if (has('dinlemeyi durdur', 'dinlemeyi kapat', 'dinlemeyi birak', 'stop listening')) {
       R.hush(); stopStory(); hfApi.current.stop(true);
       announce(en ? 'Listening is off. Press any key or tap the screen to turn it back on.' : 'Dinleme kapandı. Tekrar açmak için herhangi bir tuşa basın ya da ekrana dokunun.');
       return true;
@@ -749,7 +910,7 @@ export default function App() {
   const EXAMPLES = { tr: 'Ankara\'ya git; çal; sıcaklığı aç', en: 'go to Tokyo; play; temperature on' };
   /** Sesli ya da yazılı komut: aynı çözümleyici. Anlaşılırsa onay sesi + "Anlaşıldı: …" + komutun kendi duyurusu; anlaşılmazsa 3 örnek. */
   const execCommand = (alts: string[], source: 'voice' | 'text') => {
-    capture.current = [];
+    capture.current = []; silentReply.current = false;
     let hit: string | null = null;
     try { for (const a of alts) if (cmdRef.current(a)) { hit = a; break; } } finally { /* duyurular aşağıda */ }
     const msgs = capture.current ?? []; capture.current = null;
@@ -763,7 +924,10 @@ export default function App() {
       engine.unlock(); engine.confirm(false);
       reply = en ? `I did not understand: ${text}. Try for example: ${EXAMPLES.en}.` : `Anlamadım: ${text}. Örneğin şunları deneyebilirsin: ${EXAMPLES.tr}.`;
     }
-    announce(reply);
+    const prevSpoken = lastSpoken.current;
+    if (hit && silentReply.current) silentReply.current = false; // "sus": yalnız onay sesi
+    else announce(reply);
+    lastSpoken.current = hit && msgs.length ? msgs.join(' ') : prevSpoken;
     setGuideStatus({ kind: hit ? 'ok' : 'fail', text: reply });
     setCmdHistory((h) => [{ text, ok: !!hit, source, reply }, ...h].slice(0, 6));
     return !!hit;
@@ -807,6 +971,14 @@ export default function App() {
           // Eller serbest: yalnız "Dünya" / "EarthEar" (EN "Earth") ile başlayan cümle komuttur; diğer konuşmalar SESSİZCE yok sayılır.
           // Yalnız "Dünya" denirse 8 sn boyunca bir sonraki cümle uyandırma kelimesi olmadan komut sayılır.
           const WAKE = /^\s*(dünya|dunya|earth\s?ear|earth|örtır|ört ır)\b[\s,.!:;-]*/i;
+          // Tur sorusu açıkken "evet / hayır", tur sürerken "dur / geç" uyandırma kelimesi olmadan da çalışır (yalnız bu kısa cevaplar).
+          if (tourAskRef.current || tourOn.current) {
+            const short = alts.map((a) => ` ${fold(a).replace(/[.,!?]/g, ' ').replace(/\s+/g, ' ').trim()} `);
+            const any = (...w: string[]) => short.some((x) => w.some((y) => x.includes(` ${y} `)));
+            if (tourAskRef.current && any('hayir', 'gec', 'istemiyorum', 'no', 'skip')) { tourApi.current.answer(false); return; }
+            if (tourAskRef.current && any('evet', 'olur', 'tamam', 'baslat', 'yes', 'sure', 'okay', 'ok')) { tourApi.current.answer(true); return; }
+            if (tourOn.current && any('dur', 'durdur', 'gec', 'yeter', 'bitir', 'stop', 'skip')) { tourApi.current.end('cancel'); return; }
+          }
           const woke = alts.map((a) => (WAKE.test(a) ? a.replace(WAKE, '').trim() : null)).filter((x): x is string => x !== null);
           if (woke.length) {
             const rest = woke.filter(Boolean);
@@ -869,6 +1041,8 @@ export default function App() {
     const any = (e: KeyboardEvent) => { // yakalama evresi: diğer işleyicilerden önce
       if (SKIP.has(e.key) || e.isComposing) return;
       if (!welcomed.current) { e.preventDefault(); e.stopImmediatePropagation(); welcome(); return; } // başlatan tuş başka iş yapmasın
+      if (tourOn.current) { e.preventDefault(); e.stopImmediatePropagation(); tourApi.current.end('cancel'); return; } // herhangi bir tuş turu bitirir
+      if (speech.active && e.key !== ' ' && e.code !== 'Space') speech.stop(); // rehber konuşurken herhangi bir tuş konuşmayı keser (Boşluk = çal/durdur)
       if (hfStoppedByVoice.current && hfWantedRef.current && !isFormTarget(e.target) && !e.altKey) hfApi.current.start(true); // "sus" sonrası herhangi bir tuş
     };
     const up = (e: KeyboardEvent) => {
@@ -1022,8 +1196,13 @@ export default function App() {
       setCompare={(v) => { setCompare(v); setCmpTurn(0); announce(v ? (lang === 'en' ? 'Listening in turns: one sweep for A, one sweep for B. Time stays fixed.' : 'Sırayla dinleme açık: bir tur A, bir tur B. Zaman sabit kalır.') : (lang === 'en' ? 'Listening in turns off.' : 'Sırayla dinleme kapalı.')); }}
       onPickB={() => { setPickFor('B'); setPickOpen(true); }} onClearB={() => { setPlaceB(null); setCompare(false); setCmpTurn(0); }} onDiff={sayDiff}
       onStories={() => setStoriesOpen(true)} onEvents={openEvents} onSound={() => setSoundOpen(true)}
-      narrator={narrator} setNarrator={setNarrator} story={story} onStopStory={stopStory} showNarrator={false} />
-  ) : <p className="small">{lang === 'en' ? 'Choose a place first: search above or tap the globe.' : 'Önce bir yer seç: yukarıdan ara ya da Dünya\'ya dokun.'}</p>;
+      narrator={narrator} setNarrator={setNarrator} story={story} onStopStory={stopStory} showNarrator={false} onTour={() => tourApi.current.start()} />
+  ) : (
+    <div className="explore">
+      <button type="button" className="btn primary tour-btn" onClick={() => tourApi.current.start()}>{lang === 'en' ? '🎧 Guided tour (30 s)' : '🎧 Rehberli tur (30 sn)'}</button>
+      <p className="small">{lang === 'en' ? 'Or choose a place first: search above or tap the globe.' : 'Ya da önce bir yer seç: yukarıdan ara ya da Dünya\'ya dokun.'}</p>
+    </div>
+  );
   const weatherTab = <Weather inline open={false} music={soundMode !== 'nature'} nature={soundMode !== 'music'} onClose={() => {}} lang={lang} forecast={wx} error={wxErr} target={wxShown} announce={announce} />;
   useEffect(() => { if (panelTab === 'weather') void loadWx().catch(() => {}); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [panelTab]);
 
@@ -1066,6 +1245,23 @@ export default function App() {
           </section>
         )}
         {radar.legend && <p className="legend-caption glass" aria-hidden="true">{radar.legend}</p>}
+        {tour && (
+          <div className="tour-cap glass">
+            <span className="tour-prog" aria-hidden="true">{tour.i > 0 ? `${tour.i}/${tour.n}` : '…'}</span>
+            <p className="tour-text" aria-hidden="true">{tour.text}</p>
+            <button type="button" className="btn sm" onClick={() => tourApi.current.end('cancel')}>{lang === 'en' ? 'End tour (any key)' : 'Turu bitir (herhangi bir tuş)'}</button>
+          </div>
+        )}
+        {tourAsk && !tour && (
+          <div className="tour-ask glass" role="dialog" aria-modal="false" aria-labelledby="tour-ask-h" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); tourApi.current.answer(false); } }}>
+            <h2 id="tour-ask-h">{lang === 'en' ? 'Shall I let you listen to the Earth?' : 'Sana Dünya\'yı dinleteyim mi?'}</h2>
+            <p className="small">{lang === 'en' ? '30 seconds, 4 places: Sahara, Amazon, Central Africa, North Atlantic.' : '30 saniye, 4 yer: Sahra, Amazon, Orta Afrika, Kuzey Atlantik.'}</p>
+            <div className="btn-row">
+              <button type="button" className="btn primary" onClick={() => tourApi.current.answer(true)}>{lang === 'en' ? 'Start tour' : 'Turu başlat'}</button>
+              <button type="button" className="btn" onClick={() => tourApi.current.answer(false)}>{lang === 'en' ? 'Skip' : 'Geç'}</button>
+            </div>
+          </div>
+        )}
       </main>
 
       <PlayerBar lang={lang} place={active ? (compare && placeB ? (active === placeB ? 'B · ' : 'A · ') : '') + placeLabel(active) : null}
@@ -1078,8 +1274,8 @@ export default function App() {
       <SidePanel lang={lang} tab={panelTab} setTab={setPanelTab} open={panelOpen} setOpen={setPanelOpen}
         tabs={{ listen: listenTab, weather: weatherTab, explore: exploreTab, guide: guidePanel }} />
 
-      <Dialog open={pickOpen} onClose={() => setPickOpen(false)} title={pickFor === 'B' ? (lang === 'en' ? 'Choose the second place' : 'İkinci yeri seç') : tr(lang, 'searchTitle')} lang={lang}>
-        <PlacePicker cities={cities} place={pickFor === 'B' ? placeB : place} onPick={(p) => { if (pickFor === 'B') { setPlaceB(p); setCompare(true); setCmpTurn(0); announce(lang === 'en' ? `Second place: ${placeLabel(p)}. The radar now plays one sweep here and one sweep there. Press Space to listen.` : `İkinci yer: ${placeLabel(p)}. Radar artık bir tur birinci yeri, bir tur ikinci yeri çalar. Dinlemek için Boşluk.`); } else setPlace(p); setPickOpen(false); }} announce={announce} autoFocus lang={lang} />
+      <Dialog open={pickOpen} onClose={() => setPickOpen(false)} title={pickFor === 'B' ? (lang === 'en' ? 'Choose the second place' : 'İkinci yeri seç') : pickFor === 'H' ? (lang === 'en' ? 'Choose your home' : 'Ev konumunu seç') : tr(lang, 'searchTitle')} lang={lang}>
+        <PlacePicker cities={cities} place={pickFor === 'B' ? placeB : place} onPick={(p) => { if (pickFor === 'H') { saveHome(p); setPickOpen(false); announce(lang === 'en' ? `${p.name} saved as your home.` : `${p.name} eviniz olarak kaydedildi.`); return; } if (pickFor === 'B') { setPlaceB(p); setCompare(true); setCmpTurn(0); announce(lang === 'en' ? `Second place: ${placeLabel(p)}. The radar now plays one sweep here and one sweep there. Press Space to listen.` : `İkinci yer: ${placeLabel(p)}. Radar artık bir tur birinci yeri, bir tur ikinci yeri çalar. Dinlemek için Boşluk.`); } else setPlace(p); setPickOpen(false); }} announce={announce} autoFocus lang={lang} />
         <p className="small muted">{tr(lang, 'orTap')}</p>
       </Dialog>
       <StoriesDialog open={storiesOpen} onClose={() => setStoriesOpen(false)} lang={lang} stories={storyList} hasPlace={!!place} onRun={(id) => { setStoriesOpen(false); void runStory(id); }} />
@@ -1090,7 +1286,10 @@ export default function App() {
         onTest={(id) => { engine.unlock(); const ids = id === 'aerosol' ? ['black_carbon', 'dust', 'sea_salt', 'sulfate'] : [id]; ids.forEach((t, i) => [0.2, 0.5, 0.8].forEach((v, j) => engine.voice(t, noteHz(v, PARTS[t as keyof typeof PARTS]), engine.now + 0.05 + i * 1.1 + j * 0.3, 0.5, 0.8, 0))); }} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} lang={lang} setLang={setLang} hc={hc} setHc={setHc} view3d={view3d} can3d={can3d} setView3d={setView3d}
         guide={guide} setGuide={setGuide} handsFree={hfWanted} setHandsFree={setHfWanted} micSupported={listener.supported} shortcuts={shortcutsOn} setShortcuts={setShortcuts}
-        music={mix.music} setMusic={(v) => setMix({ ...mix, music: v })} onSoundscape={() => { setSettingsOpen(false); setSoundOpen(true); }} />
+        music={mix.music} setMusic={(v) => setMix({ ...mix, music: v })} onSoundscape={() => { setSettingsOpen(false); setSoundOpen(true); }}
+        rate={mix.rate} setRate={(v) => setMix({ ...mix, rate: v })}
+        home={home ? home.name : null} onHomeChange={() => { setSettingsOpen(false); setPickFor('H'); setPickOpen(true); }}
+        onHomeDelete={() => { saveHome(null); announce(lang === 'en' ? 'Home location deleted.' : 'Ev konumu silindi.'); }} />
       <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} lang={lang} onSpeak={() => { if (guideRef.current) void speech.say(helpText()); else announce(helpText()); }} />
       <About open={aboutOpen} onClose={() => setAboutOpen(false)} lang={lang} credits={credits} extra={<DataInventory lang={lang} />} />
       <ImageScan open={scanOpen} onClose={() => setScanOpen(false)} lang={lang} announce={announce} />

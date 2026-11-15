@@ -23,10 +23,10 @@ interface Props {
   open?: boolean; setOpen?: (v: boolean) => void;
 }
 
-const CHIP_ICONS = [IconPin, IconPlay, IconWave, IconSpeak, IconGlobe];
+const CHIP_ICONS = [IconPin, IconPlay, IconWave, IconSpeak, IconGlobe, IconGlobe, IconSpeak, IconSpeak, IconPin, IconPin, IconWave];
 const CHIPS: Record<Lang, string[]> = {
-  tr: ['Ankara\'ya git', 'Çal', 'Deniz sıcaklığını aç', 'Özet', 'Switch to English'],
-  en: ['Go to Tokyo', 'Play', 'Precipitation on', 'Summary', 'Türkçeye geç'],
+  tr: ['Ankara\'ya git', 'Çal', 'Deniz sıcaklığını aç', 'Özet', 'Switch to English', 'Turu başlat', 'Daha hızlı konuş', 'Tekrar et', 'Burası benim evim', 'Eve dön', 'Evde hava nasıl'],
+  en: ['Go to Tokyo', 'Play', 'Precipitation on', 'Summary', 'Türkçeye geç', 'Start the tour', 'Speak faster', 'Repeat', 'This is my home', 'Go home', 'Weather at home'],
 };
 
 export function Guide({ lang, micSupported, listening, status, history, onTalk, onCommand, narrator, setNarrator, inputRef, handsFree, handsFreeWanted, setHandsFreeWanted, open = true, setOpen }: Props) {

@@ -6,6 +6,32 @@ import { COND_ICON, condText, dayName, localDate, nowCond, sourceLine, spokenDet
 import { seedOf } from '../lib/worlds.ts';
 import { weatherMusic } from '../lib/music.ts';
 import { Dialog } from './Shell.tsx';
+import { speech } from '../audio/speech.ts';
+
+/** Anlatımdan önce kaç sn ses. */
+export const WX_LEAD = 2;
+/** Hava sahnesini (doğa + müzik) çal; WX_LEAD sn sonra anlat. Süre metnin uzunluğuna göre (anlatım + 2 sn kuyruk). */
+export function playThenSay(sc: ReturnType<typeof weatherScene>, key: string, d: Parameters<typeof weatherMusic>[0] | undefined, text: string,
+  announce: (t: string) => void, o: { music: boolean; nature: boolean }) {
+  engine.unlock(); const t0 = engine.now + 0.1;
+  const dur = Math.min(40, WX_LEAD + 2.5 + text.length * 0.07 / speech.rate);
+  if (o.nature) engine.weather(sc, t0, dur, seedOf('weather', key));
+  if (o.music && d) { // hava durumu müziği (günün verisinden; doğanın altında)
+    const m = weatherMusic(d), md = dur - 0.5, n = Math.max(1, Math.round(m.notesPerSec * md));
+    for (let k = 0; k < n; k++) engine.musicNote(m.instr, m.instr === 'harp' ? m.freqs : [m.freqs[k % m.freqs.length]], t0 + (k * md) / n, Math.max(0.6, md / n * 1.4), o.nature ? 0.3 : 0.6, ((k % 3) - 1) * 0.4);
+    if (m.timpani) for (let k = 0; k < Math.floor(md / 2); k++) engine.musicNote('timpani', [m.freqs[0] / 4], t0 + 1 + k * 2, 1.5, o.nature ? 0.35 : 0.6, 0);
+  }
+  // önceki konuşma (ör. "Anlaşıldı: …") bitene kadar bekle, ama en az WX_LEAD sn ses duyulsun
+  const start = Date.now();
+  const tick = () => { if (Date.now() - start >= WX_LEAD * 1000 && (!speech.active || Date.now() - start > 6000)) announce(text); else setTimeout(tick, 150); };
+  setTimeout(tick, WX_LEAD * 1000);
+}
+/** Şu anın sahnesi + müzik girdisi. */
+export function nowSceneOf(F: Forecast, p: LatLon, now = Date.now()) {
+  const s = F.sample(F.nowStep(now), p);
+  const d = { tMean: s.t, precipMm: s.precip * 24, snowMm: s.snow * 24, convMm: s.conv * 24, wind: s.wind, thunderChance: s.conv * 24 >= 5 && s.conv >= 0.5 * s.precip, cloud: s.cloud };
+  return { s, d, sc: weatherScene(d) };
+}
 
 interface Props {
   open: boolean; onClose: () => void; lang: 'tr' | 'en';
@@ -20,22 +46,15 @@ interface Props {
 export function Weather({ open, onClose, lang, forecast: F, error, target, announce, music = true, nature = true, inline = false }: Props) {
   const en = lang === 'en';
   const now = Date.now(), todayIso = localDate(now);
-  const play = (sc: ReturnType<typeof weatherScene>, key: string, d?: Parameters<typeof weatherMusic>[0]) => {
-    engine.unlock(); const t0 = engine.now + 0.1;
-    if (nature) engine.weather(sc, t0, 7, seedOf('weather', key));
-    if (music && d) { // hava durumu müziği (günün verisinden; doğanın altında)
-      const m = weatherMusic(d), n = Math.round(m.notesPerSec * 6.5);
-      for (let k = 0; k < n; k++) engine.musicNote(m.instr, m.instr === 'harp' ? m.freqs : [m.freqs[k % m.freqs.length]], t0 + (k * 6.5) / n, Math.max(0.6, 6.5 / n * 1.4), nature ? 0.3 : 0.6, ((k % 3) - 1) * 0.4);
-      if (m.timpani) for (let k = 0; k < 3; k++) engine.musicNote('timpani', [m.freqs[0] / 4], t0 + 1 + k * 2, 1.5, nature ? 0.35 : 0.6, 0);
-    }
-  };
+  /** Önce ses (~2 sn), sonra anlatım; ses anlatım boyunca kısık sürer (konuşma kısması), bitince normale döner. */
+  const play = (sc: ReturnType<typeof weatherScene>, key: string, d: Parameters<typeof weatherMusic>[0] | undefined, text: string) => playThenSay(sc, key, d, text, announce, { music, nature });
   let body: React.ReactNode;
   if (error) body = <p role="alert">{en ? 'The forecast file could not be loaded. The rest of the app keeps working.' : 'Tahmin dosyası yüklenemedi. Uygulamanın geri kalanı çalışmaya devam eder.'} <small className="muted">({error})</small></p>;
   else if (!F) body = <p role="status">{en ? 'Loading forecast…' : 'Tahmin yükleniyor…'}</p>;
   else if (!target) body = <p>{en ? 'Choose a place first (for example say "Earth, go to Ankara").' : 'Önce bir yer seç (örneğin "Dünya, Ankara\'ya git" de).'}</p>;
   else {
     const s = F.sample(F.nowStep(now), target), days = F.days(target).filter((d) => d.date >= todayIso), c = nowCond(s), stale = staleLine(F.meta, F.ageHours(now), lang);
-    const nowScene = weatherScene({ tMean: s.t, precipMm: s.precip * 24, snowMm: s.snow * 24, convMm: s.conv * 24, wind: s.wind, thunderChance: s.conv * 24 >= 5 && s.conv >= 0.5 * s.precip, cloud: s.cloud });
+    const ns = nowSceneOf(F, target, now);
     body = (
       <>
         <section className="wx-today" aria-labelledby="wx-today-h">
@@ -43,7 +62,7 @@ export function Weather({ open, onClose, lang, forecast: F, error, target, annou
           <p className="wx-big"><span aria-hidden="true">{COND_ICON[c]}</span> {Number.isNaN(s.t) ? '—' : `${Math.round(s.t)} °C`}</p>
           <p>{condText(c, lang)}, {windText(s.wind, lang)} ({Math.round(s.wind)} m/s)</p>
           <div className="btn-row">
-            <button type="button" className="btn primary" onClick={() => { play(nowScene, `now-${target.lat}-${target.lon}`, { tMean: s.t, precipMm: s.precip * 24, snowMm: s.snow * 24, wind: s.wind, thunderChance: s.conv * 24 >= 5 && s.conv >= 0.5 * s.precip, cloud: s.cloud }); announce(spokenSummary(F, target.name, target, lang, now)); }}>{en ? 'Listen: now + week' : 'Dinle: şu an + hafta'}</button>
+            <button type="button" className="btn primary" onClick={() => play(ns.sc, `now-${target.lat}-${target.lon}`, ns.d, spokenSummary(F, target.name, target, lang, now))}>{en ? 'Listen: now + week' : 'Dinle: şu an + hafta'}</button>
             <button type="button" className="btn" onClick={() => announce(spokenDetail(F, target, lang, now))}>{en ? 'More detail' : 'Daha fazla'}</button>
           </div>
         </section>
@@ -54,7 +73,7 @@ export function Weather({ open, onClose, lang, forecast: F, error, target, annou
             const txt = `${name}: ${Math.round(d.tMin)}–${Math.round(d.tMax)} °C, ${condText(d.cond, lang)}${d.thunderChance ? (en ? ', chance of thunderstorms' : ', gök gürültülü sağanak olasılığı') : ''}, ${en ? 'precipitation' : 'yağış'} ${d.precipMm.toFixed(1)} mm, ${windText(d.wind, lang)}.`;
             return (
               <li key={d.date}>
-                <button type="button" className="wx-day" aria-label={txt} onClick={() => { play(weatherScene(d), `${d.date}-${target.lat}-${target.lon}`, d); announce(txt); }}>
+                <button type="button" className="wx-day" aria-label={txt} onClick={() => play(weatherScene(d), `${d.date}-${target.lat}-${target.lon}`, d, txt)}>
                   <b>{name}</b><span aria-hidden="true" className="wx-ico">{COND_ICON[d.cond]}</span><span>{Math.round(d.tMax)}° / {Math.round(d.tMin)}°</span>
                   {d.thunderChance && <small>{en ? 'thunder?' : 'gök gürültüsü olasılığı'}</small>}
                 </button>

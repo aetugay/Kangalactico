@@ -33,7 +33,9 @@ function utter(text: string, rate: number): SpeechSynthesisUtterance {
 export const speech = {
   supported,
   setLang(l: SpeechLang) { lang = l; },
-  setRate(mul: number) { rateMul = Math.max(0.6, Math.min(1.8, mul)); },
+  setRate(mul: number) { rateMul = Math.max(0.6, Math.min(2, mul)); },
+  /** Kullanıcının konuşma hızı çarpanı (0.8–2). */
+  get rate() { return rateMul; },
   /** Öncelikli konuşma sürerken true (özet/lejant düğmelerini "durdur"a çevirmek için). */
   get active() { return priority; },
   onChange(fn: (active: boolean) => void) { listeners.add(fn); return () => { listeners.delete(fn); }; },

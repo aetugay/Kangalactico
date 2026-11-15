@@ -7,9 +7,11 @@ export const WORLD_SOUNDS: Record<World, string[]> = {
   dust: ['toz_hafif', 'toz_siddetli'], smoke: ['ates_kucuk', 'ates_buyuk'], spray: ['deniz_serpinti'], volcano: ['volkan'],
   thunder: ['gok_yakin_1', 'gok_yakin_2', 'gok_yakin_3', 'gok_uzak_1', 'gok_uzak_2'], city: [],
   forest: ['orman_kus', 'yaprak_hisirti', 'ruzgar_hafif'], heat: ['kis_ruzgari', 'ruzgar_hafif', 'buz_catirti_1', 'buz_catirti_2'],
-  ocean: ['dalga_sakin', 'dalga_sert', 'buz_catirti_1', 'buz_catirti_2'],
+  ocean: ['dalga_sakin', 'dalga_sert', 'buz_catirti_1', 'buz_catirti_2', 'okyanus_sax_1', 'okyanus_sax_2', 'okyanus_sax_3', 'okyanus_sax_4', 'okyanus_sax_5'],
   current: ['dalga_sakin', 'dalga_sert'],
 };
+/** Okyanus müzik katmanı: saksafon cümleleri (scripts/sounds-sax.mjs; perde = cümlenin ortanca perdesi, sounds.json). */
+export const SAX_PHRASES: { name: string; pitchHz: number }[] = [{ name: 'okyanus_sax_1', pitchHz: 222 }, { name: 'okyanus_sax_2', pitchHz: 500 }, { name: 'okyanus_sax_3', pitchHz: 333 }, { name: 'okyanus_sax_4', pitchHz: 250 }, { name: 'okyanus_sax_5', pitchHz: 444 }];
 export const WEATHER_SOUNDS = ['yagmur_cisenti', 'yagmur_orta', 'yagmur_saganak', 'kar', 'ruzgar_hafif', 'ruzgar_kuvvetli', 'kis_ruzgari', 'gece_circir', 'gok_yakin_1', 'gok_yakin_2', 'gok_yakin_3', 'gok_uzak_1', 'gok_uzak_2'];
 
 /** Çözme için ayrı çevrimdışı bağlam: kullanıcı dokunuşundan önce de yüklenebilir (AudioBuffer her bağlamda çalar). */

@@ -124,7 +124,12 @@ export class RadarPlayer {
     if (sound !== 'music') for (const e of wev) engine.world(e.params, when, step * e.durBeams, e.pan, e.seed, engine.mix.vol[e.layerId] ?? 1);
     if (sound !== 'nature') { // veriden doğan müzik (doğa seslerinin altında)
       if (b === 0 || !this.mood) this.mood = moodOf(F);
-      for (const m of musicEvents(F, b, this.mood)) engine.musicNote(m.instr, m.freqs, when, step * m.durBeams, sound === 'music' ? m.gain * 3 : m.gain, m.pan);
+      for (const m of musicEvents(F, b, this.mood)) {
+        engine.musicNote(m.instr, m.freqs, when, step * m.durBeams, sound === 'music' ? m.gain * 3 : m.gain, m.pan);
+        // okyanus: saksafon cümlesi (aralıklı; veri yükseldikçe daha olası). Doğa+müzik: dalga zemininin ~6–9 dB altında · sadece müzik: öne çıkar
+        if (m.world === 'ocean' && (seedOf('sax', b, Math.round(m.t * 100)) % 1000) / 1000 < 0.12 + 0.45 * m.t)
+          engine.oceanSax(when, m.minor ? 220 : 261.63, m.t, m.pan, sound === 'music' ? 0.5 : 0.24 * (0.8 + 0.2 * m.t), seedOf('saxp', b, Math.round(m.t * 100)));
+      }
     }
     this.emit([...events, ...wev], b, when);
   }

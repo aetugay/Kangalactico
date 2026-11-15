@@ -1,6 +1,6 @@
 import { INSTRUMENT_OF } from '../lib/radar.ts';
 import { worldParams, type WorldParams } from '../lib/worlds.ts';
-import { soundBank } from './soundbank.ts';
+import { soundBank, SAX_PHRASES } from './soundbank.ts';
 // Web Audio motoru (demo/index.html'den taşındı). Tek örnek: `engine`.
 // Ses yalnızca kullanıcı dokunuşu içinde unlock() çağrılınca başlar.
 
@@ -572,6 +572,25 @@ class AudioEngine {
   /** Rehber konuşurken doğa + müzik kısılır (ducking). */
   duck(on: boolean) { if (this.ac) this.master.gain.setTargetAtTime(this.mix.master * (on ? 0.35 : 1), this.ac.currentTime, on ? 0.08 : 0.4); }
   /** Bir müzik olayı (lib/music.ts musicEvents / weatherMusic): çalgı + akor notaları, yumuşak zarf. */
+  private saxBusy = 0;
+  /**
+   * Okyanus müzik katmanı: kayıtlı saksafon cümlesi (aralıklı; bir cümle bitip kısa ara verilmeden yenisi başlamaz).
+   * rootHz: müzik katmanının o anki kökü (majör Do / minör La) — cümle bu köke kaydırılır (en çok ±6 yarım ton).
+   * t: veri (0..1) → daha parlak (alçak geçiren açılır) ve cümleler arası ara kısalır. Müzik seviyesi ayarına uyar. Dosya yoksa sessiz.
+   */
+  oceanSax(when: number, rootHz: number, t: number, pan: number, gain: number, seed: number): boolean {
+    const ac = this.ctx(); if (when < this.saxBusy) return false;
+    const rnd = seeded(seed), ph = SAX_PHRASES[Math.floor(rnd() * SAX_PHRASES.length)], buf = soundBank.get(ph.name); if (!buf) return false;
+    let rate = rootHz / ph.pitchHz; while (rate > 1.42) rate /= 2; while (rate < 0.707) rate *= 2;
+    const s = ac.createBufferSource(); s.buffer = buf; s.playbackRate.value = rate;
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800 + 4500 * Math.max(0, Math.min(1, t)); lp.Q.value = 0.5;
+    const g = ac.createGain(), p = ac.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan));
+    const len = buf.duration / rate, peak = gain * (this.musicLevel / 1.1);
+    g.gain.setValueAtTime(0.0001, when); g.gain.linearRampToValueAtTime(peak, when + 0.15); g.gain.setValueAtTime(peak, when + len - 0.4); g.gain.linearRampToValueAtTime(0.0001, when + len);
+    s.connect(lp).connect(g).connect(p).connect(this.out()); s.start(when); s.stop(when + len + 0.05);
+    this.saxBusy = when + len + 1.2 + (1 - t) * 5; // veri arttıkça cümleler sıklaşır
+    return true;
+  }
   musicNote(instr: string, freqs: number[], when: number, dur: number, gain: number, pan: number) {
     if (gain <= 0.001 || !freqs.length) return;
     const ac = this.ctx(), bus = this.music();

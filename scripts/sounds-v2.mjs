@@ -54,8 +54,6 @@ const PLAN = [
   { role: 'kis_ruzgari', old: ['wind', 20, 'highpass=f=500,treble=g=6:f=3000,acompressor=threshold=-24dB:ratio=4:attack=5:release=80,volume=2dB'], neu: ['814710', { pitch: 0.75, hp: 400, lp: 2600 }], gain: -10, why: 'yankılı flüt → buzlu rüzgârın uğuldayan tonu (bulanık, 600 Hz–2,6 kHz); rüzgârın hışırtısı baskın' },
   { role: 'ruzgar_hafif', old: ['wind', 5, 'lowpass=f=1200,volume=-7dB'], neu: ['333996', { pitch: 0.5, hp: 150, lp: 1200 }], gain: -14, why: 'Kızılderili flütü bir oktav pes + alçak geçiren → esintinin altında yumuşak, havalı gövde' },
   { role: 'ruzgar_kuvvetli', old: ['wind', 40, ''], neu: ['324085', { pitch: 0.85, hp: 1500, lp: 5000 }], gain: -15, why: 'sopranino blok flüt yüksek geçiren + bulanık → sert rüzgârda ıslık/uğultu' },
-  { role: 'dalga_sakin', old: ['wave', 20, ''], neu: ['872028', { pitch: 0.5, hp: 40, lp: 380 }], gain: -12, why: 'film müziğinin bas pedi bir oktav pes (<380 Hz) → dalganın altında derin deniz kabarması; tizdeki köpük eski kayıttan' },
-  { role: 'dalga_sert', old: ['wave', 100, 'acompressor=threshold=-26dB:ratio=5:attack=3:release=60,treble=g=4:f=2500,volume=3dB'], neu: ['757835', { pitch: 0.5, hp: 40, lp: 300 }], gain: -12, why: 'elektrikli saksafon kaydının güçlü bas bandı iki oktav pes (<300 Hz) → sert dalganın gövdesi; melodi bandı atıldı' },
   { role: 'volkan', old: ['thunderstorm', 60, 'lowpass=f=140,lowpass=f=140,volume=6dB'], neu: ['861539', { pitch: 0.5, hp: 25, lp: 160 }], gain: -3, why: 'yaylı orkestranın bas sesi bir oktav pes (<160 Hz) + fırtına kaydının boğuk gürlemesi → derin volkan uğultusu (şimdiye kadar sentezdi)' },
 ];
 const L = 38, report = [];

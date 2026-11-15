@@ -273,8 +273,8 @@
    "centroidOld": 4955,
    "centroidNew": 4619,
    "kb": 595,
-   "used": true,
-   "why": "film müziğinin bas pedi bir oktav pes (<380 Hz) → dalganın altında derin deniz kabarması; tizdeki köpük eski kayıttan"
+   "used": false,
+   "why": "film müziğinin bas pedi bir oktav pes (<380 Hz) → dalganın altında derin deniz kabarması; tizdeki köpük eski kayıttan — 2026-11-15: saf dalga zemine dönüldü; saksafon artık ayrı melodik katman (okyanus_sax_N) — 2026-11-15: saf dalga zemine dönüldü; saksafon artık ayrı melodik katman (okyanus_sax_N)"
   },
   {
    "role": "dalga_sert",
@@ -286,8 +286,8 @@
    "centroidOld": 5458,
    "centroidNew": 5175,
    "kb": 595,
-   "used": true,
-   "why": "elektrikli saksafon kaydının güçlü bas bandı iki oktav pes (<300 Hz) → sert dalganın gövdesi; melodi bandı atıldı"
+   "used": false,
+   "why": "elektrikli saksafon kaydının güçlü bas bandı iki oktav pes (<300 Hz) → sert dalganın gövdesi; melodi bandı atıldı — 2026-11-15: saf dalga zemine dönüldü; saksafon artık ayrı melodik katman (okyanus_sax_N) — 2026-11-15: saf dalga zemine dönüldü; saksafon artık ayrı melodik katman (okyanus_sax_N)"
   },
   {
    "role": "volkan",
@@ -301,6 +301,48 @@
    "kb": 595,
    "used": true,
    "why": "yaylı orkestranın bas sesi bir oktav pes (<160 Hz) + fırtına kaydının boğuk gürlemesi → derin volkan uğultusu (şimdiye kadar sentezdi)"
+  }
+ ],
+ "sax": [
+  {
+   "name": "okyanus_sax_1",
+   "from": "sax.m4a",
+   "start": 19.4,
+   "seconds": 4,
+   "pitchHz": 222,
+   "kb": 64
+  },
+  {
+   "name": "okyanus_sax_2",
+   "from": "sax.m4a",
+   "start": 33.3,
+   "seconds": 2.6,
+   "pitchHz": 500,
+   "kb": 42
+  },
+  {
+   "name": "okyanus_sax_3",
+   "from": "sax.m4a",
+   "start": 36.5,
+   "seconds": 3.3,
+   "pitchHz": 333,
+   "kb": 53
+  },
+  {
+   "name": "okyanus_sax_4",
+   "from": "sax.m4a",
+   "start": 42.6,
+   "seconds": 3.3,
+   "pitchHz": 250,
+   "kb": 53
+  },
+  {
+   "name": "okyanus_sax_5",
+   "from": "sax.m4a",
+   "start": 48.6,
+   "seconds": 6.2,
+   "pitchHz": 444,
+   "kb": 98
   }
  ]
 }

@@ -292,7 +292,7 @@ export default function App() {
   /** Noktanın adı (TR ve EN): derin bağlantı adı > ülke / deniz (+300 km içindeki şehir) > koordinat. */
   const namesFor = useCallback((p: LatLon): { tr: string; en: string } => {
     const lm = cities?.landmark(p, 300), al = gazRef.current?.cityTr;
-    const city = lm ? { tr: al ? al(lm.row[0]) : lm.row[0], en: lm.row[0], km: lm.km } : null;
+    const city = lm ? { tr: al ? al(lm.row[0]) : lm.row[0], en: lm.row[0], km: lm.km, cc: lm.row[1], country: { tr: countryName(lm.row[1], 'tr'), en: countryName(lm.row[1], 'en') } } : null;
     return revRef.current?.name(p, city) ?? (city ? { tr: `${city.tr} yakını`, en: `near ${city.en}` } : { tr: formatLatLon(p, 'tr'), en: formatLatLon(p, 'en') });
   }, [cities]);
   const pickPoint = useCallback((p: LatLon, source: Place['source'], given?: { tr: string; en: string }) => {
@@ -1323,7 +1323,7 @@ export default function App() {
 
       <AppHeader lang={lang} listening={listening} micSupported={listener.supported} onTalk={() => talk()} onHoldStart={() => talk(true)} onHoldEnd={() => listener.finish()}
         guide={guide} onGuide={() => setGuide(!guideRef.current)}
-        search={<PlacePicker compact cities={cities} place={place} onPick={(p) => setPlace(p)} announce={announce} lang={lang} />}
+        search={<PlacePicker compact cities={cities} place={place} nameFor={namesFor} onPick={(p) => setPlace(p)} announce={announce} lang={lang} />}
         onWeather={() => openWeather(place ? { ...place, name: placeLabel(place).split(',')[0] } : null)} onSettings={() => setSettingsOpen(true)} onAbout={() => setAboutOpen(true)} onHelp={() => setHelpOpen(true)} />
 
       <main className="stage" aria-label={lang === 'en' ? 'Earth' : 'Dünya'}>
@@ -1380,7 +1380,7 @@ export default function App() {
         tabs={{ listen: listenTab, weather: weatherTab, explore: exploreTab, guide: guidePanel }} />
 
       <Dialog open={pickOpen} onClose={() => setPickOpen(false)} title={pickFor === 'B' ? (lang === 'en' ? 'Choose the second place' : 'İkinci yeri seç') : pickFor === 'H' ? (lang === 'en' ? 'Choose your home' : 'Ev konumunu seç') : tr(lang, 'searchTitle')} lang={lang}>
-        <PlacePicker cities={cities} place={pickFor === 'B' ? placeB : place} onPick={(p) => { if (pickFor === 'H') { saveHome(p); setPickOpen(false); announce(lang === 'en' ? `${nm(p)} saved as your home.` : `${nm(p)} eviniz olarak kaydedildi.`); return; } if (pickFor === 'B') { setPlaceB(p); setCompare(true); setCmpTurn(0); announce(lang === 'en' ? `Second place: ${placeLabel(p)}. The radar now plays one sweep here and one sweep there. Press Space to listen.` : `İkinci yer: ${placeLabel(p)}. Radar artık bir tur birinci yeri, bir tur ikinci yeri çalar. Dinlemek için Boşluk.`); } else setPlace(p); setPickOpen(false); }} announce={announce} autoFocus lang={lang} />
+        <PlacePicker cities={cities} place={pickFor === 'B' ? placeB : place} nameFor={namesFor} onPick={(p) => { if (pickFor === 'H') { saveHome(p); setPickOpen(false); announce(lang === 'en' ? `${nm(p)} saved as your home.` : `${nm(p)} eviniz olarak kaydedildi.`); return; } if (pickFor === 'B') { setPlaceB(p); setCompare(true); setCmpTurn(0); announce(lang === 'en' ? `Second place: ${placeLabel(p)}. The radar now plays one sweep here and one sweep there. Press Space to listen.` : `İkinci yer: ${placeLabel(p)}. Radar artık bir tur birinci yeri, bir tur ikinci yeri çalar. Dinlemek için Boşluk.`); } else setPlace(p); setPickOpen(false); }} announce={announce} autoFocus lang={lang} />
         <p className="small muted">{tr(lang, 'orTap')}</p>
       </Dialog>
       <StoriesDialog open={storiesOpen} onClose={() => setStoriesOpen(false)} lang={lang} stories={storyList} hasPlace={!!place} onRun={(id) => { setStoriesOpen(false); void runStory(id); }} />

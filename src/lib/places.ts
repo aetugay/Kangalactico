@@ -51,7 +51,7 @@ export class Cities {
   }
   /** Ad için şehir: km içinde nüfusu ≥ minPop olan EN BÜYÜK şehir; yoksa en yakın şehir (banliyö yerine bilinen şehir: Reykjavík, Sydney). */
   landmark(p: LatLon, km = 300, minPop = 100_000): { row: CityRow; km: number } | null {
-    const here = this.nearest(p, 25); if (here) return here; // nokta bir şehrin üstündeyse o şehir (Sivas'ta "Kayseri yakını" değil)
+    const h = this.notable(p, 25); if (h) return { row: h, km: haversineKm(p, { lat: h[2], lon: h[3] }) }; // nokta bir şehrin üstündeyse 25 km içindeki EN KALABALIK şehir (Sivas'ta "Kayseri yakını" değil; Reykjavík'te "Kópavogur" değil)
     for (const c of this.data.cities) { // nüfusa göre sıralı
       if (c[4] < minPop) break;
       if (Math.abs(c[2] - p.lat) > km / 100) continue;

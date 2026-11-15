@@ -10,6 +10,8 @@ interface Props {
   lang?: 'tr' | 'en';
   /** Üst çubukta satır içi arama: etiket gizli, ipucu yok, konum düğmesi ikon. */
   compact?: boolean;
+  /** Konumun TR/EN adı (ters coğrafi kodlama; App.namesFor). */
+  nameFor?: (p: { lat: number; lon: number }) => { tr: string; en: string };
 }
 
 function AutoFocus({ target }: { target: React.RefObject<HTMLInputElement | null> }) {
@@ -21,7 +23,7 @@ function AutoFocus({ target }: { target: React.RefObject<HTMLInputElement | null
  * Şehir arama: WAI-ARIA 1.2 combobox (liste kutusu açılır, ↑/↓ seçenek, Enter seç, Esc kapat).
  * + "Konumumu kullan" (geolocation). Haritaya dokunma WorldMap bileşeninde.
  */
-export function PlacePicker({ cities, place, onPick, announce, autoFocus, lang = 'tr', compact = false }: Props) {
+export function PlacePicker({ cities, place, onPick, announce, autoFocus, lang = 'tr', compact = false, nameFor }: Props) {
   const en = lang === 'en';
   const T = (t: string, e: string) => (en ? e : t);
   const id = useId();
@@ -74,7 +76,8 @@ export function PlacePicker({ cities, place, onPick, announce, autoFocus, lang =
       const p = { lat: pos.coords.latitude, lon: pos.coords.longitude };
       const near = cities?.nearest(p, 60);
       setGeoMsg('');
-      onPick({ ...p, name: near ? `${near.row[0]} yakını` : 'Konumum', country: near ? countryName(near.row[1]) : undefined, source: 'konum' });
+      const names = nameFor?.(p);
+      onPick(names ? { ...p, name: names[lang], names, source: 'konum' } : { ...p, name: near ? `${near.row[0]} yakını` : 'Konumum', country: near ? countryName(near.row[1]) : undefined, source: 'konum' });
     };
     const fail = (err: GeolocationPositionError) => {
       setBusy(false);

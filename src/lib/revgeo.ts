@@ -5,9 +5,11 @@
 import type { LatLon } from './geo.ts';
 
 export interface RegionsFile { countries: Packed[]; marine: (Packed & { kind?: string })[] }
-interface Packed { tr: string; en: string; b: [number, number, number, number]; r: string }
-interface Region { tr: string; en: string; b: [number, number, number, number]; rings: Float32Array[]; area: number }
+interface Packed { tr: string; en: string; cc?: string; b: [number, number, number, number]; r: string }
+interface Region { tr: string; en: string; cc?: string; b: [number, number, number, number]; rings: Float32Array[]; area: number }
 export interface Names { tr: string; en: string }
+/** Şehir: TR/EN adı, uzaklık, ülke kodu (ISO-2) ve ülkesinin TR/EN adı. */
+export interface NearCity { tr: string; en: string; km: number; cc?: string; country?: Names }
 const SEP = -32768;
 
 function unpack(p: Packed): Region {
@@ -16,7 +18,7 @@ function unpack(p: Packed): Region {
   let cur: number[] = [];
   for (let i = 0; i < a.length; i += 2) { if (a[i] === SEP) { if (cur.length) rings.push(new Float32Array(cur)); cur = []; continue; } cur.push(a[i] / 100, a[i + 1] / 100); }
   if (cur.length) rings.push(new Float32Array(cur));
-  return { tr: p.tr, en: p.en, b: p.b, rings, area: (p.b[2] - p.b[0]) * (p.b[3] - p.b[1]) };
+  return { tr: p.tr, en: p.en, cc: p.cc, b: p.b, rings, area: (p.b[2] - p.b[0]) * (p.b[3] - p.b[1]) };
 }
 /** evenodd: halkalar arası delikler doğru sayılır. */
 function inside(R: Region, lon: number, lat: number): boolean {
@@ -33,7 +35,7 @@ const km = (a: LatLon, b: LatLon) => { const R = Math.PI / 180, x = Math.sin(((b
 export class RevGeo {
   private countries: Region[]; private marine: Region[];
   constructor(f: RegionsFile) { this.countries = f.countries.map(unpack); this.marine = f.marine.map(unpack).sort((a, b) => a.area - b.area); } // küçük (özgül) deniz önce: Akdeniz > Atlas Okyanusu
-  country(p: LatLon): Names | null { const c = this.countries.find((R) => inside(R, p.lon, p.lat)); return c ? { tr: c.tr, en: c.en } : null; }
+  country(p: LatLon): (Names & { cc?: string }) | null { const c = this.countries.find((R) => inside(R, p.lon, p.lat)); return c ? { tr: c.tr, en: c.en, cc: c.cc } : null; }
   sea(p: LatLon): Names | null {
     const m = this.marine.find((R) => inside(R, p.lon, p.lat)); if (m) return { tr: m.tr, en: m.en };
     // kıyı boşluğu: 400 km içindeki en yakın deniz bölgesi köşesi
@@ -42,9 +44,13 @@ export class RevGeo {
     return best ? { tr: best.tr, en: best.en } : null;
   }
   /** Adlandır. city: en yakın şehir (TR/EN adı + uzaklık km), varsa. Kutuplar: ülke/deniz yoksa "Kuzey/Güney Kutbu bölgesi". */
-  name(p: LatLon, city?: { tr: string; en: string; km: number } | null): Names | null {
+  name(p: LatLon, city?: NearCity | null): Names | null {
     const near = city && city.km <= 300 ? city : null;
     const c = this.country(p);
+    // karada: şehir YALNIZ noktanın bulunduğu ülkedeyse eklenir ("Arlit yakını, Cezayir" yanlış — Arlit Nijer'de)
+    if (c && near && near.cc && c.cc && near.cc !== c.cc) {
+      return near.km <= 100 && near.country ? { tr: `${c.tr}, ${near.country.tr} sınırına yakın`, en: `${c.en}, near the border with ${near.country.en}` } : { tr: c.tr, en: c.en };
+    }
     if (c) return near ? (near.km < 25 ? { tr: `${near.tr}, ${c.tr}`, en: `${near.en}, ${c.en}` } : { tr: `${near.tr} yakını, ${c.tr}`, en: `near ${near.en}, ${c.en}` }) : c; // şehrin üstünde: "Sivas, Türkiye"
     const s = this.sea(p);
     if (s) return near ? { tr: `${s.tr}, ${near.tr} açıkları`, en: `${s.en}, off ${near.en}` } : s;

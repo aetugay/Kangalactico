@@ -24,7 +24,7 @@ function pack(geom, step = 0) {
   }
   return { b: [x0, y0, x1, y1].map((v) => Math.round(v * 100) / 100), r: Buffer.from(new Int16Array(out).buffer).toString('base64') };
 }
-const countries = C.map((f) => { const p = f.properties; return { tr: p.NAME_TR || p.NAME, en: p.NAME_EN || p.NAME, ...pack(f.geometry) }; });
+const countries = C.map((f) => { const p = f.properties; return { tr: p.NAME_TR || p.NAME, en: p.NAME_EN || p.NAME, cc: p.ISO_A2_EH && p.ISO_A2_EH !== '-99' ? p.ISO_A2_EH : p.ISO_A2, ...pack(f.geometry) }; });
 const marine = M.filter((f) => f.properties.name).map((f) => { const p = f.properties, en = /^[A-Z\s]+$/.test(p.name_en || p.name) ? title(p.name_en || p.name) : (p.name_en || p.name); return { tr: TR_FIX[en] ?? (p.name_tr === 'Büyük Okyanus' ? 'Pasifik Okyanusu' : p.name_tr) ?? en, en, kind: p.featurecla, ...pack(f.geometry, 0.15) }; });
 fs.writeFileSync('public/data/regions.json', JSON.stringify({ source: 'Natural Earth 1:110m admin-0 countries + 1:50m marine areas (public domain), naturalearthdata.com', countries, marine }));
 console.log('ülke', countries.length, '· deniz/okyanus', marine.length, '→', Math.round(fs.statSync('public/data/regions.json').size / 1024), 'KB');

@@ -43,7 +43,7 @@ export function moodOf(F: FrameData): Mood {
 const midi = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
 const MAJOR = [[60, 64, 67], [65, 69, 72], [67, 71, 74], [57, 60, 64]];   // I IV V vi (C)
 const MINOR = [[57, 60, 64], [62, 65, 69], [64, 67, 71], [53, 57, 60]];   // i iv v VI (Am)
-const INSTR: Record<World, Instr> = { ocean: 'harp', smoke: 'tremolo', dust: 'pad', thunder: 'timpani', forest: 'marimba', city: 'pulse', spray: 'harp', volcano: 'drone', heat: 'drone' };
+const INSTR: Record<World, Instr> = { ocean: 'harp', smoke: 'tremolo', dust: 'pad', thunder: 'timpani', forest: 'marimba', city: 'pulse', spray: 'harp', volcano: 'drone', heat: 'drone', current: 'harp' };
 
 /** b. ışında müzik: baskın dünya (yakın yarıda en yüksek t) → çalgı + akor. Veri yoksa nota yok. */
 export function musicEvents(F: FrameData, b: number, mood: Mood): MusicEvent[] {

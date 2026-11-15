@@ -388,9 +388,9 @@ class AudioEngine {
     // ---- KAYDEDİLMİŞ SESLER (public/sounds; yüklendiyse): yoğunluğa göre hafif ↔ şiddetli geçiş. Yoksa aşağıdaki SENTEZ.
     const SB = soundBank, T = p.t;
     /** Döngü: seed'li bir noktadan başlar, zarfla girer/çıkar (üst üste binen olaylar kesintisiz doku oluşturur). */
-    const loopS = (name: string, peak: number) => {
+    const loopS = (name: string, peak: number, rate = 1) => {
       const buf = SB.get(name); if (!buf || peak <= 0.002) return;
-      const b = SB.bounds(name), s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.loopStart = b.start; s.loopEnd = b.end;
+      const b = SB.bounds(name), s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.loopStart = b.start; s.loopEnd = b.end; s.playbackRate.value = rate;
       const g = ac.createGain(); s.connect(g).connect(bus);
       g.gain.setValueAtTime(0.0001, when); g.gain.linearRampToValueAtTime(peak, when + atk); g.gain.setValueAtTime(peak, Math.max(when + atk, end - rel)); g.gain.linearRampToValueAtTime(0.0001, end);
       s.start(when, b.start + rnd() * (b.end - b.start - 0.05)); s.stop(end + 0.05);
@@ -416,6 +416,9 @@ class AudioEngine {
       } break;
       case 'forest': if (SB.has('orman_kus', 'yaprak_hisirti', 'ruzgar_hafif')) {
         const { leaves = 0, birds = 0, wind = 0 } = p.mix; loopS('orman_kus', 0.85 * L * birds); loopS('yaprak_hisirti', 0.6 * L * Math.max(leaves, 0.15)); loopS('ruzgar_hafif', 0.7 * L * wind); return;
+      } break;
+      case 'current': if (SB.has('dalga_sakin', 'dalga_sert')) { // akıntı: hız → tempo (çalma hızı) + yavaş ↔ sert dalga geçişi
+        loopS('dalga_sakin', 0.8 * L * (1 - T), 0.85 + 0.5 * T); loopS('dalga_sert', 0.8 * L * T, 0.85 + 0.5 * T); return;
       } break;
       case 'ocean': if (SB.has('dalga_sakin', 'dalga_sert')) {
         const { cold = 0, ice = 0 } = p.mix; loopS('dalga_sakin', 0.85 * L * (1 - cold)); loopS('dalga_sert', 0.85 * L * cold);
@@ -487,6 +490,11 @@ class AudioEngine {
           lfo.connect(d).connect(g.gain); lfo.start(when); lfo.stop(end + 0.05);
           noise('highpass', 6500, 0.5, 0.015 * L * hot, atk, rel); // sıcak hava titremesi
         }
+        break;
+      }
+      case 'current': { // akıntı (sentez): hız → dalga kabarma sıklığı (tempo) + parlaklık
+        const n = Math.max(1, Math.round(p.rate * dur));
+        for (let k = 0; k < n; k++) { const t0 = when + (k * dur) / n, len = Math.max(0.6, dur / n); noise('lowpass', p.cutoff, 0.6, 0.12 * L, len * 0.45, len * 0.5, t0, t0 + len); }
         break;
       }
       case 'ocean': { // dalga: sıcak = yumuşak, yavaş kabaran; soğuk = sert, parlak; buzlu = çatırtı

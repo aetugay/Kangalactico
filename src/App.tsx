@@ -30,13 +30,16 @@ import { ImageScan } from './components/ImageScan.tsx';
 import { INSTRUMENT_LABEL, M24 } from './lib/m24.ts';
 
 import { Cities, countryName, fold, placeLabel, rowToPlace, type CitiesFile, type Place } from './lib/places.ts';
+import { C5Source, loadC5, type C5Id } from './lib/cells5.ts';
 import { Gazetteer, goLine, hitName, soru, type Hit, type PlacesFile } from './lib/gazetteer.ts';
 import { gainFor, noteHz, PARTS, type Mode, type RadarLayer, type Scale, type SoundMode } from './lib/radar.ts';
 import { landTexture, paintEquirect } from './lib/textures.ts';
 import { Globe3D, hasWebGL, type GlobeSource } from './three/Globe3D.tsx';
 
 const BASE = import.meta.env.BASE_URL;
-type LayerId = 'co2' | 'temp' | 'sst' | 'aerosol' | 'ndvi' | 'lights' | 'lightning';
+type LayerId = 'co2' | 'temp' | 'sst' | 'aerosol' | 'ndvi' | 'lights' | 'lightning' | C5Id;
+/** 5° ayrı katmanlar (Ceyhun paketi, onaylı): kendi kartları, kendi çözünürlük etiketi; radar 1° SVS/v3 ızgarasına karıştırılmaz. */
+const C5_LAYERS: C5Id[] = ['currents', 'lis', 'gedi'];
 /** Katmanlar panelinde: EIC görsellerinden (birincil) ve NASA ham verisi (ikincil). */
 const EIC_LAYERS: LayerId[] = ['aerosol', 'lightning', 'sst', 'lights', 'ndvi', 'temp'];
 const RAW_LAYERS: LayerId[] = []; // CO₂ (OCO-2) ve MERRA-2 ana deneyimden çıktı → Hakkında: veri doğrulaması
@@ -63,6 +66,9 @@ const LAYER_UI: Record<LayerId, { label: { tr: string; en: string }; instrument:
   ndvi: { label: { tr: 'Orman ve bitki örtüsü', en: 'Forest & vegetation' }, instrument: { tr: 'yaprak + kuşlar', en: 'leaves + birds' }, color: '#7ddc6a', icon: <IconGlobe /> },
   lights: { label: { tr: 'Gece ışıkları', en: 'Night lights' }, instrument: { tr: 'şehir uğultusu', en: 'city hum' }, color: '#ffe08a', icon: <IconBreath /> },
   lightning: { label: { tr: 'Yıldırım', en: 'Lightning' }, instrument: { tr: 'gök gürültüsü', en: 'thunder' }, color: '#fff36b', icon: <IconBolt /> },
+  currents: { label: { tr: 'Okyanus akıntıları (5°)', en: 'Ocean currents (5°)' }, instrument: { tr: 'dalga temposu', en: 'wave tempo' }, color: '#5fb8ff', icon: <IconWave /> },
+  lis: { label: { tr: 'Yıldırım iklimi (5°)', en: 'Lightning climatology (5°)' }, instrument: { tr: 'gök gürültüsü', en: 'thunder' }, color: '#ffd84a', icon: <IconBolt /> },
+  gedi: { label: { tr: 'Orman yüksekliği (5°)', en: 'Forest height (5°)' }, instrument: { tr: 'yaprak + kuşlar', en: 'leaves + birds' }, color: '#3fbf6a', icon: <IconGlobe /> },
 };
 const store = { get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* yok say */ } } };
 const params = new URLSearchParams(location.search);
@@ -163,7 +169,7 @@ export default function App() {
   const [advance, setAdvance] = useState(true);
   const [tFrame, setTFrame] = useState(0);
   const [sstFrame, setSstFrame] = useState(0);
-  const [on, setOn] = useState<Record<LayerId, boolean>>({ co2: false, temp: true, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false });
+  const [on, setOn] = useState<Record<LayerId, boolean>>({ co2: false, temp: true, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false, currents: false, lis: false, gedi: false });
   const [visual, setVisual] = useState<LayerId>('temp');
   // 2024 aylık NASA katmanları (MERRA-2 / OCO-2; denetimden geçenler) — ayrı durum, mevcut 4 katmana dokunmaz
   const [m24, setM24] = useState<M24 | null>(null);
@@ -194,7 +200,7 @@ export default function App() {
   const [worldTheme, setWorldTheme] = useState<string | null>(null);
   const applyWorldTheme = (i: number) => {
     const th = WORLD_THEMES[i];
-    setOn({ co2: false, temp: false, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false, ...Object.fromEntries(th.layers.map((k) => [k, true])) });
+    setOn({ co2: false, temp: false, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false, currents: false, lis: false, gedi: false, ...Object.fromEntries(th.layers.map((k) => [k, true])) });
     setM24On({}); setVisual(th.layers[0]); setWorldTheme(th.tr);
     const en = langRef.current === 'en';
     announce(`${en ? th.en : th.tr}: ${th.layers.map((k) => `${LAYER_UI[k].label[en ? 'en' : 'tr']} (${LAYER_UI[k].instrument[en ? 'en' : 'tr']})`).join(', ')}.`);
@@ -249,6 +255,9 @@ export default function App() {
   useEffect(() => { if (on.ndvi && !ndvi) loadNdvi(BASE).then((n) => { setNdvi(n); setNdviFrame(n.frames - 1); }).catch((e) => setErr(String(e))); }, [on.ndvi, ndvi]);
   useEffect(() => { if (on.lights && !lights) loadLights(BASE).then((l) => { setLights(l); setLightsYear(l.years.length - 1); }).catch((e) => setErr(String(e))); }, [on.lights, lights]);
   useEffect(() => { if (on.lightning && !lightning) loadLightning(BASE).then(setLightning).catch((e) => setErr(String(e))); }, [on.lightning, lightning]);
+  const [c5, setC5] = useState<Partial<Record<C5Id, C5Source>>>({});
+  const [c5Land, setC5Land] = useState(0); // kara maskesi bağlanınca radar yeniden örneklesin
+  useEffect(() => { for (const id of C5_LAYERS) if (on[id] && !c5[id]) loadC5(BASE, id, null).then((src) => setC5((m) => ({ ...m, [id]: src }))).catch((e) => setErr(String(e))); }, [on, c5]);
 
   // SST videosu (küre dokusu) — yalnızca küre üstünde gösterilirken oynar; ızgara karesi video zamanını izler
   const video = useMemo(() => { const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'none'; v.src = `${BASE}media/sst_3912_1024.mp4`; return v; }, []);
@@ -294,9 +303,10 @@ export default function App() {
     if (on.ndvi && ndvi) L.push(ndvi.radarLayer(ndviFrame, lang));
     if (on.lights && lights) L.push(lights.radarLayer(lightsYear, lang));
     if (on.lightning && lightning) L.push(lightning.radarLayer(lang));
+    for (const id of C5_LAYERS) { const src = c5[id]; if (on[id] && src) L.push(src.radarLayer(lang)); }
     if (m24) m24.meta.layers.forEach((l, i) => { if (m24On[l.id]) L.push(m24.radarLayer(i, month, lang)); });
     return L;
-  }, [m24Rev, on, co2, temp, sst, aer, ndvi, lights, lightning, ndviFrame, lightsYear, month, tFrame, sstFrame, lang, mix.inst, m24, m24On]);
+  }, [m24Rev, c5, c5Land, on, co2, temp, sst, aer, ndvi, lights, lightning, ndviFrame, lightsYear, month, tFrame, sstFrame, lang, mix.inst, m24, m24On]);
 
   const advanceRef = useRef(advance); advanceRef.current = advance;
   const layersRef = useRef(layers); layersRef.current = layers;
@@ -591,7 +601,7 @@ export default function App() {
     void (async () => {
       for (let i = 0; i < TOUR.length; i++) {
         const S = TOUR[i], en = langRef.current === 'en';
-        setOn({ co2: false, temp: false, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false, ...Object.fromEntries(S.layers.map((k) => [k, true])) });
+        setOn({ co2: false, temp: false, sst: false, aerosol: false, ndvi: false, lights: false, lightning: false, currents: false, lis: false, gedi: false, ...Object.fromEntries(S.layers.map((k) => [k, true])) });
         setM24On({}); setVisual(S.layers[0]); setWorldTheme(null); setRange(S.range);
         setPlace({ lat: S.lat, lon: S.lon, name: en ? S.en.replace(/^the /, 'The ') : S.tr, source: 'harita' });
         setTour({ i: i + 1, n: TOUR.length, text: en ? S.en.replace(/^the /, 'The ') : S.tr });
@@ -643,7 +653,7 @@ export default function App() {
     const tell = async (t: string) => { if (alive()) await speech.say(t); return alive(); };
     const until = async (ok: () => boolean, ms = 10000) => { const t0 = Date.now(); while (!ok() && Date.now() - t0 < ms && alive()) await sleep(150); return ok(); };
     const nameOf = (p: LatLon) => { const n = live2.current.cities?.nearest(p, 150); return n ? n.row[0] : formatLatLon(p); };
-    const only = (k: LayerId) => { setOn({ co2: k === 'co2', temp: k === 'temp', sst: k === 'sst', aerosol: k === 'aerosol', ndvi: false, lights: false, lightning: false }); setVisual(k); };
+    const only = (k: LayerId) => { setOn({ co2: k === 'co2', temp: k === 'temp', sst: k === 'sst', aerosol: k === 'aerosol', ndvi: false, lights: false, lightning: false, currents: false, lis: false, gedi: false }); setVisual(k); };
     const title = storyList.find((s) => s.id === id)?.title ?? id;
     radarRef.current.hush(); setCompare(false); setStory(title); engine.unlock();
     const prevMode = mode, prevAdvance = advance;
@@ -896,7 +906,7 @@ export default function App() {
       setM24Layer(m24id, want);
       return true;
     }
-    const layer: LayerId | null = has('yildirim', 'simsek', 'lightning') ? 'lightning' : has('gece isik', 'night light', 'isiklar') ? 'lights' : has('bitki ortusu', 'ndvi', 'vejetasyon', 'vegetation', 'bitki', 'orman', 'forest') ? 'ndvi' : has('okyanus', 'deniz', 'ocean', ' sea ') ? 'sst' : has('sicakl', 'temperature', ' isi ') ? 'temp' : has('aerosol', 'toz', 'duman', 'dust', 'smoke') ? 'aerosol' : null;
+    const layer: LayerId | null = has('akinti', 'current') ? 'currents' : has('yildirim iklim', 'yildirim yogunl', 'flas yogunl', 'lightning climat', 'lightning density', 'lis otd') ? 'lis' : has('orman yuksekl', 'kanopi', 'agac boyu', 'agac yuksekl', 'forest height', 'canopy', 'gedi') ? 'gedi' : has('yildirim', 'simsek', 'lightning') ? 'lightning' : has('gece isik', 'night light', 'isiklar') ? 'lights' : has('bitki ortusu', 'ndvi', 'vejetasyon', 'vegetation', 'bitki', 'orman', 'forest') ? 'ndvi' : has('okyanus', 'deniz', 'ocean', ' sea ') ? 'sst' : has('sicakl', 'temperature', ' isi ') ? 'temp' : has('aerosol', 'toz', 'duman', 'dust', 'smoke') ? 'aerosol' : null;
     if (layer) {
       const want = has('kapat', 'kapa ', 'kaldir', ' off ', 'remove') ? false : has(' ac ', 'ekle', 'goster', ' on ', ' add ', 'dinle', 'listen') ? true : !on[layer];
       if (on[layer] !== want) toggleLayer(layer);
@@ -1104,6 +1114,7 @@ export default function App() {
   const [landRaster, setLandRaster] = useState<LandRaster | null>(null);
   useEffect(() => { loadLandRaster(BASE).then(setLandRaster).catch(() => { /* kırpmasız da çalışır */ }); }, []);
   const vmode: 'smooth' | 'cells' = showCells ? 'cells' : 'smooth';
+  useEffect(() => { if (!landRaster) return; for (const src of Object.values(c5)) src?.setLand((la, lo) => landRaster.isLand(la, lo)); setC5Land((n) => n + 1); }, [landRaster, c5]);
   const m24Idx = m24 && m24Visual && m24On[m24Visual] ? m24.meta.layers.findIndex((l) => l.id === m24Visual) : -1;
   const paintLL = useCallback((p: LatLon): [number, number, number] | null => {
     if (m24 && m24Idx >= 0) { const v = m24.visual(m24Idx, month, p, vmode); if (Number.isNaN(v)) return null; const r = m24.monthRange(m24Idx, month); return co2Color((v - r.min) / (r.max - r.min || 1)); }
@@ -1113,6 +1124,7 @@ export default function App() {
     if (visual === 'ndvi' && ndvi) { const v = ndvi.layer.sample(ndviFrame, p, vmode); return Number.isNaN(v) ? null : colorFor(ndvi.cs, v); }
     if (visual === 'lights' && lights) { const v = lights.layer.sample(lightsYear, p, vmode); if (Number.isNaN(v) || v < lights.max * 0.02) return null; const k = Math.min(1, v / lights.max); return [255 * Math.pow(k, 0.5), 225 * Math.pow(k, 0.7), 120 * k]; }
     if (visual === 'lightning' && lightning) { const v = lightning.value(p); if (v <= 0) return null; return [255, 230 + 25 * v, 90 + 160 * v]; }
+    if ((C5_LAYERS as string[]).includes(visual)) { const src = c5[visual as C5Id]; if (!src) return null; const v = src.value(p); if (Number.isNaN(v)) return null; const t = gainFor(v, src.radarLayer('tr'), 'global'); if (visual === 'lis' && t <= 0) return null; return co2Color(t); }
     if (visual === 'aerosol' && aer) {
       let best = -1, bv = 0.04; aer.file.categories.forEach((c, i) => { const v = aer.layers[c.id].sample(0, p, vmode); if (v > bv) { bv = v; best = i; } });
       if (best < 0) return null;
@@ -1120,13 +1132,13 @@ export default function App() {
       return [rgb[0] * k, rgb[1] * k, rgb[2] * k];
     }
     return null;
-  }, [visual, co2, temp, sst, aer, ndvi, lights, lightning, ndviFrame, lightsYear, month, tFrame, sstFrame, m24, m24Idx, vmode]);
+  }, [visual, c5, c5Land, co2, temp, sst, aer, ndvi, lights, lightning, ndviFrame, lightsYear, month, tFrame, sstFrame, m24, m24Idx, vmode]);
   // yalnız karada / yalnız denizde tanımlı katman → Natural Earth kara poligonlarıyla kırp (yumuşak görünümde; ham hücrelerde kırpma yok)
-  const domain: 'land' | 'sea' | 'all' = m24 && m24Idx >= 0 ? (m24.meta.layers[m24Idx].domain ?? 'all') : visual === 'sst' ? 'sea' : visual === 'ndvi' ? 'land' : 'all';
+  const domain: 'land' | 'sea' | 'all' = m24 && m24Idx >= 0 ? (m24.meta.layers[m24Idx].domain ?? 'all') : visual === 'sst' || visual === 'currents' ? 'sea' : visual === 'ndvi' || visual === 'gedi' ? 'land' : 'all';
   const keep = !showCells && landRaster && domain !== 'all' ? (lat: number, lon: number) => landRaster.isLand(lat, lon) === (domain === 'land') : undefined;
   const paintVis = useCallback((p: LatLon) => (keep && !keep(p.lat, p.lon) ? null : paintLL(p)), [paintLL, keep]); // 2D harita ve radar görünümü için
   /** Görünen katmanın veri çözünürlüğü (dürüstlük etiketi). */
-  const dataRes = m24 && m24Idx >= 0 ? { km: 220, cell: m24.meta.grid.cell } : visual === 'co2' && on.co2 ? { km: 330, cell: '3° × 3.75°' } : (visual === 'temp' && on.temp) || (visual === 'sst' && on.sst) || (visual === 'aerosol' && on.aerosol) || (['ndvi', 'lights', 'lightning'] as LayerId[]).some((k) => visual === k && on[k]) ? { km: 110, cell: '1° × 1°' } : null;
+  const dataRes = (C5_LAYERS as string[]).includes(visual) && on[visual] ? { km: 550, cell: '5° × 5°' } : m24 && m24Idx >= 0 ? { km: 220, cell: m24.meta.grid.cell } : visual === 'co2' && on.co2 ? { km: 330, cell: '3° × 3.75°' } : (visual === 'temp' && on.temp) || (visual === 'sst' && on.sst) || (visual === 'aerosol' && on.aerosol) || (['ndvi', 'lights', 'lightning'] as LayerId[]).some((k) => visual === k && on[k]) ? { km: 110, cell: '1° × 1°' } : null;
   const paintKey = `${vmode}-${domain}-${!!keep}-${m24Idx >= 0 ? 'm24' + m24Idx + '-' + month + '-' + m24Rev + '-' : ''}${visual}-${visual === 'co2' ? month : visual === 'temp' ? tFrame : visual === 'sst' ? sstFrame : 0}-${!!co2}-${!!temp}-${!!sst}-${!!aer}`;
   // boyanmış dokular saklanır: aynı ay/kare ikinci kez istenince yeniden hesaplanmaz (akıcı geçiş)
   const texCache = useRef(new Map<string, HTMLCanvasElement>());
@@ -1145,6 +1157,7 @@ export default function App() {
     if (visual === 'ndvi' && ndvi) return { key: tk(`ndvi-${ndviFrame}`), el: cachedTex(tk(`ndvi-${ndviFrame}`)), opacity: op };
     if (visual === 'lights' && lights) return { key: tk(`lights-${lightsYear}`), el: cachedTex(tk(`lights-${lightsYear}`)), opacity: op };
     if (visual === 'lightning' && lightning) return { key: tk('lightning'), el: cachedTex(tk('lightning')), opacity: 0.9 };
+    if ((C5_LAYERS as string[]).includes(visual) && c5[visual as C5Id]) return { key: tk(`c5-${visual}-${c5Land}`), el: cachedTex(tk(`c5-${visual}-${c5Land}`)), opacity: showCells ? 0.92 : 0.75 };
     if (visual === 'co2' && co2) return { key: tk(`co2-${month}`), el: cachedTex(tk(`co2-${month}`)), opacity: op };
     if (visual === 'temp' && temp) return { key: tk(`temp-${tFrame}`), el: cachedTex(tk(`temp-${tFrame}`)), opacity: op };
     return null;
@@ -1157,6 +1170,10 @@ export default function App() {
     id, label: L(id).label[lang], instrument: id !== 'aerosol' && mix.inst[id] && mix.inst[id] !== id ? instrumentName(mix.inst[id], lang) + (id === 'sst' ? (lang === 'en' ? ' + waves' : ' + dalga sesi') : '') : L(id).instrument[lang], icon: L(id).icon, color: L(id).color, on: on[id], visual: visual === id && on[id],
     loading: on[id] && ((id === 'temp' && !temp) || (id === 'sst' && !sst) || (id === 'aerosol' && !aer) || (id === 'ndvi' && !ndvi) || (id === 'lights' && !lights) || (id === 'lightning' && !lightning)),
     note: id === 'co2' ? 'OCO-2 GEOS 2021' : id === 'temp' ? 'SVS 5147 · GEOS-FP' : id === 'sst' ? 'SVS 3912 · ECCO2 2007–08' : id === 'aerosol' ? 'SVS 5669 · GEOS 2025' : id === 'ndvi' ? 'SVS 5544 · göreli' : id === 'lights' ? 'SVS 5313 · 2012–2023' : 'SVS 5011 · ISS LIS 2017–23',
+  }));
+  const c5Pills: Pill[] = C5_LAYERS.map((id) => ({
+    id, label: L(id).label[lang], instrument: L(id).instrument[lang], icon: L(id).icon, color: L(id).color, on: on[id], visual: visual === id && on[id], loading: on[id] && !c5[id],
+    note: id === 'currents' ? 'OSCAR L4 V2.0 · ~550 km (5°)' : id === 'lis' ? 'LIS/OTD · ~550 km (5°)' : 'GEDI L3 V3 · ~550 km (5°)',
   }));
   const fmtShort = (l: RadarLayer, v: number) => (Number.isNaN(v) ? '—' : l.unit === '°C' ? `${Math.round(v)} °C` : l.unit === 'ppm' ? `${v.toFixed(1)} ppm` : l.fmt(v));
   const h = radar.headline;
@@ -1203,8 +1220,12 @@ export default function App() {
           : visual === 'lights' && on.lights && lights ? { i: lightsYear, n: lights.years.length, label: (i) => String(lights.years[i]), set: setLightsYear }
             : on.co2 && co2 ? { i: month, n: 12, label: (i) => co2.monthLabel(i, lang), set: setMonth } : null;
   const stepTime = (d: number) => { if (!timeCtl) return; const i = Math.max(0, Math.min(timeCtl.n - 1, timeCtl.i + d)); timeCtl.set(i); announce(timeCtl.label(i)); };
-  const WORLD_OF_LAYER: Partial<Record<LayerId, World>> = { temp: 'heat', sst: 'ocean', aerosol: 'dust', ndvi: 'forest', lights: 'city', lightning: 'thunder' };
+  const WORLD_OF_LAYER: Partial<Record<LayerId, World>> = { temp: 'heat', sst: 'ocean', aerosol: 'dust', ndvi: 'forest', lights: 'city', lightning: 'thunder', currents: 'current', lis: 'thunder', gedi: 'forest' };
   const layerInfo = (id: string) => {
+    if ((C5_LAYERS as string[]).includes(id)) { // kanıt kartı: koleksiyon, değişken, dönem, birim, çözünürlük, not
+      const src = c5[id as C5Id], k = src?.f.kanit, rl = src?.radarLayer(lang);
+      return <>{k ? <><b>{k.koleksiyon}</b> — {k.degisken}. {lang === 'en' ? 'Period' : 'Dönem'}: {k.donem}. {lang === 'en' ? 'Unit' : 'Birim'}: {k.birim} ({k.toplama}). {lang === 'en' ? 'Range' : 'Aralık'}: {rl ? `${src!.fmt(rl.min, lang === 'en')} … ${src!.fmt(rl.max, lang === 'en')}` : ''}{rl?.log ? (lang === 'en' ? ', log scale' : ', log ölçek') : ''}. <b>{lang === 'en' ? 'Resolution ~550 km (5°)' : 'Çözünürlük ~550 km (5°)'}</b>. {src!.f.note[lang]} {lang === 'en' ? 'Source package' : 'Kaynak paket'}: {k.kaynak_paket}. </> : (lang === 'en' ? 'Turn the layer on to load its details. ' : 'Ayrıntılar katman açılınca yüklenir. ')}{legendLine(WORLD_OF_LAYER[id as LayerId]!, lang)}</>;
+    }
     const pill = pills.find((x) => x.id === id), w = WORLD_OF_LAYER[id as LayerId];
     const extra = id === 'lightning' ? (lang === 'tr' ? ' ISS LIS 2017–2023 toplamı (kareler tarihsiz).' : ' ISS LIS 2017–2023 total (frames undated).') : id === 'aerosol' ? (lang === 'tr' ? ' 19 Ağu 2025 20:00 UTC; yoğunluk göreli. Toz = kum fırtınası, kara karbon = yangın, deniz tuzu = serpinti, sülfat = volkan uğultusu.' : ' 19 Aug 2025 20:00 UTC; relative density. Dust = sandstorm, black carbon = fire, sea salt = spray, sulfate = volcanic rumble.') : '';
     return <>{pill?.note && <b>{pill.note}. </b>}{w ? legendLine(w, lang) : ''}{extra}</>;
@@ -1215,6 +1236,8 @@ export default function App() {
       <WorldThemes lang={lang} active={worldTheme} onPick={applyWorldTheme} />
       <h3 className="sec-title">{lang === 'en' ? 'Sound worlds — from NASA EIC visualizations' : 'Ses dünyaları — NASA EIC görsellerinden'}</h3>
       <LayerCards lang={lang} pills={pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }} info={layerInfo} />
+      <h3 className="sec-title">{lang === 'en' ? 'Separate layers — NASA data, 5° (~550 km)' : 'Ayrı katmanlar — NASA verisi, 5° (~550 km)'}</h3>
+      <LayerCards lang={lang} pills={c5Pills} onToggle={(id) => toggleLayer(id as LayerId)} onShow={(id) => { setM24Visual(null); setVisual(id as LayerId); }} info={layerInfo} />
       <button type="button" className="btn scan-btn" onClick={() => setScanOpen(true)}>{lang === 'tr' ? '🌳 Orman yüksekliğini dinle (GEDI küre görseli)' : '🌳 Listen to forest height (GEDI globe visual)'}</button>
       <details className="adv">
         <summary>{lang === 'en' ? 'Advanced' : 'Gelişmiş'}</summary>

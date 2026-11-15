@@ -5,16 +5,17 @@
 import { compass8 } from './geo.ts';
 import type { RadarLayer, Timbre } from './radar.ts';
 
-export type World = 'heat' | 'ocean' | 'dust' | 'smoke' | 'spray' | 'volcano' | 'thunder' | 'city' | 'forest';
+export type World = 'heat' | 'ocean' | 'dust' | 'smoke' | 'spray' | 'volcano' | 'thunder' | 'city' | 'forest' | 'current';
 export const WORLD_OF: Partial<Record<Timbre, World>> = {
   temp: 'heat', sst: 'ocean', dust: 'dust', black_carbon: 'smoke', sea_salt: 'spray', sulfate: 'volcano', lightning: 'thunder', lights: 'city', ndvi: 'forest',
+  currents: 'current', lis: 'thunder', gedi: 'forest', // 5° ayrı katmanlar: akıntı hızı dalga temposunu, LIS/OTD gök gürültüsünü, GEDI ormanı sürer
 };
 /** Gece ışıklarında (SVS 5313) ıssız karanın da arka plan parlaklığı var (çöl ~0.14–0.15, 1° ızgara): bunun altı "karanlık" sayılır. */
 export const CITY_BG = 0.17;
 /** every: kaç ışında bir yeni ses dokusu (dokular üst üste biner, kesintisiz duyulur) · gate: küresel ölçekte bu eşiğin altı "yok" → sessizlik. */
 export const WORLD_PART: Record<World, { every: number; gate: number }> = {
   heat: { every: 2, gate: -1 }, ocean: { every: 2, gate: -1 }, dust: { every: 1, gate: 0.07 }, smoke: { every: 2, gate: 0.07 },
-  spray: { every: 2, gate: 0.07 }, volcano: { every: 4, gate: 0.07 }, thunder: { every: 1, gate: 0.01 }, city: { every: 2, gate: CITY_BG }, forest: { every: 2, gate: -1 },
+  spray: { every: 2, gate: 0.07 }, volcano: { every: 4, gate: 0.07 }, thunder: { every: 1, gate: 0.01 }, city: { every: 2, gate: CITY_BG }, forest: { every: 2, gate: -1 }, current: { every: 2, gate: -1 },
 };
 
 /** Sentez parametreleri (motor bunları seslendirir). Aynı girdi → aynı parametre (rastgele olaylar da seed'e bağlı). */
@@ -51,6 +52,7 @@ export function worldParams(world: World, v: number, t: number, dist: number): W
       const icy = clamp((5 - v) / 25), hot = clamp((v - 22) / 14), breeze = clamp(1 - icy - hot);
       return p(0.45 + 0.4 * Math.max(icy, hot), 1800 + 5200 * hot + 1200 * icy, 6 * icy, icy, { icy, hot, breeze });
     }
+    case 'current': return p(0.35 + 0.65 * t, 600 + 1800 * t, 0.12 + 0.9 * t, t, { fast: t }); // m/s: akıntı hızlandıkça dalgalar sıklaşır (tempo) ve güçlenir
     case 'ocean': {                                                                                              // °C: sıcak = yumuşak tropik dalga; soğuk = sert, buzlu, çatırtılı
       const warm = clamp((v - 4) / 24), cold = 1 - warm, ice = clamp((3 - v) / 5);
       return p(0.55, 450 + 1700 * cold, 5 * ice, cold, { warm, cold, ice });
@@ -68,10 +70,12 @@ export function describeWorld(world: World, v: number, t: number, lang: 'tr' | '
     case 'smoke': return en ? `${L} fire crackle (smoke, black carbon)` : `${L} yangın çıtırtısı (duman, kara karbon)`;
     case 'spray': return en ? `${L} sea spray (sea salt)` : `${L} dalga serpintisi (deniz tuzu)`;
     case 'volcano': return en ? `${L} deep volcanic rumble (sulfate)` : `${L} derin volkan uğultusu (sülfat)`;
-    case 'thunder': return en ? `${L} thunder (lightning)` : `${L} gök gürültüsü (yıldırım)`;
+    case 'thunder': if (v <= 0) return en ? 'no lightning' : 'yıldırım yok';
+      return en ? `${L} thunder (lightning)` : `${L} gök gürültüsü (yıldırım)`;
     case 'city': { const u = clamp((t - CITY_BG) / (1 - CITY_BG)); return t < CITY_BG ? (en ? 'dark, quiet' : 'karanlık, sessiz') : en ? `${lvl(u, en)} city hum (night lights)` : `${lvl(u, en)} şehir uğultusu (gece ışıkları)`; }
     case 'forest': return t < 0.25 ? (en ? 'bare land, empty wind' : 'çıplak arazi, boş rüzgâr') : en ? `${L} forest, birds (vegetation)` : `${L} orman, kuşlar (bitki örtüsü)`;
     case 'heat': return v < 5 ? (en ? `icy wind (${Math.round(v)} °C)` : `buzlu rüzgâr (${Math.round(v)} °C)`) : v > 22 ? (en ? `cicadas, hot air (${Math.round(v)} °C)` : `ağustos böcekleri, sıcak hava (${Math.round(v)} °C)`) : (en ? `mild breeze (${Math.round(v)} °C)` : `ılık esinti (${Math.round(v)} °C)`);
+    case 'current': return en ? `${L} current, wave tempo (${v.toFixed(2)} m/s)` : `${L} akıntı, dalga temposu (${v.toFixed(2).replace('.', ',')} m/s)`;
     case 'ocean': return v < 3 ? (en ? `icy, crackling waves (${Math.round(v)} °C)` : `buzlu, çatırtılı dalgalar (${Math.round(v)} °C)`) : v > 22 ? (en ? `soft tropical waves (${Math.round(v)} °C)` : `yumuşak tropik dalgalar (${Math.round(v)} °C)`) : (en ? `cool waves (${Math.round(v)} °C)` : `serin dalgalar (${Math.round(v)} °C)`);
   }
 }
@@ -93,6 +97,7 @@ export function legendLine(world: World, lang: 'tr' | 'en' = 'tr'): string {
     city: ['Bu şehir uğultusu gece ışıkları demek. Işık arttıkça trafik ve kalabalık sesi yoğunlaşır; karanlıkta sessizlik.', 'This city hum means night lights. Brighter places sound busier; dark places are silent.'],
     forest: ['Bu yaprak hışırtısı ve kuş sesleri bitki örtüsü demek. Ne kadar yeşilse o kadar çok kuş; çıplak arazide yalnız rüzgâr.', 'Rustling leaves and birds mean vegetation. The greener, the more birds; bare land is just wind.'],
     heat: ['Bu sıcaklık sesi: soğukta buzlu rüzgâr ve çatırdayan buz, sıcakta ağustos böcekleri. Önce soğuk, sonra sıcak.', 'This is temperature: icy wind and cracking ice when cold, cicadas when hot. First cold, then hot.'],
+    current: ['Bu dalga temposu okyanus akıntısının hızı demek: akıntı hızlandıkça dalgalar sıklaşır ve güçlenir. Önce yavaş, sonra hızlı.', 'This wave tempo means ocean current speed: the faster the current, the quicker and stronger the waves. First slow, then fast.'],
     ocean: ['Bu dalga sesi deniz sıcaklığı demek: sıcak suda yumuşak dalgalar, soğuk suda sert ve buzlu dalgalar. Önce soğuk, sonra sıcak.', 'These waves mean sea temperature: soft waves in warm water, harsh icy waves in cold water. First cold, then warm.'],
   };
   return T[world][en ? 1 : 0];

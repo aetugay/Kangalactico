@@ -8,6 +8,8 @@ import { destination, compass8, formatKm, type LatLon } from './geo.ts';
 
 export type Timbre = 'co2' | 'temp' | 'sst' | 'black_carbon' | 'dust' | 'sea_salt' | 'sulfate' | 'lightning' | 'ndvi' | 'lights'
   // 2024 aylık NASA katmanları (MERRA-2 / OCO-2; public/data/m24)
+  // 5° ayrı katmanlar (Ceyhun paketi 2026-11-15; public/data/c5): okyanus akıntısı (OSCAR), yıldırım klimatolojisi (LIS/OTD), kanopi yüksekliği (GEDI)
+  | 'currents' | 'lis' | 'gedi'
   | 'co2_24' | 'so2_24' | 'aod_24' | 't2m_24' | 'ts_24' | 'albedo_24' | 'sst_24' | 'precip_24' | 'seaice_24' | 'o3_24' | 'twland_24' | 'lai_24' | 'gwettop_24';
 export type Mode = 'bilim' | 'hikaye';
 
@@ -17,6 +19,8 @@ export interface RadarLayer {
   instrument: string;     // "yumuşak telli" — lejant ve etiketler için
   unit: string | null;    // "°C" ya da null (göreli)
   min: number; max: number; // değer → şiddet için sabit aralık (bilim modu)
+  /** Logaritmik ölçek (gerçek veri aralığı, kırpmasız; ör. yıldırım yoğunluğu). min > 0 olmalı. */
+  log?: boolean;
   baseHz: number;         // en yakın halkanın perdesi
   when: string;           // zaman açıklaması ("14 Kas 2026 15:00 UTC (tahmin)")
   /** Noktadaki değer; veri yoksa NaN. */
@@ -78,6 +82,11 @@ export function scaleRange(layer: RadarLayer, scale: Scale, local?: { min: numbe
 /** Değer → ölçekteki yeri 0..1 (perde, ritim yoğunluğu, parlaklık ve vurgu bundan). */
 export function gainFor(v: number, layer: RadarLayer, scale: Scale, local?: { min: number; max: number }): number {
   if (Number.isNaN(v)) return 0;
+  if (layer.log) { // log ölçek: 0 ya da altı = yok; aralık gerçek verinin en küçük pozitif değeri … en büyüğü
+    if (v <= 0) return 0;
+    const lo = Math.log(Math.max(layer.min, 1e-9)), hi = Math.log(layer.max);
+    return Math.max(0, Math.min(1, hi > lo ? (Math.log(v) - lo) / (hi - lo) : 0.5));
+  }
   const { lo, hi } = scaleRange(layer, scale, local);
   const t = hi > lo ? (v - lo) / (hi - lo) : 0.5;
   return Math.max(0, Math.min(1, t));
@@ -126,6 +135,9 @@ export const PARTS: Record<Timbre, Part> = {
   lightning: { start: 5, every: 1, offset: 0, gate: 0.01 },   // vurmalı: yıldırımlı hücre = çakma (olay yoksa sessiz)
   ndvi: { start: 9, every: 2, offset: 1, gate: -1 },          // marimba
   lights: { start: 15, every: 2, offset: 0, gate: 0.03 },     // çelesta (karanlık = sessiz)
+  currents: { start: 13, every: 2, offset: 1, gate: -1 },  // 5° akıntı (dalga temposu)
+  lis: { start: 5, every: 1, offset: 0, gate: 0.01 },       // 5° yıldırım klimatolojisi (log ölçek; 0 = sessiz)
+  gedi: { start: 9, every: 2, offset: 1, gate: -1 },        // 5° kanopi yüksekliği
   co2_24: { start: 12, every: 4, offset: 2, gate: -1 },      // keman
   so2_24: { start: 10, every: 2, offset: 1, gate: -1 },      // marimba
   aod_24: { start: 18, every: 2, offset: 0, gate: -1 },      // çelesta

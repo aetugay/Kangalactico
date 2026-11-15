@@ -8,6 +8,7 @@ export const WORLD_SOUNDS: Record<World, string[]> = {
   thunder: ['gok_yakin_1', 'gok_yakin_2', 'gok_yakin_3', 'gok_uzak_1', 'gok_uzak_2'], city: [],
   forest: ['orman_kus', 'yaprak_hisirti', 'ruzgar_hafif'], heat: ['kis_ruzgari', 'ruzgar_hafif', 'buz_catirti_1', 'buz_catirti_2'],
   ocean: ['dalga_sakin', 'dalga_sert', 'buz_catirti_1', 'buz_catirti_2'],
+  current: ['dalga_sakin', 'dalga_sert'],
 };
 export const WEATHER_SOUNDS = ['yagmur_cisenti', 'yagmur_orta', 'yagmur_saganak', 'kar', 'ruzgar_hafif', 'ruzgar_kuvvetli', 'kis_ruzgari', 'gece_circir', 'gok_yakin_1', 'gok_yakin_2', 'gok_yakin_3', 'gok_uzak_1', 'gok_uzak_2'];
 

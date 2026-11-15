@@ -1,0 +1,3490 @@
+{
+ "klasor": "referans/data",
+ "indeks": "2026-11-15",
+ "sahte_veri": false,
+ "dosyalar": [
+  {
+   "ad": "jukebox_6_kategori_ana_indeks.json",
+   "kb": 5
+  },
+  {
+   "ad": "jukebox_aerosoller_1yillik_tam_paket.json",
+   "kb": 3002
+  },
+  {
+   "ad": "jukebox_aerosoller_istasyonlar_365gun.json",
+   "kb": 26
+  },
+  {
+   "ad": "jukebox_aerosoller_kure_12ay.json",
+   "kb": 2976
+  },
+  {
+   "ad": "jukebox_gece_isiklari_1yillik_tam_paket.json",
+   "kb": 94
+  },
+  {
+   "ad": "jukebox_gece_isiklari_istasyonlar_365gun.json",
+   "kb": 5
+  },
+  {
+   "ad": "jukebox_gece_isiklari_kure_12ay.json",
+   "kb": 89
+  },
+  {
+   "ad": "jukebox_hava_sicakligi_2m_1yillik_tam_paket.json",
+   "kb": 3068
+  },
+  {
+   "ad": "jukebox_hava_sicakligi_2m_istasyonlar_365gun.json",
+   "kb": 26
+  },
+  {
+   "ad": "jukebox_hava_sicakligi_2m_kure_12ay.json",
+   "kb": 3043
+  },
+  {
+   "ad": "jukebox_okyanus_akintilari_1yillik_tam_paket.json",
+   "kb": 2169
+  },
+  {
+   "ad": "jukebox_okyanus_akintilari_istasyonlar_365gun.json",
+   "kb": 17
+  },
+  {
+   "ad": "jukebox_okyanus_akintilari_kure_12ay.json",
+   "kb": 2153
+  },
+  {
+   "ad": "jukebox_okyanus_sicakligi_1yillik_tam_paket.json",
+   "kb": 2564
+  },
+  {
+   "ad": "jukebox_okyanus_sicakligi_akintilar_1yillik_tam_paket.json",
+   "kb": 2587
+  },
+  {
+   "ad": "jukebox_okyanus_sicakligi_akintilar_istasyonlar_365gun.json",
+   "kb": 121
+  },
+  {
+   "ad": "jukebox_okyanus_sicakligi_akintilar_kure_12ay.json",
+   "kb": 2467
+  },
+  {
+   "ad": "jukebox_okyanus_sicakligi_istasyonlar_365gun.json",
+   "kb": 97
+  },
+  {
+   "ad": "jukebox_okyanus_sicakligi_kure_12ay.json",
+   "kb": 2467
+  },
+  {
+   "ad": "jukebox_orman_yuksekligi_1yillik_tam_paket.json",
+   "kb": 5095
+  },
+  {
+   "ad": "jukebox_orman_yuksekligi_istasyonlar_365gun.json",
+   "kb": 31
+  },
+  {
+   "ad": "jukebox_orman_yuksekligi_kure_12ay.json",
+   "kb": 5065
+  },
+  {
+   "ad": "jukebox_yildirim_1yillik_tam_paket.json",
+   "kb": 2246
+  },
+  {
+   "ad": "jukebox_yildirim_istasyonlar_365gun.json",
+   "kb": 28
+  },
+  {
+   "ad": "jukebox_yildirim_kure_12ay.json",
+   "kb": 2218
+  },
+  {
+   "ad": "jukebox_yuzey_sicakligi_1yillik_tam_paket.json",
+   "kb": 3067
+  },
+  {
+   "ad": "jukebox_yuzey_sicakligi_istasyonlar_365gun.json",
+   "kb": 26
+  },
+  {
+   "ad": "jukebox_yuzey_sicakligi_kure_12ay.json",
+   "kb": 3042
+  }
+ ],
+ "katmanlar": {
+  "aerosoller": {
+   "baslik": "Aerosoller (Toz, Duman, Sülfat - AOD)",
+   "kaynak": "M2TMNXAER",
+   "birim": "AOD",
+   "ref": [
+    0,
+    1
+   ],
+   "tarih": [
+    "2025-10",
+    "2026-09"
+   ],
+   "ay_sayisi": 12,
+   "aylar": [
+    "2025-10",
+    "2025-11",
+    "2025-12",
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09"
+   ],
+   "gercek_kayit": 12,
+   "veri_yok_kayit": 0,
+   "not": "MERRA-2 gerçek toplam aerosol optik derinliği (2025-2026)",
+   "fizik_beklenti": "AOD 550 nm: temiz okyanus ~0.05, Sahra yazın 0.5–1+",
+   "izgara": {
+    "nokta": 2592,
+    "enlem_sayisi": 36,
+    "boylam_sayisi": 72,
+    "enlem_adim": 5,
+    "boylam_adim": 5,
+    "enlem_araligi": [
+     -87.75,
+     87.25
+    ],
+    "ornek_enlemler": [
+     -87.75,
+     -82.75,
+     -77.75,
+     -72.75
+    ]
+   },
+   "tam_paket_kure_ile_ayni": true,
+   "istasyon": {
+    "sayi": 10,
+    "zaman_adimi": [
+     12
+    ],
+    "ad": [
+     "Anadolu_Eskisehir",
+     "Amazon_Yagmur_Ormani",
+     "Dogu_Asya_Sanayi",
+     "Kuzey_Kutbu_Svalbard",
+     "Pasifik_Mauna_Loa",
+     "Orta_Avrupa_Ren",
+     "Kuzey_Amerika_Dogu",
+     "Sahra_Colu_Merkez",
+     "Hindistan_Muson",
+     "Guney_Okyanusu_Antarktik"
+    ]
+   },
+   "aylik": [
+    {
+     "ay": "2025-10",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.016,
+     "p01": 0.018,
+     "p50": 0.094,
+     "p99": 0.382,
+     "max": 0.543,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1261
+    },
+    {
+     "ay": "2025-11",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.015,
+     "p01": 0.018,
+     "p50": 0.088,
+     "p99": 0.306,
+     "max": 0.552,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1104
+    },
+    {
+     "ay": "2025-12",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.016,
+     "p01": 0.018,
+     "p50": 0.086,
+     "p99": 0.344,
+     "max": 0.7,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1091
+    },
+    {
+     "ay": "2026-01",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.019,
+     "p01": 0.02,
+     "p50": 0.095,
+     "p99": 0.466,
+     "max": 0.713,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1232
+    },
+    {
+     "ay": "2026-02",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.017,
+     "p01": 0.018,
+     "p50": 0.095,
+     "p99": 0.468,
+     "max": 0.7,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1274
+    },
+    {
+     "ay": "2026-03",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.013,
+     "p01": 0.014,
+     "p50": 0.096,
+     "p99": 0.473,
+     "max": 0.758,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1352
+    },
+    {
+     "ay": "2026-04",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.009,
+     "p01": 0.01,
+     "p50": 0.097,
+     "p99": 0.515,
+     "max": 0.95,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1336
+    },
+    {
+     "ay": "2026-05",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.008,
+     "p01": 0.009,
+     "p50": 0.093,
+     "p99": 0.484,
+     "max": 0.777,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1306
+    },
+    {
+     "ay": "2026-06",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.008,
+     "p01": 0.01,
+     "p50": 0.09,
+     "p99": 0.484,
+     "max": 0.81,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1265
+    },
+    {
+     "ay": "2026-07",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.01,
+     "p01": 0.012,
+     "p50": 0.094,
+     "p99": 0.567,
+     "max": 0.909,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1437
+    },
+    {
+     "ay": "2026-08",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.011,
+     "p01": 0.012,
+     "p50": 0.116,
+     "p99": 0.571,
+     "max": 0.825,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1534
+    },
+    {
+     "ay": "2026-09",
+     "n": 2592,
+     "eksik": 0,
+     "min": 0.01,
+     "p01": 0.012,
+     "p50": 0.098,
+     "p99": 0.471,
+     "max": 0.8,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": true,
+     "ppm_eq_deger": true,
+     "ort": 0.1378
+    }
+   ],
+   "noktalar": {
+    "Sivas": {
+     "2025-10": {
+      "deger": 0.111,
+      "nokta": "42.25,37.19",
+      "km": 278,
+      "v3_ayni_takvim_ayi": "log(57)"
+     },
+     "2026-01": {
+      "deger": 0.16,
+      "nokta": "42.25,37.19",
+      "km": 278,
+      "v3_ayni_takvim_ayi": "log(79)"
+     },
+     "2026-07": {
+      "deger": 0.137,
+      "nokta": "42.25,37.19",
+      "km": 278,
+      "v3_ayni_takvim_ayi": "log(106)"
+     }
+    },
+    "Tokyo": {
+     "2025-10": {
+      "deger": 0.182,
+      "nokta": "37.25,137.19",
+      "km": 284,
+      "v3_ayni_takvim_ayi": "log(140)"
+     },
+     "2026-01": {
+      "deger": 0.235,
+      "nokta": "37.25,137.19",
+      "km": 284,
+      "v3_ayni_takvim_ayi": "log(107)"
+     },
+     "2026-07": {
+      "deger": 0.302,
+      "nokta": "37.25,137.19",
+      "km": 284,
+      "v3_ayni_takvim_ayi": "log(217)"
+     }
+    },
+    "Lagos": {
+     "2025-10": {
+      "deger": 0.229,
+      "nokta": "7.25,2.19",
+      "km": 154,
+      "v3_ayni_takvim_ayi": "log(182)"
+     },
+     "2026-01": {
+      "deger": 0.713,
+      "nokta": "7.25,2.19",
+      "km": 154,
+      "v3_ayni_takvim_ayi": "log(507)"
+     },
+     "2026-07": {
+      "deger": 0.228,
+      "nokta": "7.25,2.19",
+      "km": 154,
+      "v3_ayni_takvim_ayi": "log(248)"
+     }
+    },
+    "Amazon": {
+     "2025-10": {
+      "deger": 0.247,
+      "nokta": "-2.75,-57.81",
+      "km": 246,
+      "v3_ayni_takvim_ayi": "log(258)"
+     },
+     "2026-01": {
+      "deger": 0.117,
+      "nokta": "-2.75,-57.81",
+      "km": 246,
+      "v3_ayni_takvim_ayi": "log(89)"
+     },
+     "2026-07": {
+      "deger": 0.072,
+      "nokta": "-2.75,-57.81",
+      "km": 246,
+      "v3_ayni_takvim_ayi": "log(110)"
+     }
+    },
+    "Svalbard": {
+     "2025-10": {
+      "deger": 0.066,
+      "nokta": "77.25,17.19",
+      "km": 114,
+      "v3_ayni_takvim_ayi": "log(43)"
+     },
+     "2026-01": {
+      "deger": 0.064,
+      "nokta": "77.25,17.19",
+      "km": 114,
+      "v3_ayni_takvim_ayi": "log(53)"
+     },
+     "2026-07": {
+      "deger": 0.092,
+      "nokta": "77.25,17.19",
+      "km": 114,
+      "v3_ayni_takvim_ayi": "log(65)"
+     }
+    }
+   }
+  },
+  "yuzey_sicakligi": {
+   "baslik": "Yüzey Sıcaklığı (Skin Temp / LST)",
+   "kaynak": "M2TMNXSLV",
+   "birim": "°C",
+   "ref": [
+    -35,
+    45
+   ],
+   "tarih": [
+    "2025-10",
+    "2026-09"
+   ],
+   "ay_sayisi": 12,
+   "aylar": [
+    "2025-10",
+    "2025-11",
+    "2025-12",
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09"
+   ],
+   "gercek_kayit": 12,
+   "veri_yok_kayit": 0,
+   "not": "MERRA-2 gerçek yüzey cilt sıcaklığı (TS)",
+   "fizik_beklenti": "deri sıcaklığı °C",
+   "izgara": {
+    "nokta": 2592,
+    "enlem_sayisi": 36,
+    "boylam_sayisi": 72,
+    "enlem_adim": 5,
+    "boylam_adim": 5,
+    "enlem_araligi": [
+     -87.75,
+     87.25
+    ],
+    "ornek_enlemler": [
+     -87.75,
+     -82.75,
+     -77.75,
+     -72.75
+    ]
+   },
+   "tam_paket_kure_ile_ayni": true,
+   "istasyon": {
+    "sayi": 10,
+    "zaman_adimi": [
+     12
+    ],
+    "ad": [
+     "Anadolu_Eskisehir",
+     "Amazon_Yagmur_Ormani",
+     "Dogu_Asya_Sanayi",
+     "Kuzey_Kutbu_Svalbard",
+     "Pasifik_Mauna_Loa",
+     "Orta_Avrupa_Ren",
+     "Kuzey_Amerika_Dogu",
+     "Sahra_Colu_Merkez",
+     "Hindistan_Muson",
+     "Guney_Okyanusu_Antarktik"
+    ]
+   },
+   "aylik": [
+    {
+     "ay": "2025-10",
+     "n": 2592,
+     "eksik": 0,
+     "min": -54.434,
+     "p01": -52.598,
+     "p50": 10.363,
+     "p99": 31.32,
+     "max": 35.695,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 170,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 15.8484
+    },
+    {
+     "ay": "2025-11",
+     "n": 2592,
+     "eksik": 0,
+     "min": -42.764,
+     "p01": -39.802,
+     "p50": 8.877,
+     "p99": 30.162,
+     "max": 35.278,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 110,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 14.7019
+    },
+    {
+     "ay": "2025-12",
+     "n": 2592,
+     "eksik": 0,
+     "min": -43.422,
+     "p01": -35.533,
+     "p50": 8.328,
+     "p99": 30.157,
+     "max": 37.147,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 33,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 13.8841
+    },
+    {
+     "ay": "2026-01",
+     "n": 2592,
+     "eksik": 0,
+     "min": -41.172,
+     "p01": -34.624,
+     "p50": 8.054,
+     "p99": 30.096,
+     "max": 37.746,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 20,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 13.6707
+    },
+    {
+     "ay": "2026-02",
+     "n": 2592,
+     "eksik": 0,
+     "min": -46.283,
+     "p01": -43.485,
+     "p50": 8.764,
+     "p99": 30.011,
+     "max": 35.257,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 166,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 13.9479
+    },
+    {
+     "ay": "2026-03",
+     "n": 2592,
+     "eksik": 0,
+     "min": -59.908,
+     "p01": -55.194,
+     "p50": 9.142,
+     "p99": 30.224,
+     "max": 33.951,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 179,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 14.6935
+    },
+    {
+     "ay": "2026-04",
+     "n": 2592,
+     "eksik": 0,
+     "min": -64.938,
+     "p01": -61.327,
+     "p50": 10.184,
+     "p99": 30.914,
+     "max": 35.65,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 220,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 15.5896
+    },
+    {
+     "ay": "2026-05",
+     "n": 2592,
+     "eksik": 0,
+     "min": -67.505,
+     "p01": -62.009,
+     "p50": 12.018,
+     "p99": 34.231,
+     "max": 38.72,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 208,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 16.4924
+    },
+    {
+     "ay": "2026-06",
+     "n": 2592,
+     "eksik": 0,
+     "min": -72.946,
+     "p01": -66.989,
+     "p50": 14.056,
+     "p99": 35.306,
+     "max": 38.84,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 231,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 11,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 17.2349
+    },
+    {
+     "ay": "2026-07",
+     "n": 2592,
+     "eksik": 0,
+     "min": -72.655,
+     "p01": -68.904,
+     "p50": 14.812,
+     "p99": 36.051,
+     "max": 40.139,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 237,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 16,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 17.6077
+    },
+    {
+     "ay": "2026-08",
+     "n": 2592,
+     "eksik": 0,
+     "min": -68.404,
+     "p01": -65.658,
+     "p50": 14.434,
+     "p99": 35.437,
+     "max": 41.431,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 221,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 17.6589
+    },
+    {
+     "ay": "2026-09",
+     "n": 2592,
+     "eksik": 0,
+     "min": -70.547,
+     "p01": -67.623,
+     "p50": 13.058,
+     "p99": 33.817,
+     "max": 37.795,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 221,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 1,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 17.0476
+    }
+   ],
+   "noktalar": {
+    "Sivas": {
+     "2025-10": {
+      "deger": 16.079,
+      "nokta": "42.25,37.19",
+      "km": 278,
+      "v3_ayni_takvim_ayi": 11.253
+     },
+     "2026-01": {
+      "deger": 5.445,
+      "nokta": "42.25,37.19",
+      "km": 278,
+      "v3_ayni_takvim_ayi": -0.166
+     },
+     "2026-07": {
+      "deger": 23.519,
+      "nokta": "42.25,37.19",
+      "km": 278,
+      "v3_ayni_takvim_ayi": 24.517
+     }
+    },
+    "Tokyo": {
+     "2025-10": {
+      "deger": 19.763,
+      "nokta": "37.25,137.19",
+      "km": 284,
+      "v3_ayni_takvim_ayi": 22.326
+     },
+     "2026-01": {
+      "deger": 6.888,
+      "nokta": "37.25,137.19",
+      "km": 284,
+      "v3_ayni_takvim_ayi": 11.138
+     },
+     "2026-07": {
+      "deger": 24.73,
+      "nokta": "37.25,137.19",
+      "km": 284,
+      "v3_ayni_takvim_ayi": 26.132
+     }
+    },
+    "Lagos": {
+     "2025-10": {
+      "deger": 26.632,
+      "nokta": "7.25,2.19",
+      "km": 154,
+      "v3_ayni_takvim_ayi": 26.594
+     },
+     "2026-01": {
+      "deger": 28.443,
+      "nokta": "7.25,2.19",
+      "km": 154,
+      "v3_ayni_takvim_ayi": 26.709
+     },
+     "2026-07": {
+      "deger": 26.167,
+      "nokta": "7.25,2.19",
+      "km": 154,
+      "v3_ayni_takvim_ayi": 25.902
+     }
+    },
+    "Amazon": {
+     "2025-10": {
+      "deger": 29.715,
+      "nokta": "-2.75,-57.81",
+      "km": 246,
+      "v3_ayni_takvim_ayi": 33.284
+     },
+     "2026-01": {
+      "deger": 26.555,
+      "nokta": "-2.75,-57.81",
+      "km": 246,
+      "v3_ayni_takvim_ayi": 27.862
+     },
+     "2026-07": {
+      "deger": 27.048,
+      "nokta": "-2.75,-57.81",
+      "km": 246,
+      "v3_ayni_takvim_ayi": 27.978
+     }
+    },
+    "Svalbard": {
+     "2025-10": {
+      "deger": 0.481,
+      "nokta": "77.25,17.19",
+      "km": 114,
+      "v3_ayni_takvim_ayi": -5.472
+     },
+     "2026-01": {
+      "deger": -4.797,
+      "nokta": "77.25,17.19",
+      "km": 114,
+      "v3_ayni_takvim_ayi": -16.314
+     },
+     "2026-07": {
+      "deger": 4.16,
+      "nokta": "77.25,17.19",
+      "km": 114,
+      "v3_ayni_takvim_ayi": 2.487
+     }
+    }
+   }
+  },
+  "hava_sicakligi_2m": {
+   "baslik": "2 m Hava Sıcaklığı",
+   "kaynak": "M2TMNXSLV",
+   "birim": "°C",
+   "ref": [
+    -35,
+    45
+   ],
+   "tarih": [
+    "2025-10",
+    "2026-09"
+   ],
+   "ay_sayisi": 12,
+   "aylar": [
+    "2025-10",
+    "2025-11",
+    "2025-12",
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09"
+   ],
+   "gercek_kayit": 12,
+   "veri_yok_kayit": 0,
+   "not": "MERRA-2 gerçek 2m hava sıcaklığı (T2M)",
+   "fizik_beklenti": "2 m hava °C",
+   "izgara": {
+    "nokta": 2592,
+    "enlem_sayisi": 36,
+    "boylam_sayisi": 72,
+    "enlem_adim": 5,
+    "boylam_adim": 5,
+    "enlem_araligi": [
+     -87.75,
+     87.25
+    ],
+    "ornek_enlemler": [
+     -87.75,
+     -82.75,
+     -77.75,
+     -72.75
+    ]
+   },
+   "tam_paket_kure_ile_ayni": true,
+   "istasyon": {
+    "sayi": 10,
+    "zaman_adimi": [
+     12
+    ],
+    "ad": [
+     "Anadolu_Eskisehir",
+     "Amazon_Yagmur_Ormani",
+     "Dogu_Asya_Sanayi",
+     "Kuzey_Kutbu_Svalbard",
+     "Pasifik_Mauna_Loa",
+     "Orta_Avrupa_Ren",
+     "Kuzey_Amerika_Dogu",
+     "Sahra_Colu_Merkez",
+     "Hindistan_Muson",
+     "Guney_Okyanusu_Antarktik"
+    ]
+   },
+   "aylik": [
+    {
+     "ay": "2025-10",
+     "n": 2592,
+     "eksik": 0,
+     "min": -51.685,
+     "p01": -49.849,
+     "p50": 9.671,
+     "p99": 30.029,
+     "max": 33.105,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 166,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 15.1418
+    },
+    {
+     "ay": "2025-11",
+     "n": 2592,
+     "eksik": 0,
+     "min": -41.143,
+     "p01": -38.771,
+     "p50": 8.323,
+     "p99": 29.096,
+     "max": 32.507,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 86,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 14.0189
+    },
+    {
+     "ay": "2025-12",
+     "n": 2592,
+     "eksik": 0,
+     "min": -40.921,
+     "p01": -34.392,
+     "p50": 7.648,
+     "p99": 28.862,
+     "max": 34.056,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 16,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 13.1616
+    },
+    {
+     "ay": "2026-01",
+     "n": 2592,
+     "eksik": 0,
+     "min": -39.877,
+     "p01": -33.154,
+     "p50": 7.143,
+     "p99": 28.826,
+     "max": 34.677,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 10,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 12.9713
+    },
+    {
+     "ay": "2026-02",
+     "n": 2592,
+     "eksik": 1,
+     "min": -43.487,
+     "p01": -41.49,
+     "p50": 7.934,
+     "p99": 28.64,
+     "max": 32.541,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 140,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 13.2464
+    },
+    {
+     "ay": "2026-03",
+     "n": 2592,
+     "eksik": 0,
+     "min": -54.662,
+     "p01": -52.346,
+     "p50": 8.231,
+     "p99": 28.767,
+     "max": 31.511,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 168,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 13.939
+    },
+    {
+     "ay": "2026-04",
+     "n": 2592,
+     "eksik": 0,
+     "min": -58.993,
+     "p01": -57.18,
+     "p50": 9.653,
+     "p99": 29.59,
+     "max": 33.589,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 193,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 14.8337
+    },
+    {
+     "ay": "2026-05",
+     "n": 2592,
+     "eksik": 0,
+     "min": -61.139,
+     "p01": -57.949,
+     "p50": 11.361,
+     "p99": 32.692,
+     "max": 35.743,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 188,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 15.7594
+    },
+    {
+     "ay": "2026-06",
+     "n": 2592,
+     "eksik": 0,
+     "min": -65.899,
+     "p01": -62.745,
+     "p50": 13.497,
+     "p99": 33.223,
+     "max": 37.315,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 210,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 16.4767
+    },
+    {
+     "ay": "2026-07",
+     "n": 2592,
+     "eksik": 0,
+     "min": -66.965,
+     "p01": -64.311,
+     "p50": 14.411,
+     "p99": 33.948,
+     "max": 38.673,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 218,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 16.8588
+    },
+    {
+     "ay": "2026-08",
+     "n": 2592,
+     "eksik": 0,
+     "min": -63.661,
+     "p01": -61.051,
+     "p50": 14.135,
+     "p99": 33.547,
+     "max": 39.654,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 209,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 16.913
+    },
+    {
+     "ay": "2026-09",
+     "n": 2592,
+     "eksik": 0,
+     "min": -65.05,
+     "p01": -63.613,
+     "p50": 12.461,
+     "p99": 32.267,
+     "max": 36.355,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 202,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 16.2987
+    }
+   ],
+   "noktalar": {
+    "Sivas": {
+     "2025-10": {
+      "deger": 15.301,
+      "nokta": "42.25,37.19",
+      "km": 278,
+      "v3_ayni_takvim_ayi": 10.884
+     },
+     "2026-01": {
+      "deger": 4.632,
+      "nokta": "42.25,37.19",
+      "km": 278,
+      "v3_ayni_takvim_ayi": 0.01
+     },
+     "2026-07": {
+      "deger": 22.466,
+      "nokta": "42.25,37.19",
+      "km": 278,
+      "v3_ayni_takvim_ayi": 22.411
+     }
+    },
+    "Tokyo": {
+     "2025-10": {
+      "deger": 17.765,
+      "nokta": "37.25,137.19",
+      "km": 284,
+      "v3_ayni_takvim_ayi": 21.323
+     },
+     "2026-01": {
+      "deger": 2.511,
+      "nokta": "37.25,137.19",
+      "km": 284,
+      "v3_ayni_takvim_ayi": 8.057
+     },
+     "2026-07": {
+      "deger": 24.653,
+      "nokta": "37.25,137.19",
+      "km": 284,
+      "v3_ayni_takvim_ayi": 26.325
+     }
+    },
+    "Lagos": {
+     "2025-10": {
+      "deger": 26.163,
+      "nokta": "7.25,2.19",
+      "km": 154,
+      "v3_ayni_takvim_ayi": 26.217
+     },
+     "2026-01": {
+      "deger": 27.721,
+      "nokta": "7.25,2.19",
+      "km": 154,
+      "v3_ayni_takvim_ayi": 26.76
+     },
+     "2026-07": {
+      "deger": 25.889,
+      "nokta": "7.25,2.19",
+      "km": 154,
+      "v3_ayni_takvim_ayi": 25.564
+     }
+    },
+    "Amazon": {
+     "2025-10": {
+      "deger": 29.564,
+      "nokta": "-2.75,-57.81",
+      "km": 246,
+      "v3_ayni_takvim_ayi": 33.176
+     },
+     "2026-01": {
+      "deger": 26.349,
+      "nokta": "-2.75,-57.81",
+      "km": 246,
+      "v3_ayni_takvim_ayi": 27.304
+     },
+     "2026-07": {
+      "deger": 26.774,
+      "nokta": "-2.75,-57.81",
+      "km": 246,
+      "v3_ayni_takvim_ayi": 27.521
+     }
+    },
+    "Svalbard": {
+     "2025-10": {
+      "deger": -0.018,
+      "nokta": "77.25,17.19",
+      "km": 114,
+      "v3_ayni_takvim_ayi": -4.557
+     },
+     "2026-01": {
+      "deger": -5.933,
+      "nokta": "77.25,17.19",
+      "km": 114,
+      "v3_ayni_takvim_ayi": -16.302
+     },
+     "2026-07": {
+      "deger": 4.463,
+      "nokta": "77.25,17.19",
+      "km": 114,
+      "v3_ayni_takvim_ayi": 3.272
+     }
+    }
+   }
+  },
+  "okyanus_sicakligi": {
+   "baslik": "Deniz Yüzey Sıcaklığı (SST)",
+   "kaynak": "AVHRR_OI-NCEI-L4-GLOB-v2.1",
+   "birim": "°C",
+   "ref": [
+    -2,
+    32
+   ],
+   "tarih": [
+    "2025-10-03",
+    "2026-10-03"
+   ],
+   "ay_sayisi": 13,
+   "aylar": [
+    "2025-10",
+    "2025-11",
+    "2025-12",
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10"
+   ],
+   "gercek_kayit": 74,
+   "veri_yok_kayit": 0,
+   "not": "AVHRR OI L4 gerçek günlük deniz yüzey sıcaklığı",
+   "fizik_beklenti": "SST °C (deniz suyu ≥ −1,8)",
+   "izgara": {
+    "nokta": 2028,
+    "enlem_sayisi": 34,
+    "boylam_sayisi": 72,
+    "enlem_adim": 5,
+    "boylam_adim": 5,
+    "enlem_araligi": [
+     -77.5,
+     87.5
+    ],
+    "ornek_enlemler": [
+     -77.5,
+     -72.5,
+     -67.5,
+     -62.5
+    ]
+   },
+   "tam_paket_kure_ile_ayni": true,
+   "istasyon": {
+    "sayi": 6,
+    "zaman_adimi": [
+     74
+    ],
+    "ad": [
+     "Pasifik_Ekvator_ElNino",
+     "Atlantik_Golf_Akintisi",
+     "Guney_Okyanusu_Antarktik",
+     "Karadeniz",
+     "Akdeniz_Dogu",
+     "Hint_Okyanusu_Somali"
+    ]
+   },
+   "aylik": [
+    {
+     "ay": "2025-10",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.8,
+     "p50": 14.022,
+     "p99": 30.257,
+     "max": 32.127,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.6313
+    },
+    {
+     "ay": "2025-11",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.797,
+     "p50": 13.926,
+     "p99": 29.987,
+     "max": 31.048,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.3885
+    },
+    {
+     "ay": "2025-12",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.769,
+     "p50": 13.403,
+     "p99": 30.145,
+     "max": 30.887,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.3797
+    },
+    {
+     "ay": "2026-01",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.767,
+     "p50": 13.456,
+     "p99": 30.125,
+     "max": 30.711,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.524
+    },
+    {
+     "ay": "2026-02",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.75,
+     "p50": 13.929,
+     "p99": 29.689,
+     "max": 30.403,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.7558
+    },
+    {
+     "ay": "2026-03",
+     "n": 2028,
+     "eksik": 3,
+     "min": -1.8,
+     "p01": -1.747,
+     "p50": 13.975,
+     "p99": 29.791,
+     "max": 30.484,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.8398
+    },
+    {
+     "ay": "2026-04",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.757,
+     "p50": 13.827,
+     "p99": 30.031,
+     "max": 30.385,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.8856
+    },
+    {
+     "ay": "2026-05",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.779,
+     "p50": 13.878,
+     "p99": 30.486,
+     "max": 31.391,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.8403
+    },
+    {
+     "ay": "2026-06",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.791,
+     "p50": 14.027,
+     "p99": 30.567,
+     "max": 31.656,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.7532
+    },
+    {
+     "ay": "2026-07",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.793,
+     "p50": 14.836,
+     "p99": 30.456,
+     "max": 32.763,
+     "ust_ref_ustu": 3,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.8691
+    },
+    {
+     "ay": "2026-08",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.799,
+     "p50": 15.095,
+     "p99": 30.474,
+     "max": 34.626,
+     "ust_ref_ustu": 6,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 3,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.9978
+    },
+    {
+     "ay": "2026-09",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.798,
+     "p50": 15.352,
+     "p99": 30.724,
+     "max": 34.885,
+     "ust_ref_ustu": 6,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 1,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 19.0433
+    },
+    {
+     "ay": "2026-10",
+     "n": 2028,
+     "eksik": 1,
+     "min": -1.8,
+     "p01": -1.798,
+     "p50": 14.259,
+     "p99": 30.356,
+     "max": 33.53,
+     "ust_ref_ustu": 4,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.9225
+    }
+   ],
+   "noktalar": {
+    "Sivas": {
+     "2025-10": {
+      "deger": 27.491,
+      "nokta": "37.5,37.5",
+      "km": 254,
+      "v3_ayni_takvim_ayi": null
+     },
+     "2026-01": {
+      "deger": 20.348,
+      "nokta": "37.5,37.5",
+      "km": 254,
+      "v3_ayni_takvim_ayi": null
+     },
+     "2026-07": {
+      "deger": 27.021,
+      "nokta": "37.5,37.5",
+      "km": 254,
+      "v3_ayni_takvim_ayi": null
+     }
+    },
+    "Tokyo": {
+     "2025-10": {
+      "deger": 25.095,
+      "nokta": "37.5,137.5",
+      "km": 281,
+      "v3_ayni_takvim_ayi": 25.802
+     },
+     "2026-01": {
+      "deger": 14.363,
+      "nokta": "37.5,137.5",
+      "km": 281,
+      "v3_ayni_takvim_ayi": 18.069
+     },
+     "2026-07": {
+      "deger": 23.132,
+      "nokta": "37.5,137.5",
+      "km": 281,
+      "v3_ayni_takvim_ayi": 26.828
+     }
+    },
+    "Lagos": {
+     "2025-10": {
+      "deger": 26.775,
+      "nokta": "7.5,2.5",
+      "km": 146,
+      "v3_ayni_takvim_ayi": 27.964
+     },
+     "2026-01": {
+      "deger": 28.493,
+      "nokta": "7.5,2.5",
+      "km": 146,
+      "v3_ayni_takvim_ayi": 29.43
+     },
+     "2026-07": {
+      "deger": 27.582,
+      "nokta": "7.5,2.5",
+      "km": 146,
+      "v3_ayni_takvim_ayi": 27.011
+     }
+    },
+    "Amazon": {
+     "2025-10": {
+      "deger": 30.073,
+      "nokta": "-2.5,-52.5",
+      "km": 836,
+      "v3_ayni_takvim_ayi": null
+     },
+     "2026-01": {
+      "deger": 29.23,
+      "nokta": "-2.5,-52.5",
+      "km": 836,
+      "v3_ayni_takvim_ayi": null
+     },
+     "2026-07": {
+      "deger": 29.003,
+      "nokta": "-2.5,-52.5",
+      "km": 836,
+      "v3_ayni_takvim_ayi": null
+     }
+    },
+    "Svalbard": {
+     "2025-10": {
+      "deger": 4.633,
+      "nokta": "77.5,17.5",
+      "km": 91,
+      "v3_ayni_takvim_ayi": 2.786
+     },
+     "2026-01": {
+      "deger": 1.427,
+      "nokta": "77.5,17.5",
+      "km": 91,
+      "v3_ayni_takvim_ayi": -0.659
+     },
+     "2026-07": {
+      "deger": 6.021,
+      "nokta": "77.5,17.5",
+      "km": 91,
+      "v3_ayni_takvim_ayi": 3.189
+     }
+    }
+   }
+  },
+  "okyanus_akintilari": {
+   "baslik": "Okyanus Yüzey Akıntı Hızı",
+   "kaynak": "OSCAR_L4_OC_FINAL_V2.0",
+   "birim": "m/s",
+   "ref": [
+    0,
+    1.2
+   ],
+   "tarih": [
+    "2025-02",
+    "2026-01"
+   ],
+   "ay_sayisi": 12,
+   "aylar": [
+    "2025-02",
+    "2025-03",
+    "2025-04",
+    "2025-05",
+    "2025-06",
+    "2025-07",
+    "2025-08",
+    "2025-09",
+    "2025-10",
+    "2025-11",
+    "2025-12",
+    "2026-01"
+   ],
+   "gercek_kayit": 12,
+   "veri_yok_kayit": 0,
+   "not": "OSCAR L4 V2.0 gerçek u,v bileşenlerinden hesaplanan hız = sqrt(u²+v²)",
+   "fizik_beklenti": "yüzey akıntı hızı m/s: Gulf Stream ~1–2",
+   "izgara": {
+    "nokta": 1917,
+    "enlem_sayisi": 33,
+    "boylam_sayisi": 72,
+    "enlem_adim": 5.01,
+    "boylam_adim": 5,
+    "enlem_araligi": [
+     -77.48,
+     82.74
+    ],
+    "ornek_enlemler": [
+     -77.48,
+     -72.48,
+     -67.47,
+     -62.46
+    ]
+   },
+   "tam_paket_kure_ile_ayni": true,
+   "istasyon": {
+    "sayi": 6,
+    "zaman_adimi": [
+     12
+    ],
+    "ad": [
+     "Pasifik_Ekvator_ElNino",
+     "Atlantik_Golf_Akintisi",
+     "Guney_Okyanusu_Antarktik",
+     "Karadeniz",
+     "Akdeniz_Dogu",
+     "Hint_Okyanusu_Somali"
+    ]
+   },
+   "aylik": [
+    {
+     "ay": "2025-02",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.009,
+     "p01": 0.014,
+     "p50": 0.127,
+     "p99": 0.6,
+     "max": 1.775,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.1828
+    },
+    {
+     "ay": "2025-03",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.006,
+     "p01": 0.016,
+     "p50": 0.124,
+     "p99": 0.604,
+     "max": 1.463,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.1786
+    },
+    {
+     "ay": "2025-04",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.01,
+     "p01": 0.017,
+     "p50": 0.127,
+     "p99": 0.534,
+     "max": 2.093,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.173
+    },
+    {
+     "ay": "2025-05",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.011,
+     "p01": 0.017,
+     "p50": 0.124,
+     "p99": 0.567,
+     "max": 1.94,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.178
+    },
+    {
+     "ay": "2025-06",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.01,
+     "p01": 0.019,
+     "p50": 0.123,
+     "p99": 0.607,
+     "max": 1.676,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.1794
+    },
+    {
+     "ay": "2025-07",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.01,
+     "p01": 0.021,
+     "p50": 0.126,
+     "p99": 0.592,
+     "max": 1.526,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.1846
+    },
+    {
+     "ay": "2025-08",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.01,
+     "p01": 0.021,
+     "p50": 0.126,
+     "p99": 0.62,
+     "max": 1.729,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.1844
+    },
+    {
+     "ay": "2025-09",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.017,
+     "p01": 0.024,
+     "p50": 0.125,
+     "p99": 0.595,
+     "max": 1.21,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.1841
+    },
+    {
+     "ay": "2025-10",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.01,
+     "p01": 0.021,
+     "p50": 0.127,
+     "p99": 0.583,
+     "max": 1.516,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.1799
+    },
+    {
+     "ay": "2025-11",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.006,
+     "p01": 0.018,
+     "p50": 0.126,
+     "p99": 0.651,
+     "max": 1.777,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.1854
+    },
+    {
+     "ay": "2025-12",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.011,
+     "p01": 0.017,
+     "p50": 0.128,
+     "p99": 0.676,
+     "max": 1.807,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.1866
+    },
+    {
+     "ay": "2026-01",
+     "n": 1917,
+     "eksik": 0,
+     "min": 0.011,
+     "p01": 0.016,
+     "p50": 0.124,
+     "p99": 0.669,
+     "max": 1.513,
+     "ust_ref_ustu": 2,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.1816
+    }
+   ],
+   "noktalar": {
+    "Sivas": {
+     "2025-02": {
+      "deger": 0.134,
+      "nokta": "37.68,37.5",
+      "km": 234
+     },
+     "2025-05": {
+      "deger": 0.074,
+      "nokta": "37.68,37.5",
+      "km": 234
+     },
+     "2025-11": {
+      "deger": 0.07,
+      "nokta": "37.68,37.5",
+      "km": 234
+     }
+    },
+    "Tokyo": {
+     "2025-02": {
+      "deger": 0.227,
+      "nokta": "37.68,137.5",
+      "km": 296
+     },
+     "2025-05": {
+      "deger": 0.293,
+      "nokta": "37.68,137.5",
+      "km": 296
+     },
+     "2025-11": {
+      "deger": 0.34,
+      "nokta": "37.68,137.5",
+      "km": 296
+     }
+    },
+    "Lagos": {
+     "2025-02": {
+      "deger": 0.248,
+      "nokta": "7.64,2.5",
+      "km": 158
+     },
+     "2025-05": {
+      "deger": 0.33,
+      "nokta": "7.64,2.5",
+      "km": 158
+     },
+     "2025-11": {
+      "deger": 0.322,
+      "nokta": "7.64,2.5",
+      "km": 158
+     }
+    },
+    "Amazon": {
+     "2025-02": {
+      "deger": 0.6,
+      "nokta": "-2.38,-62.5",
+      "km": 289
+     },
+     "2025-05": {
+      "deger": 0.415,
+      "nokta": "-2.38,-62.5",
+      "km": 289
+     },
+     "2025-11": {
+      "deger": 0.7,
+      "nokta": "-2.38,-62.5",
+      "km": 289
+     }
+    },
+    "Svalbard": {
+     "2025-02": {
+      "deger": 0.034,
+      "nokta": "77.73,17.5",
+      "km": 69
+     },
+     "2025-05": {
+      "deger": 0.03,
+      "nokta": "77.73,17.5",
+      "km": 69
+     },
+     "2025-11": {
+      "deger": 0.033,
+      "nokta": "77.73,17.5",
+      "km": 69
+     }
+    }
+   }
+  },
+  "yildirim": {
+   "baslik": "Yıldırım (LIS/OTD Küresel Flaş Yoğunluğu)",
+   "kaynak": "lohrmc",
+   "birim": "flaş/km²/gün",
+   "ref": [
+    0,
+    0.15
+   ],
+   "tarih": [
+    "klimatoloji-01",
+    "klimatoloji-12"
+   ],
+   "ay_sayisi": 12,
+   "aylar": [
+    "klimatoloji-01",
+    "klimatoloji-02",
+    "klimatoloji-03",
+    "klimatoloji-04",
+    "klimatoloji-05",
+    "klimatoloji-06",
+    "klimatoloji-07",
+    "klimatoloji-08",
+    "klimatoloji-09",
+    "klimatoloji-10",
+    "klimatoloji-11",
+    "klimatoloji-12"
+   ],
+   "gercek_kayit": 12,
+   "veri_yok_kayit": 0,
+   "not": "NASA GHRC LIS/OTD 0.5 derece gerçek küresel yıldırım klimatolojisi (.nc)",
+   "fizik_beklenti": "LIS/OTD LRMC flaş/km²/gün: Kongo yıllık ~100–160/km²/yıl ≈ 0,3–0,45/gün",
+   "izgara": {
+    "nokta": 2015,
+    "enlem_sayisi": 32,
+    "boylam_sayisi": 72,
+    "enlem_adim": 5,
+    "boylam_adim": 5,
+    "enlem_araligi": [
+     -77.5,
+     77.5
+    ],
+    "ornek_enlemler": [
+     -77.5,
+     -72.5,
+     -67.5,
+     -62.5
+    ]
+   },
+   "tam_paket_kure_ile_ayni": true,
+   "istasyon": {
+    "sayi": 10,
+    "zaman_adimi": [
+     12
+    ],
+    "ad": [
+     "Anadolu_Eskisehir",
+     "Amazon_Yagmur_Ormani",
+     "Dogu_Asya_Sanayi",
+     "Kuzey_Kutbu_Svalbard",
+     "Pasifik_Mauna_Loa",
+     "Orta_Avrupa_Ren",
+     "Kuzey_Amerika_Dogu",
+     "Sahra_Colu_Merkez",
+     "Hindistan_Muson",
+     "Guney_Okyanusu_Antarktik"
+    ]
+   },
+   "aylik": [
+    {
+     "ay": "klimatoloji-01",
+     "n": 2015,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0,
+     "p99": 0.089,
+     "max": 0.199,
+     "ust_ref_ustu": 4,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 1202,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.0084
+    },
+    {
+     "ay": "klimatoloji-02",
+     "n": 2015,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0,
+     "p99": 0.089,
+     "max": 0.2,
+     "ust_ref_ustu": 5,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 1200,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.0084
+    },
+    {
+     "ay": "klimatoloji-03",
+     "n": 2028,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0,
+     "p99": 0.082,
+     "max": 0.205,
+     "ust_ref_ustu": 6,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 1143,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.0092
+    },
+    {
+     "ay": "klimatoloji-04",
+     "n": 2043,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0,
+     "p99": 0.11,
+     "max": 0.167,
+     "ust_ref_ustu": 7,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 1073,
+     "max_refe_esit": 3,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.0099
+    },
+    {
+     "ay": "klimatoloji-05",
+     "n": 2051,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0.001,
+     "p99": 0.111,
+     "max": 0.193,
+     "ust_ref_ustu": 8,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 966,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.0105
+    },
+    {
+     "ay": "klimatoloji-06",
+     "n": 2062,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0.001,
+     "p99": 0.119,
+     "max": 0.196,
+     "ust_ref_ustu": 8,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 934,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.0118
+    },
+    {
+     "ay": "klimatoloji-07",
+     "n": 2052,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0.001,
+     "p99": 0.116,
+     "max": 0.206,
+     "ust_ref_ustu": 8,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 964,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.0126
+    },
+    {
+     "ay": "klimatoloji-08",
+     "n": 2040,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0.001,
+     "p99": 0.106,
+     "max": 0.2,
+     "ust_ref_ustu": 8,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 975,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.013
+    },
+    {
+     "ay": "klimatoloji-09",
+     "n": 2012,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0,
+     "p99": 0.116,
+     "max": 0.226,
+     "ust_ref_ustu": 8,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 1038,
+     "max_refe_esit": 1,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.0117
+    },
+    {
+     "ay": "klimatoloji-10",
+     "n": 2024,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0,
+     "p99": 0.12,
+     "max": 0.197,
+     "ust_ref_ustu": 9,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 1125,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.011
+    },
+    {
+     "ay": "klimatoloji-11",
+     "n": 2041,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0,
+     "p99": 0.112,
+     "max": 0.179,
+     "ust_ref_ustu": 5,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 1167,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.0096
+    },
+    {
+     "ay": "klimatoloji-12",
+     "n": 2010,
+     "eksik": 0,
+     "min": 0,
+     "p01": 0,
+     "p50": 0,
+     "p99": 0.095,
+     "max": 0.178,
+     "ust_ref_ustu": 3,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 1197,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 0.0088
+    }
+   ],
+   "noktalar": {
+    "Sivas": {
+     "klimatoloji-01": {
+      "deger": 0.003,
+      "nokta": "37.5,37.5",
+      "km": 254
+     },
+     "klimatoloji-04": {
+      "deger": 0.021,
+      "nokta": "37.5,37.5",
+      "km": 254
+     },
+     "klimatoloji-10": {
+      "deger": 0.022,
+      "nokta": "37.5,37.5",
+      "km": 254
+     }
+    },
+    "Tokyo": {
+     "klimatoloji-01": {
+      "deger": 0.001,
+      "nokta": "37.5,137.5",
+      "km": 281
+     },
+     "klimatoloji-04": {
+      "deger": 0.002,
+      "nokta": "37.5,137.5",
+      "km": 281
+     },
+     "klimatoloji-10": {
+      "deger": 0.009,
+      "nokta": "37.5,137.5",
+      "km": 281
+     }
+    },
+    "Lagos": {
+     "klimatoloji-01": {
+      "deger": 0.015,
+      "nokta": "7.5,2.5",
+      "km": 146
+     },
+     "klimatoloji-04": {
+      "deger": 0.089,
+      "nokta": "7.5,2.5",
+      "km": 146
+     },
+     "klimatoloji-10": {
+      "deger": 0.075,
+      "nokta": "7.5,2.5",
+      "km": 146
+     }
+    },
+    "Amazon": {
+     "klimatoloji-01": {
+      "deger": 0.023,
+      "nokta": "-2.5,-62.5",
+      "km": 286
+     },
+     "klimatoloji-04": {
+      "deger": 0.022,
+      "nokta": "-2.5,-62.5",
+      "km": 286
+     },
+     "klimatoloji-10": {
+      "deger": 0.144,
+      "nokta": "-2.5,-62.5",
+      "km": 286
+     }
+    },
+    "Svalbard": {
+     "klimatoloji-01": {
+      "deger": 0,
+      "nokta": "77.5,17.5",
+      "km": 91
+     },
+     "klimatoloji-04": {
+      "deger": 0,
+      "nokta": "77.5,7.5",
+      "km": 206
+     },
+     "klimatoloji-10": {
+      "deger": 0,
+      "nokta": "77.5,7.5",
+      "km": 206
+     }
+    }
+   }
+  },
+  "okyanus_sicakligi_akintilar": {
+   "baslik": "Okyanus Sıcaklığı (SST) ve Yüzey Akıntıları (OSCAR)",
+   "kaynak": "AVHRR_OI-NCEI-L4-GLOB-v2.1+OSCAR_L4_OC_FINAL_V2.0",
+   "birim": "°C",
+   "ref": [
+    -2,
+    32
+   ],
+   "tarih": [
+    "2025-10-03",
+    "2026-10-03"
+   ],
+   "ay_sayisi": 13,
+   "aylar": [
+    "2025-10",
+    "2025-11",
+    "2025-12",
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09",
+    "2026-10"
+   ],
+   "gercek_kayit": 74,
+   "veri_yok_kayit": 0,
+   "not": "AVHRR OI L4 gerçek günlük deniz yüzey sıcaklığı",
+   "fizik_beklenti": "SST °C",
+   "izgara": {
+    "nokta": 2028,
+    "enlem_sayisi": 34,
+    "boylam_sayisi": 72,
+    "enlem_adim": 5,
+    "boylam_adim": 5,
+    "enlem_araligi": [
+     -77.5,
+     87.5
+    ],
+    "ornek_enlemler": [
+     -77.5,
+     -72.5,
+     -67.5,
+     -62.5
+    ]
+   },
+   "tam_paket_kure_ile_ayni": true,
+   "istasyon": {
+    "sayi": 6,
+    "zaman_adimi": [
+     74
+    ],
+    "ad": [
+     "Pasifik_Ekvator_ElNino",
+     "Atlantik_Golf_Akintisi",
+     "Guney_Okyanusu_Antarktik",
+     "Karadeniz",
+     "Akdeniz_Dogu",
+     "Hint_Okyanusu_Somali"
+    ]
+   },
+   "aylik": [
+    {
+     "ay": "2025-10",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.8,
+     "p50": 14.022,
+     "p99": 30.257,
+     "max": 32.127,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.6313
+    },
+    {
+     "ay": "2025-11",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.797,
+     "p50": 13.926,
+     "p99": 29.987,
+     "max": 31.048,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.3885
+    },
+    {
+     "ay": "2025-12",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.769,
+     "p50": 13.403,
+     "p99": 30.145,
+     "max": 30.887,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.3797
+    },
+    {
+     "ay": "2026-01",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.767,
+     "p50": 13.456,
+     "p99": 30.125,
+     "max": 30.711,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.524
+    },
+    {
+     "ay": "2026-02",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.75,
+     "p50": 13.929,
+     "p99": 29.689,
+     "max": 30.403,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.7558
+    },
+    {
+     "ay": "2026-03",
+     "n": 2028,
+     "eksik": 3,
+     "min": -1.8,
+     "p01": -1.747,
+     "p50": 13.975,
+     "p99": 29.791,
+     "max": 30.484,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.8398
+    },
+    {
+     "ay": "2026-04",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.757,
+     "p50": 13.827,
+     "p99": 30.031,
+     "max": 30.385,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.8856
+    },
+    {
+     "ay": "2026-05",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.779,
+     "p50": 13.878,
+     "p99": 30.486,
+     "max": 31.391,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.8403
+    },
+    {
+     "ay": "2026-06",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.791,
+     "p50": 14.027,
+     "p99": 30.567,
+     "max": 31.656,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.7532
+    },
+    {
+     "ay": "2026-07",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.793,
+     "p50": 14.836,
+     "p99": 30.456,
+     "max": 32.763,
+     "ust_ref_ustu": 3,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.8691
+    },
+    {
+     "ay": "2026-08",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.799,
+     "p50": 15.095,
+     "p99": 30.474,
+     "max": 34.626,
+     "ust_ref_ustu": 6,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 3,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.9978
+    },
+    {
+     "ay": "2026-09",
+     "n": 2028,
+     "eksik": 0,
+     "min": -1.8,
+     "p01": -1.798,
+     "p50": 15.352,
+     "p99": 30.724,
+     "max": 34.885,
+     "ust_ref_ustu": 6,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 1,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 19.0433
+    },
+    {
+     "ay": "2026-10",
+     "n": 2028,
+     "eksik": 1,
+     "min": -1.8,
+     "p01": -1.798,
+     "p50": 14.259,
+     "p99": 30.356,
+     "max": 33.53,
+     "ust_ref_ustu": 4,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 18.9225
+    }
+   ],
+   "noktalar": {
+    "Sivas": {
+     "2025-10": {
+      "deger": 27.491,
+      "nokta": "37.5,37.5",
+      "km": 254,
+      "v3_ayni_takvim_ayi": null
+     },
+     "2026-01": {
+      "deger": 20.348,
+      "nokta": "37.5,37.5",
+      "km": 254,
+      "v3_ayni_takvim_ayi": null
+     },
+     "2026-07": {
+      "deger": 27.021,
+      "nokta": "37.5,37.5",
+      "km": 254,
+      "v3_ayni_takvim_ayi": null
+     }
+    },
+    "Tokyo": {
+     "2025-10": {
+      "deger": 25.095,
+      "nokta": "37.5,137.5",
+      "km": 281,
+      "v3_ayni_takvim_ayi": 25.802
+     },
+     "2026-01": {
+      "deger": 14.363,
+      "nokta": "37.5,137.5",
+      "km": 281,
+      "v3_ayni_takvim_ayi": 18.069
+     },
+     "2026-07": {
+      "deger": 23.132,
+      "nokta": "37.5,137.5",
+      "km": 281,
+      "v3_ayni_takvim_ayi": 26.828
+     }
+    },
+    "Lagos": {
+     "2025-10": {
+      "deger": 26.775,
+      "nokta": "7.5,2.5",
+      "km": 146,
+      "v3_ayni_takvim_ayi": 27.964
+     },
+     "2026-01": {
+      "deger": 28.493,
+      "nokta": "7.5,2.5",
+      "km": 146,
+      "v3_ayni_takvim_ayi": 29.43
+     },
+     "2026-07": {
+      "deger": 27.582,
+      "nokta": "7.5,2.5",
+      "km": 146,
+      "v3_ayni_takvim_ayi": 27.011
+     }
+    },
+    "Amazon": {
+     "2025-10": {
+      "deger": 30.073,
+      "nokta": "-2.5,-52.5",
+      "km": 836,
+      "v3_ayni_takvim_ayi": null
+     },
+     "2026-01": {
+      "deger": 29.23,
+      "nokta": "-2.5,-52.5",
+      "km": 836,
+      "v3_ayni_takvim_ayi": null
+     },
+     "2026-07": {
+      "deger": 29.003,
+      "nokta": "-2.5,-52.5",
+      "km": 836,
+      "v3_ayni_takvim_ayi": null
+     }
+    },
+    "Svalbard": {
+     "2025-10": {
+      "deger": 4.633,
+      "nokta": "77.5,17.5",
+      "km": 91,
+      "v3_ayni_takvim_ayi": 2.786
+     },
+     "2026-01": {
+      "deger": 1.427,
+      "nokta": "77.5,17.5",
+      "km": 91,
+      "v3_ayni_takvim_ayi": -0.659
+     },
+     "2026-07": {
+      "deger": 6.021,
+      "nokta": "77.5,17.5",
+      "km": 91,
+      "v3_ayni_takvim_ayi": 3.189
+     }
+    }
+   }
+  },
+  "orman_yuksekligi": {
+   "baslik": "Orman / Kanopi Yüksekliği (GEDI V3 + MERRA-2 LAI)",
+   "kaynak": "GEDI_L3_LandSurface_Metrics_V3_2525+M2TMNXLND",
+   "birim": "m",
+   "ref": [
+    0,
+    45
+   ],
+   "tarih": [
+    "2025-10",
+    "2026-09"
+   ],
+   "ay_sayisi": 12,
+   "aylar": [
+    "2025-10",
+    "2025-11",
+    "2025-12",
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09"
+   ],
+   "gercek_kayit": 12,
+   "veri_yok_kayit": 0,
+   "not": "GEDI L3 V3 gerçek rh100_mean kanopi yüksekliği + MERRA-2 gerçek LAI mevsimsel bağlama",
+   "fizik_beklenti": "GEDI rh100 m: tropik orman 25–45",
+   "izgara": {
+    "nokta": 4920,
+    "enlem_sayisi": 190,
+    "boylam_sayisi": 72,
+    "enlem_adim": 0.52,
+    "boylam_adim": 5,
+    "enlem_araligi": [
+     -51.78,
+     51.78
+    ],
+    "ornek_enlemler": [
+     -51.78,
+     -51.02,
+     -50.27,
+     -49.53
+    ]
+   },
+   "tam_paket_kure_ile_ayni": true,
+   "istasyon": {
+    "sayi": 10,
+    "zaman_adimi": [
+     12
+    ],
+    "ad": [
+     "Anadolu_Eskisehir",
+     "Amazon_Yagmur_Ormani",
+     "Dogu_Asya_Sanayi",
+     "Kuzey_Kutbu_Svalbard",
+     "Pasifik_Mauna_Loa",
+     "Orta_Avrupa_Ren",
+     "Kuzey_Amerika_Dogu",
+     "Sahra_Colu_Merkez",
+     "Hindistan_Muson",
+     "Guney_Okyanusu_Antarktik"
+    ]
+   },
+   "aylik": [
+    {
+     "ay": "2025-10",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.153,
+     "p99": 31.199,
+     "max": 36.801,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.2867
+    },
+    {
+     "ay": "2025-11",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.149,
+     "p99": 31.081,
+     "max": 36.801,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.285
+    },
+    {
+     "ay": "2025-12",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.167,
+     "p99": 30.979,
+     "max": 36.611,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.2562
+    },
+    {
+     "ay": "2026-01",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.17,
+     "p99": 30.751,
+     "max": 36.213,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.2003
+    },
+    {
+     "ay": "2026-02",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.179,
+     "p99": 30.314,
+     "max": 36.44,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.1593
+    },
+    {
+     "ay": "2026-03",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.211,
+     "p99": 30.437,
+     "max": 37.02,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.189
+    },
+    {
+     "ay": "2026-04",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.24,
+     "p99": 31.199,
+     "max": 37.429,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.2725
+    },
+    {
+     "ay": "2026-05",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.266,
+     "p99": 31.385,
+     "max": 37.522,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.3485
+    },
+    {
+     "ay": "2026-06",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.15,
+     "p50": 6.288,
+     "p99": 31.348,
+     "max": 37.53,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.3969
+    },
+    {
+     "ay": "2026-07",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.273,
+     "p99": 31.199,
+     "max": 37.528,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.4113
+    },
+    {
+     "ay": "2026-08",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.253,
+     "p99": 30.959,
+     "max": 37.513,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.3785
+    },
+    {
+     "ay": "2026-09",
+     "n": 4920,
+     "eksik": 0,
+     "min": 1.413,
+     "p01": 2.151,
+     "p50": 6.22,
+     "p99": 30.846,
+     "max": 37.221,
+     "ust_ref_ustu": 0,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 0,
+     "norm_formulu_tutar": true,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 8.3121
+    }
+   ],
+   "noktalar": {
+    "Sivas": {
+     "2025-10": {
+      "deger": 5.585,
+      "nokta": "39.49,37.5",
+      "km": 50
+     },
+     "2026-01": {
+      "deger": 5.489,
+      "nokta": "39.49,37.5",
+      "km": 50
+     },
+     "2026-07": {
+      "deger": 5.833,
+      "nokta": "39.49,37.5",
+      "km": 50
+     }
+    },
+    "Tokyo": {
+     "2025-10": {
+      "deger": 18.446,
+      "nokta": "35.88,137.5",
+      "km": 199
+     },
+     "2026-01": {
+      "deger": 17.128,
+      "nokta": "35.88,137.5",
+      "km": 199
+     },
+     "2026-07": {
+      "deger": 18.438,
+      "nokta": "35.88,137.5",
+      "km": 199
+     }
+    },
+    "Lagos": {
+     "2025-10": {
+      "deger": 6.641,
+      "nokta": "6.44,2.5",
+      "km": 98
+     },
+     "2026-01": {
+      "deger": 6.215,
+      "nokta": "6.44,2.5",
+      "km": 98
+     },
+     "2026-07": {
+      "deger": 6.636,
+      "nokta": "6.44,2.5",
+      "km": 98
+     }
+    },
+    "Amazon": {
+     "2025-10": {
+      "deger": 24.124,
+      "nokta": "-3.1,-62.5",
+      "km": 278
+     },
+     "2026-01": {
+      "deger": 24.88,
+      "nokta": "-3.1,-62.5",
+      "km": 278
+     },
+     "2026-07": {
+      "deger": 25.576,
+      "nokta": "-3.1,-62.5",
+      "km": 278
+     }
+    },
+    "Svalbard": {
+     "2025-10": {
+      "deger": 8.026,
+      "nokta": "51.78,17.5",
+      "km": 2941
+     },
+     "2026-01": {
+      "deger": 7.798,
+      "nokta": "51.78,17.5",
+      "km": 2941
+     },
+     "2026-07": {
+      "deger": 8.477,
+      "nokta": "51.78,17.5",
+      "km": 2941
+     }
+    }
+   }
+  },
+  "gece_isiklari": {
+   "baslik": "Gece Işıkları (VIIRS VNP46A4 / VNP46A3)",
+   "kaynak": "VNP46A3",
+   "birim": "nW/cm²/sr",
+   "ref": [
+    0,
+    120
+   ],
+   "tarih": [
+    "2025-01",
+    "2025-01"
+   ],
+   "ay_sayisi": 1,
+   "aylar": [
+    "2025-01"
+   ],
+   "gercek_kayit": 9,
+   "veri_yok_kayit": 1,
+   "not": "VIIRS Black Marble gerçek HDF5 tile verisi (her karo okunduktan hemen sonra diskten silinir)",
+   "fizik_beklenti": "VIIRS radyans nW/cm²/sr",
+   "izgara": {
+    "nokta": 1065,
+    "enlem_sayisi": 89,
+    "boylam_sayisi": 120,
+    "enlem_adim": 0.5,
+    "boylam_adim": 0.5,
+    "enlem_araligi": [
+     -7.5,
+     80
+    ],
+    "ornek_enlemler": [
+     -7.5,
+     20.5,
+     21,
+     21.5
+    ]
+   },
+   "tam_paket_kure_ile_ayni": true,
+   "istasyon": {
+    "sayi": 10,
+    "zaman_adimi": [
+     1
+    ],
+    "ad": [
+     "Anadolu_Eskisehir",
+     "Amazon_Yagmur_Ormani",
+     "Dogu_Asya_Sanayi",
+     "Kuzey_Kutbu_Svalbard",
+     "Pasifik_Mauna_Loa",
+     "Orta_Avrupa_Ren",
+     "Kuzey_Amerika_Dogu",
+     "Sahra_Colu_Merkez",
+     "Hindistan_Muson",
+     "Guney_Okyanusu_Antarktik"
+    ]
+   },
+   "aylik": [
+    {
+     "ay": "2025-01",
+     "n": 1065,
+     "eksik": 0,
+     "min": 0.5,
+     "p01": 0.504,
+     "p50": 0.842,
+     "p99": 34.84,
+     "max": 1323.595,
+     "ust_ref_ustu": 1,
+     "alt_ref_alti": 0,
+     "min_refe_esit": 0,
+     "max_refe_esit": 0,
+     "fizik_disi": 1,
+     "norm_formulu_tutar": false,
+     "norm_eq_deger": false,
+     "ppm_eq_deger": true,
+     "ort": 3.855
+    }
+   ],
+   "noktalar": {
+    "Sivas": {
+     "2025-01": {
+      "deger": 2.444,
+      "nokta": "39.5,37",
+      "km": 28
+     }
+    },
+    "Tokyo": {
+     "2025-01": {
+      "deger": 0.849,
+      "nokta": "37,119.5",
+      "km": 1811
+     }
+    },
+    "Lagos": {
+     "2025-01": {
+      "deger": 2.96,
+      "nokta": "26,12",
+      "km": 2351
+     }
+    },
+    "Amazon": {
+     "2025-01": {
+      "deger": 1.495,
+      "nokta": "-7.5,-63",
+      "km": 591
+     }
+    },
+    "Svalbard": {
+     "2025-01": {
+      "deger": 0.776,
+      "nokta": "78,15.5",
+      "km": 25
+     }
+    }
+   }
+  }
+ },
+ "kopyalar": [
+  [
+   "okyanus_sicakligi/2025-10",
+   "okyanus_sicakligi_akintilar/2025-10"
+  ],
+  [
+   "okyanus_sicakligi/2025-11",
+   "okyanus_sicakligi_akintilar/2025-11"
+  ],
+  [
+   "okyanus_sicakligi/2025-12",
+   "okyanus_sicakligi_akintilar/2025-12"
+  ],
+  [
+   "okyanus_sicakligi/2026-01",
+   "okyanus_sicakligi_akintilar/2026-01"
+  ],
+  [
+   "okyanus_sicakligi/2026-02",
+   "okyanus_sicakligi_akintilar/2026-02"
+  ],
+  [
+   "okyanus_sicakligi/2026-03",
+   "okyanus_sicakligi_akintilar/2026-03"
+  ],
+  [
+   "okyanus_sicakligi/2026-04",
+   "okyanus_sicakligi_akintilar/2026-04"
+  ],
+  [
+   "okyanus_sicakligi/2026-05",
+   "okyanus_sicakligi_akintilar/2026-05"
+  ],
+  [
+   "okyanus_sicakligi/2026-06",
+   "okyanus_sicakligi_akintilar/2026-06"
+  ],
+  [
+   "okyanus_sicakligi/2026-07",
+   "okyanus_sicakligi_akintilar/2026-07"
+  ],
+  [
+   "okyanus_sicakligi/2026-08",
+   "okyanus_sicakligi_akintilar/2026-08"
+  ],
+  [
+   "okyanus_sicakligi/2026-09",
+   "okyanus_sicakligi_akintilar/2026-09"
+  ],
+  [
+   "okyanus_sicakligi/2026-10",
+   "okyanus_sicakligi_akintilar/2026-10"
+  ]
+ ],
+ "v3_katmanlari": [
+  "CO2: OCO2_GEOS_L3CO2_DAY :: XCO2 (oco2_GEOS_L3CO2_day_20210101_B10206Ar.nc4)",
+  "TEMP: M2TMNXSLV_2024 :: T2M (MERRA2_400.tavgM_2d_slv_Nx.202401.nc4)",
+  "LST: M2TMNXSLV_2024 :: TS (MERRA2_400.tavgM_2d_slv_Nx.202401.nc4)",
+  "O3: M2TMNXSLV_2024 :: TO3 (MERRA2_400.tavgM_2d_slv_Nx.202401.nc4)",
+  "AOD: M2TMNXAER_2024 :: TOTEXTTAU (MERRA2_400.tavgM_2d_aer_Nx.202401.nc4)",
+  "SO2: M2TMNXAER_2024 :: SO2SMASS (MERRA2_400.tavgM_2d_aer_Nx.202401.nc4)",
+  "FIRE: M2TMNXAER_2024 :: BCCMASS (MERRA2_400.tavgM_2d_aer_Nx.202401.nc4)",
+  "CO: M2TMNXCHM_2024 :: COSC (MERRA2_400.tavgM_2d_chm_Nx.202401.nc4)",
+  "ALBEDO: M2TMNXRAD_2024 :: ALBEDO (MERRA2_400.tavgM_2d_rad_Nx.202401.nc4)",
+  "SST: M2TMNXOCN_2024 :: TSKINWTR (MERRA2_400.tavgM_2d_ocn_Nx.202401.nc4)",
+  "SEAICE: M2TMNXOCN_2024 :: FRSEAICE (MERRA2_400.tavgM_2d_ocn_Nx.202401.nc4)",
+  "SMAP: M2TMNXLND_2024 :: GWETTOP (MERRA2_400.tavgM_2d_lnd_Nx.202401.nc4)",
+  "IMERG: M2TMNXLND_2024 :: PRECTOTLAND (MERRA2_400.tavgM_2d_lnd_Nx.202401.nc4)",
+  "GRACE: M2TMNXLND_2024 :: TWLAND (MERRA2_400.tavgM_2d_lnd_Nx.202401.nc4)",
+  "NDVI: M2TMNXLND_2024 :: LAI (MERRA2_400.tavgM_2d_lnd_Nx.202401.nc4)"
+ ]
+}

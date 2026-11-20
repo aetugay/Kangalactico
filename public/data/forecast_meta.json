@@ -1,9 +1,9 @@
 {
  "source": "NASA GMAO GEOS-FP (Goddard Earth Observing System — Forward Processing), NCCS OPeNDAP",
  "url": "https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/",
- "run": "2026-11-18T00:00:00Z",
- "runLabel": "20261118_00Z",
- "fetchedAt": "2026-11-18T14:52:52.970Z",
+ "run": "2026-11-19T00:00:00Z",
+ "runLabel": "20261119_00Z",
+ "fetchedAt": "2026-11-20T14:41:31.096Z",
  "daysAvailable": 7,
  "daysRequested": 7,
  "hoursUtc": [
@@ -13,10 +13,6 @@
   18
  ],
  "steps": [
-  "2026-11-18T00:00:00.000Z",
-  "2026-11-18T06:00:00.000Z",
-  "2026-11-18T12:00:00.000Z",
-  "2026-11-18T18:00:00.000Z",
   "2026-11-19T00:00:00.000Z",
   "2026-11-19T06:00:00.000Z",
   "2026-11-19T12:00:00.000Z",
@@ -40,7 +36,11 @@
   "2026-11-24T00:00:00.000Z",
   "2026-11-24T06:00:00.000Z",
   "2026-11-24T12:00:00.000Z",
-  "2026-11-24T18:00:00.000Z"
+  "2026-11-24T18:00:00.000Z",
+  "2026-11-25T00:00:00.000Z",
+  "2026-11-25T06:00:00.000Z",
+  "2026-11-25T12:00:00.000Z",
+  "2026-11-25T18:00:00.000Z"
  ],
  "note": "Saatlik ortalamalar (tavg1): her adım o saatten başlayan 1 saatin ortalaması. Günlük yağış = 4 örneğin ortalama hızı × 24 saat (tahmini). Model tahmini; resmi uyarı değildir.",
  "grid": {

@@ -3,7 +3,7 @@
  "url": "https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/fcast/",
  "run": "2026-11-19T00:00:00Z",
  "runLabel": "20261119_00Z",
- "fetchedAt": "2026-11-20T14:41:31.096Z",
+ "fetchedAt": "2026-11-21T13:58:02.011Z",
  "daysAvailable": 7,
  "daysRequested": 7,
  "hoursUtc": [
